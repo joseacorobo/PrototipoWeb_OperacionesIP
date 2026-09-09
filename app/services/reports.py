@@ -24,8 +24,22 @@ def get_managerial_summary(area: str = "Todas", range_filter: str = "all") -> di
     cur = conn.cursor()
     
     range_sql = _get_range_condition(range_filter)
-    area_sql = "1=1" if area == "Todas" else "tl.area = ?"
-    params = [] if area == "Todas" else [area]
+    if area == "Todas":
+        area_sql = "1=1"
+        user_area_sql = "1=1"
+        params = []
+    elif area in ["Acceso", "Redes de Acceso"]:
+        area_sql = "tl.area IN ('Soporte', 'Cabecera')"
+        user_area_sql = "u.area IN ('Soporte', 'Cabecera')"
+        params = []
+    elif area in ["Servicios", "Servicios y Clientes"]:
+        area_sql = "tl.area IN ('Telefonía')"
+        user_area_sql = "u.area IN ('Telefonía')"
+        params = []
+    else:
+        area_sql = "tl.area = ?"
+        user_area_sql = "u.area = ?"
+        params = [area]
     
     # 1. KPIs Globales
     cur.execute(f"""
@@ -93,8 +107,7 @@ def get_managerial_summary(area: str = "Todas", range_filter: str = "all") -> di
             "badge": badge
         })
 
-    # 3. Productividad Detallada por Especialista (12 Técnicos)
-    user_area_sql = "1=1" if area == "Todas" else "u.area = ?"
+    # 3. Productividad Detallada por Especialista (Dinámico)
     cur.execute(f"""
     SELECT u.id, u.name, u.area, u.role, u.avatar,
            COUNT(tl.id) as tasks_count,
@@ -317,7 +330,7 @@ def generate_excel_report(area: str = "Todas", range_filter: str = "all") -> io.
     ws2.views.sheetView[0].showGridLines = True
     
     ws2.merge_cells("A1:M1")
-    ws2["A1"] = "RENDIMIENTO Y DESGLOSE POR ESPECIALISTA (12 TÉCNICOS)"
+    ws2["A1"] = "RENDIMIENTO Y DESGLOSE POR ESPECIALISTA"
     ws2["A1"].font = f_title
     
     headers_ws2 = [
@@ -394,9 +407,18 @@ def generate_excel_report(area: str = "Todas", range_filter: str = "all") -> io.
     # Obtener todos los registros para auditoría completa
     conn = get_db()
     cur = conn.cursor()
-    range_sql = _get_range_condition(range_filter)
-    area_sql = "1=1" if area == "Todas" else "tl.area = ?"
-    params = [] if area == "Todas" else [area]
+    if area == "Todas":
+        area_sql = "1=1"
+        params = []
+    elif area in ["Acceso", "Redes de Acceso"]:
+        area_sql = "tl.area IN ('Soporte', 'Cabecera')"
+        params = []
+    elif area in ["Servicios", "Servicios y Clientes"]:
+        area_sql = "tl.area IN ('Telefonía')"
+        params = []
+    else:
+        area_sql = "tl.area = ?"
+        params = [area]
     
     cur.execute(f"""
     SELECT tl.ticket_code, tl.created_at, tl.duration_minutes, tl.wait_minutes, tl.net_duration,

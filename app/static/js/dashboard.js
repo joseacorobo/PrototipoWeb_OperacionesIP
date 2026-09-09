@@ -16,13 +16,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function changeArea(area) {
     currentArea = area;
-    document.getElementById("breadcrumb-area").innerText = area === "Todas" ? "Todas las Áreas" : `Área de ${area}`;
     
-    const areas = ['todas', 'soporte', 'cabecera', 'telefonia'];
+    let label = "Todas las Áreas";
+    if (area === "Acceso" || area === "Redes de Acceso") {
+        label = "División Redes de Acceso";
+    } else if (area === "Soporte") {
+        label = "Célula Soporte FTTH";
+    } else if (area === "Cabecera") {
+        label = "Célula Cabecera OLT";
+    } else if (area === "Telefonía") {
+        label = "Célula Telefonía VoIP";
+    }
+    document.getElementById("breadcrumb-area").innerText = label;
+    
+    const areas = ['todas', 'acceso', 'soporte', 'cabecera', 'telefonia'];
     areas.forEach(a => {
         const pill = document.getElementById(`pill-area-${a}`);
         const nav = document.getElementById(`nav-area-${a}`);
-        const isActive = (a === 'todas' && area === 'Todas') || (a === area.toLowerCase().replace('í', 'i'));
+        const isActive = (a === 'todas' && area === 'Todas') || 
+                         (a === 'acceso' && (area === 'Acceso' || area === 'Redes de Acceso')) ||
+                         (a === area.toLowerCase().replace('í', 'i'));
         
         if (pill) {
             pill.className = isActive 
@@ -38,11 +51,11 @@ function changeArea(area) {
     
     const techTitle = document.getElementById("tech-chart-title");
     if (area === "Todas") {
-        techTitle.innerText = "Carga Individual por Especialista (12 Especialistas)";
-        document.getElementById("kpi-tech-count").innerText = "12 especialistas";
+        techTitle.innerText = "Carga Individual por Especialista";
+    } else if (area === "Acceso" || area === "Redes de Acceso") {
+        techTitle.innerText = "Carga Individual: Especialistas de Redes de Acceso";
     } else {
-        techTitle.innerText = `Carga Individual: Especialistas de ${area} (4 personas)`;
-        document.getElementById("kpi-tech-count").innerText = `4 especialistas de ${area}`;
+        techTitle.innerText = `Carga Individual: Especialistas de ${area}`;
     }
     
     loadDashboardData();
@@ -74,6 +87,13 @@ async function loadDashboardData() {
         const techData = await techRes.json();
         renderTechniciansChart(techData);
 
+        // Contador dinámico de especialistas según base de datos
+        const countEl = document.getElementById("kpi-tech-count");
+        if (countEl) {
+            const num = techData.length;
+            countEl.innerText = `${num} especialista${num !== 1 ? 's' : ''}`;
+        }
+
         const weightsRes = await fetch(`/api/charts/task-weights?area=${currentArea}`);
         const weightsData = await weightsRes.json();
         renderWeightsChart(weightsData);
@@ -96,19 +116,19 @@ function renderAreaProgress(areaPoints, totalPoints) {
     container.innerHTML = "";
     
     const areas = [
-        { name: "Soporte de Operaciones", key: "Soporte", color: "bg-blue-500", count: "4 analistas" },
-        { name: "Cabecera / Head End", key: "Cabecera", color: "bg-amber-500", count: "4 especialistas" },
-        { name: "Telefonía VoIP", key: "Telefonía", color: "bg-purple-500", count: "4 especialistas" }
+        { name: "Soporte FTTH", key: "Soporte", color: "bg-blue-500", category: "Redes de Acceso" },
+        { name: "Cabecera OLT", key: "Cabecera", color: "bg-amber-500", category: "Redes de Acceso" },
+        { name: "Telefonía VoIP", key: "Telefonía", color: "bg-purple-500", category: "Servicios & Clientes" }
     ];
     
     areas.forEach(a => {
         const pts = areaPoints[a.key] || 0;
         const pct = totalPoints > 0 ? Math.round((pts / totalPoints) * 100) : 0;
-        const isSelected = (currentArea === a.key);
+        const isSelected = (currentArea === a.key) || (currentArea === "Acceso" && a.category === "Redes de Acceso");
         const borderStyle = isSelected ? "border-l-4 border-snow-blue pl-2" : "";
         
         const html = `
-            <div class="${borderStyle} transition">
+            <div class="${borderStyle} transition cursor-pointer" onclick="changeArea('${a.key}')">
                 <div class="flex justify-between items-center text-xs mb-1">
                     <span class="font-medium ${isSelected ? 'text-snow-blue font-bold' : 'text-gray-800'}">${a.name}</span>
                     <span class="text-snow-muted font-semibold">${pts} pts (${pct}%)</span>

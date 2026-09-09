@@ -25,6 +25,17 @@ def startup_event():
 def dashboard_view():
     return FileResponse(os.path.join(BASE_DIR, "templates", "dashboard.html"))
 
+def parse_area_filter(area: str, table_prefix: str = ""):
+    col = f"{table_prefix}.area" if table_prefix else "area"
+    if not area or area in ["Todas", "Todas las Áreas", "Todas las Células"]:
+        return "1=1", []
+    elif area in ["Acceso", "Redes de Acceso"]:
+        return f"{col} IN ('Soporte', 'Cabecera')", []
+    elif area in ["Servicios", "Servicios y Clientes", "Otras"]:
+        return f"{col} IN ('Telefonía')", []
+    else:
+        return f"{col} = ?", [area]
+
 # =============================================================
 # ENDPOINTS DE KPIS Y GRÁFICAS FILTRADOS POR ÁREA
 # =============================================================
@@ -34,20 +45,16 @@ def get_kpis(area: str = "Todas"):
     conn = get_db()
     cur = conn.cursor()
     
-    if area != "Todas":
-        cur.execute("SELECT COUNT(*), COALESCE(SUM(points), 0), COALESCE(AVG(net_duration), 0) FROM task_logs WHERE area = ?", [area])
-    else:
-        cur.execute("SELECT COUNT(*), COALESCE(SUM(points), 0), COALESCE(AVG(net_duration), 0) FROM task_logs")
+    where_logs, params_logs = parse_area_filter(area)
+    cur.execute(f"SELECT COUNT(*), COALESCE(SUM(points), 0), COALESCE(AVG(net_duration), 0) FROM task_logs WHERE {where_logs}", params_logs)
     row = cur.fetchone()
     total_tasks, total_points, avg_mttr = row[0], row[1], round(row[2], 1)
     
     cur.execute("SELECT area, SUM(points) FROM task_logs GROUP BY area")
     points_by_area = {r[0]: r[1] for r in cur.fetchall()}
     
-    if area != "Todas":
-        cur.execute("SELECT COUNT(*) FROM users WHERE area = ?", [area])
-    else:
-        cur.execute("SELECT COUNT(*) FROM users")
+    where_users, params_users = parse_area_filter(area)
+    cur.execute(f"SELECT COUNT(*) FROM users WHERE {where_users}", params_users)
     total_techs = cur.fetchone()[0] or 1
     
     avg_points_per_tech = round(total_points / total_techs, 1) if total_techs > 0 else 0
@@ -79,29 +86,18 @@ def get_technicians_chart(area: str = "Todas"):
     conn = get_db()
     cur = conn.cursor()
     
-    if area != "Todas":
-        cur.execute("""
-        SELECT u.id, u.name, u.area, u.role, u.avatar,
-               COALESCE(SUM(tl.points), 0) as total_pts,
-               COUNT(tl.id) as total_tasks,
-               COALESCE(AVG(tl.net_duration), 0) as avg_mttr
-        FROM users u
-        LEFT JOIN task_logs tl ON u.id = tl.user_id
-        WHERE u.area = ?
-        GROUP BY u.id
-        ORDER BY total_pts DESC
-        """, [area])
-    else:
-        cur.execute("""
-        SELECT u.id, u.name, u.area, u.role, u.avatar,
-               COALESCE(SUM(tl.points), 0) as total_pts,
-               COUNT(tl.id) as total_tasks,
-               COALESCE(AVG(tl.net_duration), 0) as avg_mttr
-        FROM users u
-        LEFT JOIN task_logs tl ON u.id = tl.user_id
-        GROUP BY u.id
-        ORDER BY total_pts DESC
-        """)
+    where_clause, params = parse_area_filter(area, "u")
+    cur.execute(f"""
+    SELECT u.id, u.name, u.area, u.role, u.avatar,
+           COALESCE(SUM(tl.points), 0) as total_pts,
+           COUNT(tl.id) as total_tasks,
+           COALESCE(AVG(tl.net_duration), 0) as avg_mttr
+    FROM users u
+    LEFT JOIN task_logs tl ON u.id = tl.user_id
+    WHERE {where_clause}
+    GROUP BY u.id
+    ORDER BY total_pts DESC
+    """, params)
     
     data = []
     for r in cur.fetchall():
@@ -140,8 +136,7 @@ def get_task_weights(area: str = "Todas"):
     conn = get_db()
     cur = conn.cursor()
     
-    filter_clause = "WHERE area = ?" if area != "Todas" else ""
-    params = [area] if area != "Todas" else []
+    where_clause, params = parse_area_filter(area)
     
     cur.execute(f"""
     SELECT 
@@ -156,7 +151,7 @@ def get_task_weights(area: str = "Todas"):
         COUNT(*) as count,
         SUM(points) as points
     FROM task_logs
-    {filter_clause}
+    WHERE {where_clause}
     GROUP BY points
     ORDER BY points ASC
     """, params)
@@ -171,6 +166,8 @@ def get_hourly_chart(area: str = "Todas"):
         pointsData = [15, 32, 58, 85, 110, 132, 150, 168]
     elif area == "Cabecera":
         pointsData = [10, 25, 45, 70, 95, 115, 140, 162]
+    elif area in ["Acceso", "Redes de Acceso"]:
+        pointsData = [25, 57, 103, 155, 205, 247, 290, 330]
     elif area == "Telefonía":
         pointsData = [8, 20, 38, 62, 84, 102, 120, 138]
     else:
@@ -184,15 +181,14 @@ def get_hourly_chart(area: str = "Todas"):
 def get_feed(area: str = "Todas"):
     conn = get_db()
     cur = conn.cursor()
-    filter_clause = "WHERE tl.area = ?" if area != "Todas" else ""
-    params = [area] if area != "Todas" else []
+    where_clause, params = parse_area_filter(area, "tl")
     
     cur.execute(f"""
     SELECT tl.ticket_code, u.name, u.area, u.avatar, tt.name as task_name, tl.points, tl.net_duration, tl.created_at
     FROM task_logs tl
     JOIN users u ON tl.user_id = u.id
     JOIN task_types tt ON tl.task_type_id = tt.id
-    {filter_clause}
+    WHERE {where_clause}
     ORDER BY tl.created_at DESC
     LIMIT 7
     """, params)
@@ -220,8 +216,7 @@ def get_feed(area: str = "Todas"):
 def get_tickets_inbox(area: str = "Todas"):
     conn = get_db()
     cur = conn.cursor()
-    filter_clause = "WHERE et.area = ?" if area != "Todas" else ""
-    params = [area] if area != "Todas" else []
+    where_clause, params = parse_area_filter(area, "et")
     
     cur.execute(f"""
     SELECT et.id, et.ticket_code, et.sender_email, et.subject, et.full_body, et.area,
@@ -233,7 +228,7 @@ def get_tickets_inbox(area: str = "Todas"):
     FROM email_tickets et
     LEFT JOIN users u ON et.claimed_by_user_id = u.id
     LEFT JOIN task_types tt ON et.suggested_task_type_id = tt.id
-    {filter_clause}
+    WHERE {where_clause}
     ORDER BY CASE et.status WHEN 'EN PROGRESO' THEN 1 WHEN 'PENDIENTE' THEN 2 ELSE 3 END, et.created_at DESC
     """, params)
     
@@ -414,7 +409,12 @@ def simulate_incoming_ticket(area: Optional[str] = "Soporte"):
         ]
     }
     
-    target_area = area if area in templates else "Soporte"
+    if area in ["Acceso", "Redes de Acceso"]:
+        target_area = random.choice(["Soporte", "Cabecera"])
+    elif area in templates:
+        target_area = area
+    else:
+        target_area = "Soporte"
     sample = random.choice(templates[target_area])
     
     cur.execute("""
@@ -491,7 +491,7 @@ def ingest_custom_email(payload: IngestCustomPayload):
 def get_reports_summary_endpoint(area: str = "Todas", range_filter: str = "all"):
     """
     Retorna métricas consolidadas, KPIs de productividad, balance por célula
-    y ranking de los 12 especialistas para la vista previa en el dashboard.
+    y ranking de los especialistas para la vista previa en el dashboard.
     """
     return get_managerial_summary(area=area, range_filter=range_filter)
 
@@ -500,7 +500,7 @@ def export_reports_excel_endpoint(area: str = "Todas", range_filter: str = "all"
     """
     Genera y descarga en 1 clic el libro Excel corporativo (.xlsx) con 3 hojas:
     1. Resumen Ejecutivo y Áreas
-    2. Productividad por Especialista (12 técnicos)
+    2. Productividad por Especialista
     3. Log Detallado de Auditoría Técnica
     """
     stream = generate_excel_report(area=area, range_filter=range_filter)
@@ -510,6 +510,40 @@ def export_reports_excel_endpoint(area: str = "Todas", range_filter: str = "all"
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+# =============================================================
+# ENDPOINTS DE USUARIOS Y GESTIÓN DE ACCESO (MÓDULO DE AUTENTICACIÓN)
+# =============================================================
+
+@app.get("/api/users")
+def list_users(area: Optional[str] = "Todas"):
+    """Retorna la lista de usuarios y roles activos en el sistema de manera dinámica"""
+    conn = get_db()
+    cur = conn.cursor()
+    where_clause, params = parse_area_filter(area)
+    cur.execute(f"SELECT id, name, area, role, avatar, shift, status, email FROM users WHERE {where_clause} ORDER BY id ASC", params)
+    users = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return users
+
+@app.get("/api/auth/me")
+def get_current_user_profile():
+    """Retorna el perfil del usuario activo en la sesión"""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, area, role, avatar, email FROM users WHERE role = 'ADMINISTRADOR' OR role = 'COORDINADOR' LIMIT 1")
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return dict(row)
+    return {
+        "id": 1,
+        "name": "David Rodríguez",
+        "area": "Redes de Acceso",
+        "role": "COORDINADOR",
+        "avatar": "DR",
+        "email": "david.rodriguez@inter.com.ve"
+    }
 
 # =============================================================
 # ENDPOINTS DEL WORKER DE CORREO (MODO SIMULADOR E IMAP REAL)

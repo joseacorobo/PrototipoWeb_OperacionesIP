@@ -61,43 +61,54 @@
             <!-- Navigation Sections -->
             <div class="space-y-5">
                 
-                <!-- Macro-Área: Redes de Acceso y Aprovisionamiento -->
+                <!-- Vista Global -->
+                <div>
+                    <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-gray-100 text-snow-blue transition">
+                        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                        <span>Todas las Áreas</span>
+                    </button>
+                </div>
+
+                <!-- Categoría 1: Redes de Acceso -->
                 <div>
                     <div class="flex items-center justify-between px-3 mb-2">
-                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Acceso & Aprovisionamiento</p>
+                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Redes de Acceso</p>
                         <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-600">Activo</span>
                     </div>
                     <nav class="space-y-1">
-                        <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-gray-100 text-snow-blue transition">
-                            <i data-lucide="layout-grid" class="w-4 h-4"></i>
-                            <span>Todas las Células</span>
+                        <button onclick="changeArea('Acceso')" id="nav-area-acceso" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                            <i data-lucide="network" class="w-4 h-4 text-emerald-600"></i>
+                            <span>Redes de Acceso (General)</span>
                         </button>
-                        <button onclick="changeArea('Soporte')" id="nav-area-soporte" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                        <button onclick="changeArea('Soporte')" id="nav-area-soporte" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-5">
                             <i data-lucide="headset" class="w-4 h-4 text-blue-500"></i>
-                            <span>Soporte FTTH (4p)</span>
+                            <span>Soporte FTTH</span>
                         </button>
-                        <button onclick="changeArea('Cabecera')" id="nav-area-cabecera" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                        <button onclick="changeArea('Cabecera')" id="nav-area-cabecera" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-5">
                             <i data-lucide="server" class="w-4 h-4 text-amber-500"></i>
-                            <span>Cabecera OLT (4p)</span>
-                        </button>
-                        <button onclick="changeArea('Telefonía')" id="nav-area-telefonia" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="phone-call" class="w-4 h-4 text-purple-500"></i>
-                            <span>Telefonía VoIP (4p)</span>
+                            <span>Cabecera OLT</span>
                         </button>
                     </nav>
                 </div>
 
-                <!-- Otras Divisiones IP (Previstas para Expansión) -->
+                <!-- Categoría 2: Servicios & Clientes -->
                 <div>
-                    <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-3 mb-2">Otras Divisiones IP</p>
+                    <div class="flex items-center justify-between px-3 mb-2">
+                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Servicios & Clientes</p>
+                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-600">Operativo</span>
+                    </div>
                     <nav class="space-y-1">
+                        <button onclick="changeArea('Telefonía')" id="nav-area-telefonia" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                            <i data-lucide="phone-call" class="w-4 h-4 text-purple-500"></i>
+                            <span>Telefonía VoIP</span>
+                        </button>
                         <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-gray-400 cursor-not-allowed select-none bg-gray-50/50">
                             <i data-lucide="building-2" class="w-4 h-4 text-gray-400"></i>
                             <span>Grandes Cuentas</span>
                             <span class="ml-auto text-[9px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-medium">Fase 3</span>
                         </div>
                         <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-gray-400 cursor-not-allowed select-none bg-gray-50/50">
-                            <i data-lucide="network" class="w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="globe" class="w-4 h-4 text-gray-400"></i>
                             <span>Redes WAN & Core</span>
                             <span class="ml-auto text-[9px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-medium">Fase 3</span>
                         </div>
@@ -162,9 +173,10 @@
             <div class="flex items-center gap-3">
                 <div class="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-medium">
                     <button onclick="changeArea('Todas')" id="pill-area-todas" class="px-3 py-1.5 rounded-lg bg-white shadow-xs text-gray-900 font-semibold transition">Todas</button>
-                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Soporte (4)</button>
-                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Cabecera (4)</button>
-                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Telefonía (4)</button>
+                    <button onclick="changeArea('Acceso')" id="pill-area-acceso" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Redes de Acceso</button>
+                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Soporte FTTH</button>
+                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Cabecera OLT</button>
+                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Telefonía VoIP</button>
                 </div>
 
                 <!-- Simulation Action: Simular Nuevo Correo Entrante -->
@@ -246,7 +258,7 @@
                     </div>
                     <div class="mt-2 flex items-center justify-between">
                         <span id="kpi-balance-status" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-snow-green">Equilibrado</span>
-                        <span class="text-[10px] text-snow-muted" id="kpi-tech-count">12 especialistas</span>
+                        <span class="text-[10px] text-snow-muted" id="kpi-tech-count">-- especialistas</span>
                     </div>
                 </div>
 
@@ -750,7 +762,8 @@
                     <div class="flex items-center gap-1.5">
                         <span class="text-snow-muted font-semibold">Célula:</span>
                         <select id="select-report-area" onchange="changeReportArea(this.value)" class="bg-white border border-snow-border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
-                            <option value="Todas">Todas las Células (Acceso & Aprov.)</option>
+                            <option value="Todas">Todas las Áreas</option>
+                            <option value="Acceso">Redes de Acceso (Soporte + Cabecera)</option>
                             <option value="Soporte">Soporte FTTH</option>
                             <option value="Cabecera">Cabecera OLT</option>
                             <option value="Telefonía">Telefonía VoIP</option>
@@ -809,7 +822,7 @@
                     </div>
                 </div>
 
-                <!-- Tabla 2: Ranking de Productividad de Especialistas (12 Técnicos) -->
+                <!-- Tabla 2: Ranking de Productividad de Especialistas -->
                 <div class="border border-snow-border rounded-2xl p-4 bg-white space-y-3">
                     <p class="text-xs font-bold text-gray-900 flex items-center gap-2">
                         <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>

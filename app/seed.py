@@ -12,22 +12,26 @@ def seed():
     cur.execute("DELETE FROM task_types")
     cur.execute("DELETE FROM users")
     
-    # 1. 12 Colaboradores
+    import hashlib
+    default_hash = hashlib.sha256("inter2026".encode('utf-8')).hexdigest()
+    
+    # 1. Especialistas y Coordinadores Operacionales
     users = [
-        ("Carlos Méndez", "Soporte", "Operador Senior", "CM", "Mañana", "Activo"),
-        ("Anais Rodríguez", "Soporte", "Operador", "AR", "Mañana", "Activo"),
-        ("José Gregorio Pérez", "Soporte", "Operador", "JP", "Tarde", "Activo"),
-        ("Mariana Salazar", "Soporte", "Operador", "MS", "Noche", "Activo"),
-        ("Luis Eduardo Gómez", "Cabecera", "Especialista Head End", "LG", "Mañana", "Activo"),
-        ("Ricardo Morales", "Cabecera", "Especialista OLT", "RM", "Mañana", "Activo"),
-        ("Gabriel Torres", "Cabecera", "Especialista", "GT", "Tarde", "Activo"),
-        ("Alejandro Silva", "Cabecera", "Especialista", "AS", "Noche", "Activo"),
-        ("Daniela Castillo", "Telefonía", "Especialista VoIP/SIP", "DC", "Mañana", "Activo"),
-        ("Jesús Alberto Vargas", "Telefonía", "Especialista", "JV", "Mañana", "Activo"),
-        ("Paola Mendoza", "Telefonía", "Especialista", "PM", "Tarde", "Activo"),
-        ("Víctor Hernández", "Telefonía", "Especialista", "VH", "Noche", "Activo"),
+        ("Carlos Méndez", "Soporte", "COORDINADOR", "CM", "Mañana", "Activo", "carlos.mendez@inter.com.ve", default_hash),
+        ("Anais Rodríguez", "Soporte", "ESPECIALISTA", "AR", "Mañana", "Activo", "anais.rodriguez@inter.com.ve", default_hash),
+        ("José Gregorio Pérez", "Soporte", "ESPECIALISTA", "JP", "Tarde", "Activo", "jose.perez@inter.com.ve", default_hash),
+        ("Mariana Salazar", "Soporte", "ESPECIALISTA", "MS", "Noche", "Activo", "mariana.salazar@inter.com.ve", default_hash),
+        ("Luis Eduardo Gómez", "Cabecera", "COORDINADOR", "LG", "Mañana", "Activo", "luis.gomez@inter.com.ve", default_hash),
+        ("Ricardo Morales", "Cabecera", "ESPECIALISTA", "RM", "Mañana", "Activo", "ricardo.morales@inter.com.ve", default_hash),
+        ("Gabriel Torres", "Cabecera", "ESPECIALISTA", "GT", "Tarde", "Activo", "gabriel.torres@inter.com.ve", default_hash),
+        ("Alejandro Silva", "Cabecera", "ESPECIALISTA", "AS", "Noche", "Activo", "alejandro.silva@inter.com.ve", default_hash),
+        ("Daniela Castillo", "Telefonía", "COORDINADOR", "DC", "Mañana", "Activo", "daniela.castillo@inter.com.ve", default_hash),
+        ("Jesús Alberto Vargas", "Telefonía", "ESPECIALISTA", "JV", "Mañana", "Activo", "jesus.vargas@inter.com.ve", default_hash),
+        ("Paola Mendoza", "Telefonía", "ESPECIALISTA", "PM", "Tarde", "Activo", "paola.mendoza@inter.com.ve", default_hash),
+        ("Víctor Hernández", "Telefonía", "ESPECIALISTA", "VH", "Noche", "Activo", "victor.hernandez@inter.com.ve", default_hash),
+        ("David Rodríguez", "Acceso", "ADMINISTRADOR", "DR", "General", "Activo", "david.rodriguez@inter.com.ve", default_hash),
     ]
-    cur.executemany("INSERT INTO users (name, area, role, avatar, shift, status) VALUES (?, ?, ?, ?, ?, ?)", users)
+    cur.executemany("INSERT INTO users (name, area, role, avatar, shift, status, email, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", users)
     
     # 2. Catálogo de Tareas P1 a P5
     task_types = [
@@ -67,6 +71,8 @@ def seed():
     base_time = datetime.now()
     for u in user_rows:
         u_id, u_name, u_area = u[0], u[1], u[2]
+        if u_area not in task_by_area:
+            continue
         area_tasks = task_by_area[u_area]
         for _ in range(random.randint(8, 13)):
             t = random.choice(area_tasks)

@@ -12,18 +12,31 @@ def init_db():
     conn = get_db()
     cursor = conn.cursor()
     
-    # Usuarios (12 colaboradores)
+    # Usuarios y Roles (Soporta Autenticación RBAC y Cuentas de Acceso)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
+        email TEXT UNIQUE,
+        password_hash TEXT,
         area TEXT NOT NULL,
-        role TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'ESPECIALISTA', -- ADMINISTRADOR, COORDINADOR, ESPECIALISTA
         avatar TEXT,
         shift TEXT DEFAULT 'Mañana',
-        status TEXT DEFAULT 'Activo'
+        status TEXT DEFAULT 'Activo',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+    
+    # Migración segura de columnas en users
+    cursor.execute("PRAGMA table_info(users)")
+    existing_user_cols = [c[1] for c in cursor.fetchall()]
+    if "email" not in existing_user_cols:
+        cursor.execute("ALTER TABLE users ADD COLUMN email TEXT")
+    if "password_hash" not in existing_user_cols:
+        cursor.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+    if "created_at" not in existing_user_cols:
+        cursor.execute("ALTER TABLE users ADD COLUMN created_at TIMESTAMP")
     
     # Catálogo de Tareas P1 a P5
     cursor.execute("""
