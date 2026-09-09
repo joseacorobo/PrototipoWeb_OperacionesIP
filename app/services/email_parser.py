@@ -174,7 +174,7 @@ class TelcoEmailParser:
             result["detected_area"] = "Cabecera"
             if any(k in lower_text for k in ["portchannel", "mini red", "20g"]):
                 result["suggested_task_code"] = "P5-CAB-01"
-                result["suggested_task_name"] = "Habilitación PortChannel 10G ➔ 20G"
+                result["suggested_task_name"] = "Habilitación PortChannel 10G -> 20G"
                 result["suggested_points"] = 8
                 result["is_critical"] = True
             else:

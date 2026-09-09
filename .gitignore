@@ -18,6 +18,7 @@ Reporte_Gerencial_Operaciones_IP*.xlsx
 
 # Archivos temporales o con credenciales sensibles
 PruebaCorreo
+app/config_mail.json
 1.txt
 
 # Sistema Operativo y Editores

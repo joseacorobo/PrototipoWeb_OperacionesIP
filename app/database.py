@@ -84,6 +84,16 @@ def init_db():
     )
     """)
     
+    
+    # Migración de columnas para el Worker de Correo
+    cursor.execute("PRAGMA table_info(email_tickets)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if "message_id" not in columns:
+        cursor.execute("ALTER TABLE email_tickets ADD COLUMN message_id TEXT")
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_email_tickets_msgid ON email_tickets(message_id)")
+    if "source" not in columns:
+        cursor.execute("ALTER TABLE email_tickets ADD COLUMN source TEXT DEFAULT 'MANUAL'")
+
     conn.commit()
     conn.close()
 

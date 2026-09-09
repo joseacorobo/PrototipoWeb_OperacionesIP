@@ -11,6 +11,7 @@ let isPaused = false;
 document.addEventListener("DOMContentLoaded", () => {
     lucide.createIcons();
     loadDashboardData();
+    setInterval(loadMailWorkerStatus, 20000);
 });
 
 function changeArea(area) {
@@ -83,6 +84,7 @@ async function loadDashboardData() {
 
         loadInbox();
         loadFeed();
+        loadMailWorkerStatus();
 
     } catch (err) {
         console.error("Error loading dashboard data:", err);
@@ -268,10 +270,24 @@ async function loadInbox() {
             statusBadge = `<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-semibold">Completado</span>`;
             actionBtn = `<span class="text-emerald-600 font-bold flex items-center justify-end gap-1"><i data-lucide="check-check" class="w-3.5 h-3.5"></i> +${t.suggested_points} pts</span>`;
         }
+
+        // Badge de Origen de Ingesta (Módulo 6)
+        let sourceBadge = '';
+        const src = (t.source || 'MANUAL').toUpperCase();
+        if (src === 'REAL_IMAP') {
+            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">IMAP Real</span>`;
+        } else if (src === 'SIMULATOR' || src === 'SIMULADOR') {
+            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-100">Simulador</span>`;
+        } else {
+            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200">Manual</span>`;
+        }
         
         const row = `
             <tr class="hover:bg-gray-50/60 transition cursor-pointer" onclick="openTicketWorkspace(${t.id})">
-                <td class="py-2.5 px-3 font-mono font-semibold text-gray-900">${t.ticket_code}</td>
+                <td class="py-2.5 px-3">
+                    <span class="font-mono font-semibold text-gray-900 block">${t.ticket_code}</span>
+                    <div class="mt-0.5">${sourceBadge}</div>
+                </td>
                 <td class="py-2.5 px-3">
                     <p class="font-medium text-gray-900 truncate max-w-xs">${t.subject}</p>
                     <p class="text-[10px] text-snow-muted truncate max-w-xs">${t.sender_email}</p>
@@ -312,6 +328,21 @@ async function openTicketWorkspace(ticketId) {
         document.getElementById("ws-ticket-sender").innerText = t.sender_email;
         document.getElementById("ws-ticket-subject").innerText = t.subject;
         document.getElementById("ws-ticket-body").innerText = t.full_body;
+
+        const srcEl = document.getElementById("ws-ticket-source-badge");
+        if (srcEl) {
+            const src = (t.source || 'MANUAL').toUpperCase();
+            if (src === 'REAL_IMAP') {
+                srcEl.innerText = "IMAP Real";
+                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100";
+            } else if (src === 'SIMULATOR' || src === 'SIMULADOR') {
+                srcEl.innerText = "Simulador";
+                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-snow-blue border border-blue-100";
+            } else {
+                srcEl.innerText = "Manual";
+                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 border border-gray-200";
+            }
+        }
 
         // Llenar parámetros técnicos detectados
         document.getElementById("ws-param-subscriber").innerText = t.subscriber_code || "N/A";
@@ -679,3 +710,203 @@ async function loadReportsData() {
 function downloadExcelReport() {
     window.location.href = `/api/reports/export/excel?area=${reportCurrentArea}&range_filter=${reportCurrentRange}`;
 }
+
+// =============================================================
+// CONTROLADOR DEL WORKER DE INGESTA DE CORREO (MÓDULO 6)
+// =============================================================
+
+let currentWorkerStatus = null;
+
+async function loadMailWorkerStatus() {
+    try {
+        const res = await fetch('/api/mail-worker/status');
+        if (!res.ok) return;
+        const status = await res.json();
+        currentWorkerStatus = status;
+
+        // 1. Badge de Modo
+        const modeBadge = document.getElementById("worker-mode-badge");
+        const modeText = document.getElementById("worker-mode-text");
+        if (modeBadge && modeText) {
+            if (status.config.mode === 'REAL_IMAP') {
+                modeBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1.5";
+                modeText.innerText = "Modo: IMAP Real";
+            } else {
+                modeBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-snow-blue border border-blue-100 flex items-center gap-1.5";
+                modeText.innerText = "Modo: Simulador";
+            }
+        }
+
+        // 2. Badge de Estado (Activo / Pausado)
+        const stateBadge = document.getElementById("worker-state-badge");
+        const stateText = document.getElementById("worker-state-text");
+        const btnToggleText = document.getElementById("btn-worker-toggle-text");
+        const iconToggle = document.getElementById("icon-worker-toggle");
+
+        const isRunning = status.is_running && status.config.enabled;
+
+        if (stateBadge && stateText) {
+            if (isRunning) {
+                stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5";
+                stateBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="worker-state-text">Activo (Cada ${status.config.poll_interval}s)</span>`;
+            } else {
+                stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100 flex items-center gap-1.5";
+                stateBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span id="worker-state-text">Pausado</span>`;
+            }
+        }
+
+        if (btnToggleText && iconToggle) {
+            if (isRunning) {
+                btnToggleText.innerText = "Pausar";
+                iconToggle.setAttribute("data-lucide", "pause");
+                iconToggle.className = "w-3.5 h-3.5 text-amber-600";
+            } else {
+                btnToggleText.innerText = "Reanudar";
+                iconToggle.setAttribute("data-lucide", "play");
+                iconToggle.className = "w-3.5 h-3.5 text-emerald-600";
+            }
+        }
+
+        // 3. Telemetría (Última sync y total)
+        const lastSyncEl = document.getElementById("worker-last-sync");
+        if (lastSyncEl) {
+            if (status.last_check) {
+                lastSyncEl.innerText = status.last_check.split(' ')[1] || status.last_check;
+            } else {
+                lastSyncEl.innerText = "Pendiente";
+            }
+        }
+
+        const totalCountEl = document.getElementById("worker-total-count");
+        if (totalCountEl) {
+            totalCountEl.innerText = status.total_processed;
+        }
+
+        lucide.createIcons();
+    } catch (err) {
+        console.error("Error loading mail worker status:", err);
+    }
+}
+
+async function toggleMailWorker() {
+    if (!currentWorkerStatus) return;
+    const nextState = !currentWorkerStatus.config.enabled;
+    try {
+        const res = await fetch('/api/mail-worker/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: nextState })
+        });
+        if (res.ok) {
+            await loadMailWorkerStatus();
+        }
+    } catch (err) {
+        console.error("Error toggling worker:", err);
+    }
+}
+
+async function syncMailWorkerNow() {
+    const btn = document.getElementById("btn-worker-sync");
+    const icon = document.getElementById("icon-sync-spin");
+    if (icon) icon.classList.add("animate-spin");
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/mail-worker/sync-now', { method: 'POST' });
+        const result = await res.json();
+        
+        await loadMailWorkerStatus();
+        if (result.status === 'ok' || result.new_tickets > 0) {
+            await loadInbox();
+            await loadDashboardData();
+        }
+    } catch (err) {
+        console.error("Error syncing mail worker now:", err);
+    } finally {
+        if (icon) icon.classList.remove("animate-spin");
+        if (btn) btn.disabled = false;
+        lucide.createIcons();
+    }
+}
+
+async function openMailConfigModal() {
+    try {
+        const res = await fetch('/api/mail-worker/status');
+        const status = await res.json();
+        currentWorkerStatus = status;
+        const cfg = status.config;
+
+        document.getElementById("cfg_mode").value = cfg.mode || "SIMULATOR";
+        document.getElementById("cfg_interval").value = cfg.poll_interval || 60;
+        document.getElementById("cfg_imap_server").value = cfg.imap_server || "imap.gmail.com";
+        document.getElementById("cfg_imap_port").value = cfg.imap_port || 993;
+        document.getElementById("cfg_imap_mailbox").value = cfg.imap_mailbox || "INBOX";
+        document.getElementById("cfg_imap_user").value = cfg.imap_user || "";
+        document.getElementById("cfg_imap_password").value = "";
+
+        toggleImapFieldsVisibility();
+
+        const modal = document.getElementById("modalMailWorkerConfig");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        lucide.createIcons();
+    } catch (err) {
+        console.error("Error opening mail config modal:", err);
+    }
+}
+
+function closeMailConfigModal() {
+    const modal = document.getElementById("modalMailWorkerConfig");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
+function toggleImapFieldsVisibility() {
+    const mode = document.getElementById("cfg_mode").value;
+    const fields = document.getElementById("cfg_imap_fields");
+    if (!fields) return;
+    if (mode === "SIMULATOR") {
+        fields.classList.add("opacity-50");
+    } else {
+        fields.classList.remove("opacity-50");
+    }
+}
+
+async function saveMailWorkerConfig(e) {
+    e.preventDefault();
+    const mode = document.getElementById("cfg_mode").value;
+    const interval = parseInt(document.getElementById("cfg_interval").value, 10) || 60;
+    const server = document.getElementById("cfg_imap_server").value.trim();
+    const port = parseInt(document.getElementById("cfg_imap_port").value, 10) || 993;
+    const mailbox = document.getElementById("cfg_imap_mailbox").value.trim() || "INBOX";
+    const user = document.getElementById("cfg_imap_user").value.trim();
+    const pass = document.getElementById("cfg_imap_password").value;
+
+    const payload = {
+        mode: mode,
+        poll_interval: interval,
+        imap_server: server,
+        imap_port: port,
+        imap_mailbox: mailbox,
+        imap_user: user
+    };
+    if (pass) {
+        payload.imap_password = pass;
+    }
+
+    try {
+        const res = await fetch('/api/mail-worker/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            closeMailConfigModal();
+            await loadMailWorkerStatus();
+            await loadInbox();
+        }
+    } catch (err) {
+        console.error("Error saving mail worker config:", err);
+    }
+}
+

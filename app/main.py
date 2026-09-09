@@ -1,3 +1,4 @@
+from services.mail_worker import mail_worker_instance
 from services.reports import get_managerial_summary, generate_excel_report
 from services.email_parser import TelcoEmailParser
 from fastapi import FastAPI, Request
@@ -18,6 +19,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 @app.on_event("startup")
 def startup_event():
     init_db()
+    mail_worker_instance.start()
 
 @app.get("/", response_class=FileResponse)
 def dashboard_view():
@@ -227,7 +229,7 @@ def get_tickets_inbox(area: str = "Todas"):
            et.status, et.claimed_by_user_id, u.name as claimed_by_name, u.avatar as claimed_avatar,
            et.claimed_at, et.total_paused_seconds,
            tt.name as suggested_task_name, tt.points as suggested_points, tt.id as suggested_task_id, tt.code as task_code,
-           et.created_at
+           et.created_at, et.source
     FROM email_tickets et
     LEFT JOIN users u ON et.claimed_by_user_id = u.id
     LEFT JOIN task_types tt ON et.suggested_task_type_id = tt.id
@@ -416,8 +418,8 @@ def simulate_incoming_ticket(area: Optional[str] = "Soporte"):
     sample = random.choice(templates[target_area])
     
     cur.execute("""
-    INSERT INTO email_tickets (ticket_code, sender_email, subject, full_body, area, subscriber_code, serial_pon, node_name, slot_pon, mac_address, suggested_task_type_id, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')
+    INSERT INTO email_tickets (ticket_code, sender_email, subject, full_body, area, subscriber_code, serial_pon, node_name, slot_pon, mac_address, suggested_task_type_id, status, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', 'SIMULADOR')
     """, (code, sample[0], sample[1], sample[2], target_area, sample[3], sample[4], sample[5], sample[6], sample[7], sample[8]))
     
     conn.commit()
@@ -469,8 +471,8 @@ def ingest_custom_email(payload: IngestCustomPayload):
     INSERT INTO email_tickets (
         ticket_code, sender_email, subject, full_body, area, 
         subscriber_code, serial_pon, node_name, slot_pon, mac_address, 
-        suggested_task_type_id, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')
+        suggested_task_type_id, status, source
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', 'MANUAL')
     """, (
         code, payload.sender_email, payload.subject, payload.body_text, p["detected_area"],
         p["subscriber_code"] or "N/A", p["serial_pon"] or "N/A", p["node_name"] or "N/A", 
@@ -508,3 +510,53 @@ def export_reports_excel_endpoint(area: str = "Todas", range_filter: str = "all"
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+# =============================================================
+# ENDPOINTS DEL WORKER DE CORREO (MODO SIMULADOR E IMAP REAL)
+# =============================================================
+
+@app.get("/api/mail-worker/status")
+def get_mail_worker_status():
+    """Retorna el estado de sincronización del worker en segundo plano"""
+    return mail_worker_instance.get_status()
+
+class ToggleWorkerPayload(BaseModel):
+    enabled: bool
+
+@app.post("/api/mail-worker/toggle")
+def toggle_mail_worker(payload: ToggleWorkerPayload):
+    """Activa o pausa la búsqueda automática en segundo plano"""
+    mail_worker_instance.config["enabled"] = payload.enabled
+    mail_worker_instance.save_config(mail_worker_instance.config)
+    return {"status": "ok", "enabled": payload.enabled}
+
+@app.post("/api/mail-worker/sync-now")
+def sync_mail_worker_now():
+    """Fuerza una sincronización inmediata sin esperar el intervalo"""
+    res = mail_worker_instance.sync_now()
+    return res
+
+class MailWorkerConfigPayload(BaseModel):
+    mode: str
+    poll_interval: int
+    imap_server: Optional[str] = "imap.gmail.com"
+    imap_port: Optional[int] = 993
+    imap_user: Optional[str] = ""
+    imap_password: Optional[str] = ""
+    imap_mailbox: Optional[str] = "INBOX"
+
+@app.post("/api/mail-worker/config")
+def update_mail_worker_config(payload: MailWorkerConfigPayload):
+    """Actualiza los parámetros de conexión y modo de trabajo"""
+    cfg = {
+        "mode": payload.mode,
+        "poll_interval": payload.poll_interval,
+        "imap_server": payload.imap_server,
+        "imap_port": payload.imap_port,
+        "imap_user": payload.imap_user,
+        "imap_mailbox": payload.imap_mailbox
+    }
+    if payload.imap_password:
+        cfg["imap_password"] = payload.imap_password
+    mail_worker_instance.save_config(cfg)
+    return {"status": "ok", "config": mail_worker_instance.get_status()}

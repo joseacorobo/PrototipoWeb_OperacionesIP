@@ -170,7 +170,7 @@
                 <!-- Simulation Action: Simular Nuevo Correo Entrante -->
                 <button onclick="openTesterModal()" class="bg-blue-50 text-snow-blue hover:bg-blue-100 text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-blue-200">
                     <i data-lucide="scan-search" class="w-4 h-4"></i>
-                    <span>🔬 Analizar Caso Real</span>
+                    <span>Analizar Caso Real</span>
                 </button>
                 <button onclick="simulateEmail()" class="bg-gray-900 hover:bg-black text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
                     <i data-lucide="mail-plus" class="w-4 h-4 text-emerald-400"></i>
@@ -345,6 +345,56 @@
                     </div>
                 </div>
 
+                <!-- Panel de Control y Telemetría del Worker de Correo (Módulo 6) -->
+                <div class="mb-4 p-3 bg-gray-50 rounded-2xl border border-snow-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Badge de Modo -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-snow-muted font-medium">Worker:</span>
+                            <span id="worker-mode-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-snow-blue border border-blue-100 flex items-center gap-1.5">
+                                <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+                                <span id="worker-mode-text">Modo: Simulador</span>
+                            </span>
+                        </div>
+                        
+                        <!-- Badge de Estado Activo / Pausado -->
+                        <span id="worker-state-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span id="worker-state-text">Activo (Cada 60s)</span>
+                        </span>
+
+                        <!-- Telemetría: Última Sincronización e Ingestados -->
+                        <div class="flex items-center gap-3 pl-2 border-l border-gray-200 text-snow-muted">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <span>Última sync:</span>
+                                <strong id="worker-last-sync" class="text-gray-800 font-mono">--</strong>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="mail-check" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <span>Ingestados:</span>
+                                <strong id="worker-total-count" class="text-gray-800 font-mono">0</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción Operativa del Worker -->
+                    <div class="flex items-center gap-2">
+                        <button id="btn-worker-toggle" onclick="toggleMailWorker()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-snow-border text-gray-700 font-semibold flex items-center gap-1.5 shadow-2xs transition">
+                            <i data-lucide="pause" class="w-3.5 h-3.5 text-amber-600" id="icon-worker-toggle"></i>
+                            <span id="btn-worker-toggle-text">Pausar</span>
+                        </button>
+                        <button id="btn-worker-sync" onclick="syncMailWorkerNow()" class="px-3 py-1.5 rounded-xl bg-snow-blue hover:bg-blue-600 text-white font-semibold flex items-center gap-1.5 shadow-xs transition">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="icon-sync-spin"></i>
+                            <span>Sincronizar Ahora</span>
+                        </button>
+                        <button onclick="openMailConfigModal()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-snow-border text-gray-700 font-semibold flex items-center gap-1.5 shadow-2xs transition" title="Configurar Parámetros IMAP / Simulador">
+                            <i data-lucide="settings" class="w-3.5 h-3.5 text-gray-600"></i>
+                            <span>Configurar</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
@@ -412,6 +462,7 @@
             <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <span id="ws-ticket-code" class="text-sm font-mono font-bold px-2.5 py-1 rounded-lg bg-white border border-snow-border text-gray-900 shadow-2xs">INC-XXXXX</span>
+                    <span id="ws-ticket-source-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-snow-blue border border-blue-100">Simulador</span>
                     <span id="ws-ticket-status-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-snow-blue flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-snow-blue animate-pulse"></span> En Atención
                     </span>
@@ -801,6 +852,102 @@
                     <span>Descargar Reporte Excel (.xlsx)</span>
                 </button>
             </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- MODAL: CONFIGURACIÓN DEL WORKER DE CORREO (IMAP / SIMULADOR) -->
+    <!-- ============================================================== -->
+    <div id="modalMailWorkerConfig" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-snow-card w-full max-w-lg flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            
+            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-snow-blue text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20">
+                        <i data-lucide="mail-search" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-sm">Configuración del Ingestor de Correo</h3>
+                        <p class="text-[11px] text-snow-muted">Módulo 6: Worker en Segundo Plano (IMAP SSL / Simulador)</p>
+                    </div>
+                </div>
+                <button onclick="closeMailConfigModal()" class="text-snow-muted hover:text-gray-900 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="formMailWorkerConfig" onsubmit="saveMailWorkerConfig(event)" class="p-6 space-y-4 text-xs">
+                
+                <!-- Selector de Modo -->
+                <div>
+                    <label class="block font-semibold text-gray-800 mb-1">Modo de Operación:</label>
+                    <select id="cfg_mode" onchange="toggleImapFieldsVisibility()" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-semibold focus:ring-2 focus:ring-snow-blue outline-none">
+                        <option value="SIMULATOR">Modo Simulador de Laboratorio (Recomendado sin Internet)</option>
+                        <option value="REAL_IMAP">Buzón IMAP Real SSL (Puerto 993)</option>
+                    </select>
+                </div>
+
+                <!-- Intervalo de Consulta -->
+                <div>
+                    <label class="block font-semibold text-gray-800 mb-1">Intervalo de Verificación Automática (segundos):</label>
+                    <input type="number" id="cfg_interval" min="15" max="3600" value="60" required class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                    <span class="text-[10px] text-snow-muted mt-0.5 block">Frecuencia de escaneo en segundo plano (Recomendado: 60s).</span>
+                </div>
+
+                <!-- Campos de Conexión IMAP Real (visibles u ocultos según modo) -->
+                <div id="cfg_imap_fields" class="space-y-3 pt-2 border-t border-snow-border">
+                    <p class="font-bold text-gray-900 uppercase tracking-wider text-[10px] text-snow-muted flex items-center gap-1.5">
+                        <i data-lucide="server" class="w-3.5 h-3.5 text-snow-blue"></i>
+                        Credenciales del Buzón IMAP
+                    </p>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-2">
+                            <label class="block font-medium text-gray-700 mb-1">Servidor IMAP Host:</label>
+                            <input type="text" id="cfg_imap_server" placeholder="imap.gmail.com" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-gray-700 mb-1">Puerto SSL:</label>
+                            <input type="number" id="cfg_imap_port" placeholder="993" value="993" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Carpeta de Correo:</label>
+                        <input type="text" id="cfg_imap_mailbox" placeholder="INBOX" value="INBOX" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Usuario / Dirección de Correo:</label>
+                        <input type="text" id="cfg_imap_user" placeholder="ejemplo@inter.com.ve" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Contraseña de Aplicación / Token:</label>
+                        <input type="password" id="cfg_imap_password" placeholder="••••••••••••••••" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                        <span class="text-[10px] text-snow-muted mt-0.5 block">Dejar en blanco para mantener la contraseña actual.</span>
+                    </div>
+                </div>
+
+                <!-- Nota Informativa -->
+                <div class="p-3 bg-blue-50/60 border border-blue-100 rounded-xl text-[11px] text-blue-900 flex items-start gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-snow-blue shrink-0 mt-0.5"></i>
+                    <span>En <strong>Modo Simulador</strong>, el worker genera periódicamente casos reales de soporte FTTH y cabecera con validación de nomenclatura DERS, sin requerir acceso a internet.</span>
+                </div>
+
+                <!-- Footer Acciones -->
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-snow-border">
+                    <button type="button" onclick="closeMailConfigModal()" class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-snow-blue hover:bg-blue-600 text-white font-semibold flex items-center gap-1.5 shadow-xs transition">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Guardar Parámetros</span>
+                    </button>
+                </div>
+
+            </form>
 
         </div>
     </div>
