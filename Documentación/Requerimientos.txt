@@ -1,0 +1,42 @@
+=== REQUERIMIENTOS Y ESPECIFICACIONES TÉCNICAS (DERS) ===
+
+1. Realizar una herramienta para agilizar el uso de comandos basicos o avanzados para el area de Soporte[cite: 1], con el fin de contar con un lugar donde chequear comandos de uso habitual, relevantes, ademas de que ayude a autocompletar de manera inteligente los Slots, PON, y Ct.Onu[cite: 1].
+
+== PROPUESTA ===
+
+ - Realizar una plataforma bajo Web o entorno de facil acceso y de alta fidelidad para chequear comandos basicos y recurrentes en el area de soporte de Operaciones IP[cite: 1]. 
+ - El sistema debe contar con seguridad e inicio/registro de usuarios[cite: 1].
+ - Debe agregar la flexibilidad para que el personal de soporte pueda ampliar la base de datos de comandos[cite: 1].
+ - La estructura debe dividirse por categorías: uso, basicos, recurrentes, casos especiales, casos router, casos bridge, casos según el tipo de ONU, y casos de IPs Certificadas[cite: 1].
+
+ - Extras o Recomendaciones Técnicas:
+	# EX-01: Portapapeles de un solo clic (One-click copy) para los comandos formateados.
+	# EX-02: Memoria de sesión local para recordar el último Slot y PON consultado.
+	# EX-03: Roles de usuario diferenciados (Operador y Administrador).
+
+== ANÁLISIS DEL COMPORTAMIENTO DE LA HERRAMIENTA ===
+
+ - La herramienta busca agilizar el uso de comandos, y no recrear un sistema completo ya que en el caso del 815 ya cuenta con su propio sistema donde pueden verificar todos los datos necesarios en los procesos de Operaciones IP[cite: 1]. Como tambien la OLT de Fiber Home[cite: 1].
+ - Generalmente trabajan de manera paralela la OLT y el 815 desde el mismo dashboard que presta el 815, el cual permite chequear facilmente Direccion MAC, IP, PLAN, CONECTIVIDAD, TRAFICO, Transmision, y casi todo lo que el operador necesita saber[cite: 1].
+
+== MÓDULO DE GESTIÓN DE TAREAS Y CORREOS (MÁQUINA DE ESTADOS FINITOS) ===
+
+### 1. INTEGRACIÓN Y FLUJO TÉCNICO (SCRIPT PYTHON)
+- Conexión IMAP (Lectura): El sistema extraerá correos de soporte, decodificando el texto y transformando formatos Base64 en imágenes locales para la web.
+- Conexión SMTP (Escritura): Permitirá a los técnicos responder con adjuntos desde la plataforma, manteniendo el hilo original (In-Reply-To).
+- Base de Datos Centralizada (SQLite): La interfaz web leerá los requerimientos localmente para evitar colisiones y múltiples conexiones simultáneas al servidor corporativo.
+
+### 2. MÁQUINA DE ESTADOS FINITOS
+- Estado PENDIENTE: El correo es procesado y aparece en la bandeja global a la vista de todos.
+- Estado EN PROGRESO: Un técnico reclama el ticket. El sistema bloquea visualmente el caso para el resto del equipo.
+- Estado EN ESPERA: El técnico solicita información al cliente/terreno. El ticket se pausa. (Consideración: Evaluar a futuro el cierre automático tras 72h de inactividad).
+- Estado COMPLETADO: El requerimiento es solventado usando los comandos autogenerados.
+
+### 3. KPIs Y SU IMPACTO EN LA GESTIÓN OPERATIVA
+La implementación de esta herramienta y su máquina de estados permitirá medir indicadores estándar de telecomunicaciones que reflejan la eficiencia del departamento de soporte:
+
+* MTTR (Mean Time To Repair / Tiempo Medio de Resolución): Es el indicador principal. Medirá el tiempo promedio que le toma al equipo resolver una falla desde que el caso entra en estado "Pendiente" hasta que marca como "Completado" (descontando el tiempo que el caso pasa "En Espera"). Esto demostrará cómo la automatización de comandos reduce drásticamente los tiempos de atención.
+* Tareas Completadas por Área de Operaciones IP: Segmentación del volumen de casos resueltos según su clasificación técnica dentro del departamento (ej. Acceso GPON, Enrutamiento BNG, Casos de IPs Certificadas, Telefonía/VoIP). Este indicador permite a la gerencia identificar qué tipo de fallas o requerimientos técnicos demandan mayor esfuerzo operativo en el día a día.
+* Carga de Resolución por Operador: Contabiliza el volumen real de tickets completados por cada técnico durante su guardia, garantizando visibilidad sobre el rendimiento individual y permitiendo una distribución equitativa de las tareas.
+
+// Documento actualizado: 08/09/2026

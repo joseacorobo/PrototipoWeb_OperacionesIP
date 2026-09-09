@@ -1,0 +1,23 @@
+==== COMANDOS GIT BASH ====
+
+git clone <url-de-tu-repositorio> // descargar por primera vez repositorio
+cd nombre-del-repositorio
+git add .
+git commit -m "Mi primer cambio"
+git push origin main
+
+==PARA DESCARGAR LOS CAMBIOS RECIENTES DE LA NUBE==
+
+	git pull
+
+-- PARA SUBIR A LA NUBE -----
+	
+	git add.
+	git commit -m " descripcion del cambio"
+	git push #Sube tus commits locales al repositorio remoto en GitHub.
+	
+	git branch # Muestra las ramas existentes en tu proyecto y en cuál estás trabajando actualmente.
+	
+	git log # Para chequear los ultimos cambios 
+	
+	git push #

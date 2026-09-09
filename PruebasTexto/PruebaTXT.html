@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Operaciones IP</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --accent: #0ea5e9;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-main); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { margin: 0; font-size: 1.8rem; color: var(--accent); }
+        header p { color: var(--text-muted); margin: 5px 0 0 0; }
+        
+        .variables-panel { background: var(--bg-card); padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); display: flex; gap: 20px; margin-bottom: 25px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; font-weight: bold; }
+        .input-group input { padding: 10px; width: 120px; background: var(--bg-input); border: 1px solid #475569; color: white; border-radius: 6px; text-align: center; font-size: 1.1rem; font-weight: bold; }
+        .input-group input:focus { outline: none; border-color: var(--accent); }
+
+        .section-title { font-size: 1.2rem; border-bottom: 2px solid var(--bg-card); padding-bottom: 8px; margin: 25px 0 15px 0; color: #38bdf8; }
+        
+        .command-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .command-card { background: var(--bg-card); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .command-info { flex-grow: 1; margin-right: 15px; }
+        .command-name { font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; color: #e2e8f0; }
+        .command-code { font-family: monospace; background: #0f172a; padding: 6px 10px; border-radius: 4px; color: #38bdf8; display: block; word-break: break-all; font-size: 0.9rem; }
+        
+        button.copy-btn { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s; white-space: nowrap; }
+        button.copy-btn:hover { background: var(--accent-hover); }
+        button.copy-btn.copied { background: var(--success); }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: none; font-weight: bold; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Portal de Operaciones IP</h1>
+            <p>Generador dinámico de comandos para OLT (Telnet) y BNG (SSH)</p>
+        </header>
+
+        <!-- Panel de Variables Compartidas -->
+        <div class="variables-panel">
+            <div class="input-group">
+                <label for="slot">SLOT:</label>
+                <input type="text" id="slot" value="0" oninput="actualizarComandos()">
+            </div>
+            <div class="input-group">
+                <label for="pon">PON:</label>
+                <input type="text" id="pon" value="3" oninput="actualizarComandos()">
+            </div>
+            <div class="input-group">
+                <label for="onu">ONU ID:</label>
+                <input type="text" id="onu" value="15" oninput="actualizarComandos()">
+            </div>
+        </div>
+
+        <!-- Sección OLT -->
+        <div class="section-title">Comandos OLT (Telnet)</div>
+        <div class="command-grid">
+            <div class="command-card">
+                <div class="command-info">
+                    <div class="command-name">Ver Estado de ONU</div>
+                    <code class="command-code" data-template="display ont info 0/{slot}/{pon} {onu}">display ont info 0/0/3 15</code>
+                </div>
+                <button class="copy-btn" onclick="copiarComando(this)">Copiar</button>
+            </div>
+            <div class="command-card">
+                <div class="command-info">
+                    <div class="command-name">Ver Estado Óptico (Rx/Tx)</div>
+                    <code class="command-code" data-template="display ont optical-info 0/{slot}/{pon} {onu}">display ont optical-info 0/0/3 15</code>
+                </div>
+                <button class="copy-btn" onclick="copiarComando(this)">Copiar</button>
+            </div>
+            <div class="command-card">
+                <div class="command-info">
+                    <div class="command-name">Buscar Dirección MAC por Puerto</div>
+                    <code class="command-code" data-template="display mac-address port 0/{slot}/{pon} {onu}">display mac-address port 0/0/3 15</code>
+                </div>
+                <button class="copy-btn" onclick="copiarComando(this)">Copiar</button>
+            </div>
+        </div>
+
+        <!-- Sección BNG -->
+        <div class="section-title">Comandos BNG 815 (SSH)</div>
+        <div class="command-grid">
+            <div class="command-card">
+                <div class="command-info">
+                    <div class="command-name">Ver Suscriptor en Interfaz GPON</div>
+                    <code class="command-code" data-template="show subscribers interface gpon 0/{slot}/{pon}:{onu}">show subscribers interface gpon 0/0/3:15</code>
+                </div>
+                <button class="copy-btn" onclick="copiarComando(this)">Copiar</button>
+            </div>
+            <div class="command-card">
+                <div class="command-info">
+                    <div class="command-name">Ver Sesión PPPoE Activa</div>
+                    <code class="command-code" data-template="show pppoe session interface gpon 0/{slot}/{pon}:{onu}">show pppoe session interface gpon 0/0/3:15</code>
+                </div>
+                <button class="copy-btn" onclick="copiarComando(this)">Copiar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación flotante de copiado -->
+    <div id="toast" class="toast">¡Comando copiado al portapapeles!</div>
+
+    <script>
+        function actualizarComandos() {
+            const slot = document.getElementById('slot').value || '0';
+            const pon = document.getElementById('pon').value || '0';
+            const onu = document.getElementById('onu').value || '0';
+
+            const codes = document.querySelectorAll('.command-code');
+            codes.forEach(codeEl => {
+                const template = codeEl.getAttribute('data-template');
+                // Reemplazamos las variables dinámicamente
+                const resultado = template
+                    .replace('{slot}', slot)
+                    .replace('{pon}', pon)
+                    .replace('{onu}', onu);
+                codeEl.textContent = resultado;
+            });
+        }
+
+        function copiarComando(btn) {
+            const codeEl = btn.parentElement.querySelector('.command-code');
+            const textoACopiar = codeEl.textContent;
+
+            navigator.clipboard.writeText(textoACopiar).then(() => {
+                // Efecto visual en el botón
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('copied');
+                
+                // Mostrar toast
+                const toast = document.getElementById('toast');
+                toast.style.display = 'block';
+
+                setTimeout(() => {
+                    btn.textContent = 'Copiar';
+                    btn.classList.remove('copied');
+                    toast.style.display = 'none';
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>

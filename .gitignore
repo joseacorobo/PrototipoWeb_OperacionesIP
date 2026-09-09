@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# SQLite Database (generada automáticamente con seed.py)
+app/ip_ops.db
+*.db
+*.sqlite3
+
+# Archivos de exportación generados en tiempo de ejecución
+Reporte_Gerencial_Operaciones_IP*.xlsx
+
+# Archivos temporales o con credenciales sensibles
+PruebaCorreo
+1.txt
+
+# Sistema Operativo y Editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

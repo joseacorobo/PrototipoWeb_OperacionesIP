@@ -1,0 +1,10 @@
+[CONSULTAS_OLT_TELNET]
+
+buscar_onu_por_serial = display ont autofind {slot} {pon}
+estado_puerto_pon = display port state frame 0 slot {slot} link {pon}
+info_detallada_onu = display ont info {slot} {pon} {onu}
+
+[CONSULTAS_BNG_SSH]
+
+ver_sesion_suscriptor = show subscribers interface gpon 0/{slot}/{pon}:{onu}
+ver_arp_ip = show arp | include {ip_onu}

@@ -1,0 +1,26 @@
+import imaplib
+import email
+from email.header import decode_header
+import time
+import os
+
+# === CREDENCIALES CONFIGURABLES (O VÍA VARIABLES DE ENTORNO) ===
+EMAIL = os.getenv("IMAP_EMAIL", "tu_correo_corporativo@inter.com.ve")
+PASSWORD = os.getenv("IMAP_PASSWORD", "tu_password_o_token_app")
+IMAP_SERVER = os.getenv("IMAP_SERVER", "imap.gmail.com")
+
+def revisar_correos_nuevos():
+    try:
+        mail = imaplib.IMAP4_SSL(IMAP_SERVER)
+        mail.login(EMAIL, PASSWORD)
+        mail.select("inbox")
+        
+        status, mensajes = mail.search(None, "UNREAD")
+        lista_ids = mensajes[0].split()
+        print(f"Correos no leídos encontrados: {len(lista_ids)}")
+        mail.logout()
+    except Exception as e:
+        print("Error en conexión IMAP:", e)
+
+if __name__ == "__main__":
+    revisar_correos_nuevos()

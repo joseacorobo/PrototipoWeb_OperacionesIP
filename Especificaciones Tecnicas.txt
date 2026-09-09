@@ -1,0 +1,21 @@
+=== ESPECIFICACIONES DE SINTAXIX===
+
+======Respecto a la Longitud y Formato del Numero=========
+
+Numero de Abonado : 10 Digitios , donde 2 Primeros son del Permisor( En un Permisor pueden formar parte varias ciudades)
+Cliente Corporativi: Maneja la misma etiqueta de Abonado
+Sintaxis de Ubicacion en OLT:  generalmente no se envia solo se toma en cuenta el Serial PON
+Estandar formal para nombrar las OLT: Generalemte se compone por un mensaje donde se indica OLT - 3 a 4 Letras del Acronimo de la Ciudad y por supuesto el Numero de la OLT.
+Fabricantes de ONU: Todas las ONU que son de inter tienen 12 digitos empezando con la siglas FHTT, para ONU como las de netuno HWTC , en situaciones donde son onu de simpletv
+las siglas si son diferentes.
+Identificacion de modo de ONU: el Tecnico indica si esta en modo Bridge o si es IP certificada sin alguna plantilla definida
+Generalmente no se especifica la MAC, trabajan con el serial PON, pero si hay casos donde el tecnico envia la MAC del equipo.
+
+==Consideraciones==
+
+Cuando se hacen remplazos de equipo el cargo es del tecnico el area de soporte de operaciones IP no se involucra directamente.
+
+# Respecto a el correo Corporativo:
+	- Es el correo por medio el cual la empresa maneja gran parte de los tickets , en el departamento IP esta el correo que es parte de Operaciones IP y los tecnicos a veces envia a ese correo, 
+	  tambien cada trabajador del area de soporte como los demas tienen su propio correo por el cual atienden los tickets, los correos llegan de a el correo de redes de acceso como tambien pueden llegar al area de
+	  operaciones IP. 

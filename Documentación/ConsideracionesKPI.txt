@@ -1,0 +1,22 @@
+=== MÓDULO DE GESTIÓN DE TAREAS Y CORREOS (MÁQUINA DE ESTADOS FINITOS) ===
+
+### 1. INTEGRACIÓN Y FLUJO TÉCNICO (SCRIPT PYTHON)
+* Conexión IMAP (Lectura): El sistema extraerá correos de soporte, decodificando el texto y transformando formatos Base64 en imágenes locales para la web.
+* Conexión SMTP (Escritura): Permitirá a los técnicos responder con adjuntos desde la plataforma, manteniendo el hilo original (In-Reply-To).
+* Base de Datos Centralizada: La interfaz web leerá los requerimientos desde SQLite para evitar colisiones y múltiples conexiones simultáneas al servidor corporativo.
+
+### 2. MÁQUINA DE ESTADOS FINITOS
+* Estado PENDIENTE: El correo es procesado y aparece en la bandeja global a la vista de todos.
+* Estado EN PROGRESO: Un técnico reclama el ticket. El sistema bloquea visualmente el caso para el resto del equipo.
+* Estado EN ESPERA: El técnico solicita información al cliente/terreno. El ticket se pausa. (Consideración: Evaluar a futuro el cierre automático tras 72h de inactividad).
+* Estado COMPLETADO: El requerimiento es solventado usando los comandos autogenerados.
+
+### 3. KPIs Y SU IMPACTO EN LA CARGA DE TRABAJO
+La relevancia de estos indicadores radica en visibilizar el alivio operativo, demostrando que la herramienta absorbe el trabajo pesado y repetitivo del operador:
+
+* Tiempo Medio de Inyección (TMI): Mide los segundos ahorrados por caso al automatizar el autocompletado. Un TMI bajo indica menor fatiga visual y agilidad en guardias saturadas.
+* Tasa de Errores de Sintaxis y Retrabajo: Contabiliza la reducción de comandos fallidos. Impacta directamente en el estrés del empleado, al eliminar la frustración de repetir procesos por un dígito mal copiado.
+* Tasa de Colisiones Evitadas: Mide cuántas veces el estado "En Progreso" impidió que dos empleados leyeran y resolvieran el mismo correo. Representa esfuerzo humano salvado.
+* Volumen Real de Tareas Completadas: Genera un mapa equitativo de la carga laboral del turno, visibilizando el esfuerzo individual y facilitando la distribución justa de los casos.
+
+// Documento actualizado para la etapa de desarrollo.
