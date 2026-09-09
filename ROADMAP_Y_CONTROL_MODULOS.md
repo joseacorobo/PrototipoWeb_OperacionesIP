@@ -28,8 +28,8 @@ graph TD
 | **M2** | **Workspace FSM y Cronometraje Automático** | Fase 1 | 🟢 **APROBADO** | `app/templates/dashboard.html`, `app/static/js/dashboard.js` |
 | **M3** | **Algoritmo de Extracción Telco (`TelcoEmailParser`)** | Fase 1 | 🟢 **APROBADO** | `app/services/email_parser.py` |
 | **M4** | **Reportes Gerenciales y Auditoría Forense (Excel)** | Fase 1 | 🟢 **APROBADO** | `app/services/reports.py`, `app/templates/dashboard.html` |
-| **M5** | **Asistente Inteligente de Comandos CLI (OLT / 815 / SW)** | Fase 2 | 🟡 **EN DEFINICIÓN / PRÓXIMO** | `app/services/command_generator.py` *(Por crear)* |
-| **M6** | **Worker de Ingesta Real de Correo (IMAP / Background)** | Fase 2 | ⚪ **PLANIFICADO** | `app/services/mail_worker.py` *(Por crear)* |
+| **M5** | **Asistente Inteligente de Comandos CLI (OLT / 815 / SW)** | Fase 2 | 🟡 **PAUSADO / EN REGISTRO DE COMANDOS** | `app/services/command_generator.py` *(Estructura lista)* |
+| **M6** | **Worker de Ingesta Real de Correo (IMAP / Background)** | Fase 2 | 🟡 **DISEÑADO Y ESPECIFICADO** | `app/services/mail_worker.py` *(Diseño definido)* |
 | **M7** | **Expansión: Grandes Cuentas y Operaciones WAN** | Fase 3 | ⚪ **PLANIFICADO** | Arquitectura modular extensible |
 
 ---
@@ -76,32 +76,60 @@ graph TD
 
 ---
 
-## 🎯 4. Módulo en Definición (Siguiente Paso): M5 - Asistente CLI de Comandos
+## 🎯 4. Módulo 5: Asistente Inteligente de Comandos CLI (Pausado para Registro)
 
-El siguiente componente a diseñar e implementar es el **Asistente Inteligente de Comandos OLT / 815 / Switch**:
+Este módulo queda en espera de que el usuario consolide y registre la lista oficial de comandos operativos:
 
-### Objetivos del Módulo:
-1. **Generación Dinámica de Sintaxis según Fabricante:**
-   - Si el serial es `FHTT...` (FiberHome) ➔ Generar comandos OLT FiberHome (`AN5516 / AN5116`):
-     - Consulta de estado físico de tarjeta y puerto PON.
-     - Consulta de potencia óptica de la ONT (`show pon power`).
-     - Consulta de Whitelist y estado de demonio.
-     - Comandos para desatascar demonio pegado.
-   - Si el serial es `HWTC...` (Huawei) ➔ Generar comandos OLT Huawei (`MA5608T / MA5800`):
-     - `display ont info`.
-     - `display ont optical-info`.
-   - Si el ticket tiene MAC o IP Certificada ➔ Generar comandos para el **Servidor 815 (Gx / WANMAC)**:
-     - Verificación de WANMAC en base de datos.
-     - Consulta de estado de sesión PPPoE o IPoE (en verde vs en rojo).
-2. **Autocompletado Contextual con 1 Clic:**
-   - El operador abre el ticket y el asistente ya tiene los comandos prearmados con el Slot, PON y Serial del cliente.
-   - Botón de **"Copiar Comando"** para pegar directamente en la terminal SecureCRT / PuTTY.
-3. **Barrera de Seguridad (Prevención de Daño Operativo):**
-   - Si el caso está marcado como Modo Bridge con IP Certificada, el sistema **bloquea y oculta** los comandos de `reboot`, `refresh` o `reaprovisionar`.
+### Alcance a Implementar en Siguiente Sesión:
+1. **Catálogo por Fabricante:**
+   - **FiberHome (AN5516 / AN5116):** `show card`, `show pon power`, desatasco de demonio y consulta Whitelist.
+   - **Huawei (MA5608T / MA5800):** `display ont info`, `display ont optical-info`.
+   - **Servidor 815 (Gx):** Consulta de WANMAC y verificación de sesiones PPPoE/IPoE.
+2. **Autocompletado Contextual:** Al abrir el ticket, los comandos se prellenan con el Slot, PON y Serial del caso.
+3. **Barrera de Seguridad:** Bloqueo preventivo de comandos de reinicio o refresh si el ticket está marcado como Modo Bridge con IP Certificada.
 
 ---
 
-## 📝 5. Registro Cronológico de Versiones (Changelog)
+## 📬 5. Módulo 6: Worker de Ingesta Real de Correos en Segundo Plano (Diseño Definido)
+
+Este módulo se encargará de la **automatización continua sin intervención humana**:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Mail as 📬 Servidor de Correo (IMAP / Exchange)
+    participant Worker as ⚙️ Background Mail Worker
+    participant Parser as 🧠 TelcoEmailParser
+    participant DB as 💾 Base de Datos SQLite
+    participant UI as 🖥️ Dashboard FSM
+
+    loop Cada 30 a 60 segundos
+        Worker->>Mail: Consulta correos NO LEÍDOS (UNREAD) en buzones
+        Mail-->>Worker: Retorna mensajes nuevos con Message-ID
+        Worker->>Parser: Envía Asunto y Cuerpo del mensaje
+        Parser-->>Worker: Retorna Abonado (10d), Permisor, Serial, OLT, Bridge?, Puntos
+        Worker->>DB: Guarda ticket en estado PENDIENTE (Evita duplicados por Message-ID)
+        Worker->>Mail: Marca correo como LEÍDO y añade etiqueta [OperacionesIP]
+        Worker->>UI: Notificación en tiempo real (Incrementa contador de bandeja)
+    end
+```
+
+### Especificaciones Técnicas del Worker:
+1. **Canales Multi-Buzón Soportados:**
+   - Buzón General Operaciones IP: `operaciones.ip@inter.com.ve`
+   - Buzón Redes de Acceso: `redes.acceso@inter.com.ve`
+   - Casilla personal de analistas para tickets escalados.
+2. **Protocolo Seguro y Configuración Desacoplada:**
+   - Uso de `imaplib` con SSL/TLS o Microsoft Graph API / OAuth2.
+   - Parámetros en variables de entorno o archivo `.env` (`IMAP_SERVER`, `IMAP_PORT`, `IMAP_USER`, `IMAP_PASSWORD`).
+3. **Mecanismo Antiduplicidad:**
+   - Registro del encabezado RFC 2822 `Message-ID` en la tabla `email_tickets` con índice único (`UNIQUE`) para garantizar que un correo nunca se procese dos veces.
+4. **Modo Dry-Run / Simulación:**
+   - El sistema mantendrá el botón `+ Simular Correo` y `🔬 Analizar Caso Real` para poder realizar pruebas en entornos de laboratorio sin requerir conexión obligatoria a un servidor de producción.
+
+---
+
+## 📝 6. Registro Cronológico de Versiones (Changelog)
 
 - **v0.1 (2026-09-04):** Análisis de documentación base (`Capacitacion FTTH.pptx`, `EsquemaOLT_SW_815_FTTH_General v2.pptx`). Extracción de imágenes y esquemas de red.
 - **v0.2 (2026-09-04):** Diseño del catálogo de tareas DERS (20 tipos), matriz Excel inicial y base de datos SQLite con los 12 especialistas.
@@ -110,8 +138,9 @@ El siguiente componente a diseñar e implementar es el **Asistente Inteligente d
 - **v0.5 (2026-09-09):** Creación del servicio `TelcoEmailParser` con soporte a abonados de 10 dígitos, detección de Permisor, seriales de 12 caracteres (Inter / Netuno / SimpleTV), OLTs canónicas y botón interactivo `🔬 Analizar Caso Real`.
 - **v0.6 (2026-09-09):** Reestructuración jerárquica departamental en Frontend (*Operaciones IP ➔ Acceso & Aprov. ➔ Células FTTH*) y desarrollo del Módulo de Reportes Gerenciales con exportación a Excel en 3 hojas (`openpyxl`).
 - **v0.7 (2026-09-09):** Inicialización del repositorio Git, sanitización de credenciales, configuración de `.gitignore`, `README.md` y publicación en GitHub: `joseacorobo/PrototipoWeb_OperacionesIP`.
-- **v0.8 (2026-09-09):** Creación de este documento oficial de Roadmap y Control de Módulos (`ROADMAP_Y_CONTROL_MODULOS.md`).
+- **v0.8 (2026-09-09):** Creación del documento oficial de Roadmap y Control de Módulos (`ROADMAP_Y_CONTROL_MODULOS.md`).
+- **v0.9 (2026-09-09):** Definición arquitectónica del Módulo 6 (Worker de Correo Multi-Buzón) y pausa programada para registro de comandos CLI del Módulo 5.
 
 ---
 
-*Última actualización: 2026-09-09 13:30*\n
+*Última actualización: 2026-09-09 15:20*\n
