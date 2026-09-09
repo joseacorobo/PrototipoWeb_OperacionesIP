@@ -1,27 +1,27 @@
-# 🚀 Operaciones IP — Plataforma de Gestión de Carga, Métricas DERS y Automatización FSM
+#  Operaciones IP — Plataforma de Gestión de Carga, Métricas DERS y Automatización FSM
 
 Sistema web integral de gestión operativa, balanceo de carga de trabajo, medición de KPIs bajo estándar DERS y trazabilidad forense para el departamento de **Operaciones IP** de **Inter Telecomunicaciones** (Red FTTH).
 
 ---
 
-## 🏢 1. Arquitectura y Jerarquía Organizacional
+##  1. Arquitectura y Jerarquía Organizacional
 
 La plataforma modela la estructura jerárquica de la empresa:
 
 - **Departamento General:** Operaciones IP
   - **División Operativa (Alcance Activo FTTH):** Redes de Acceso y Aprovisionamiento
-    - 🎧 **Célula de Soporte FTTH** (4 Especialistas)
-    - 🖥️ **Célula de Cabecera OLT** (4 Especialistas)
-    - 📞 **Célula de Telefonía VoIP / SIP** (4 Especialistas)
+    -  **Célula de Soporte FTTH** (4 Especialistas)
+    -  **Célula de Cabecera OLT** (4 Especialistas)
+    -  **Célula de Telefonía VoIP / SIP** (4 Especialistas)
   - **Otras Divisiones (Previstas para Expansión - Fase 3):**
-    - 🏢 **Grandes Cuentas** (Clientes Corporativos / Enlaces Dedicados)
-    - ⚡ **Redes WAN & Core** (Transporte IP / BGP / Backhaul)
+    -  **Grandes Cuentas** (Clientes Corporativos / Enlaces Dedicados)
+    -  **Redes WAN & Core** (Transporte IP / BGP / Backhaul)
 
 ---
 
-## ✨ 2. Funcionalidades Principales
+##  2. Funcionalidades Principales
 
-### 📈 Motor de Métricas y Ponderación por Puntos (DERS)
+###  Motor de Métricas y Ponderación por Puntos (DERS)
 - Asignación de puntos ponderados por dificultad de tarea:
   - **P1 (1 pt):** Verificación de estado de ONT en OLT / Consultas simples.
   - **P2 (2 pts):** Resolución de discrepancia MAC / Pruebas de velocidad.
@@ -31,12 +31,12 @@ La plataforma modela la estructura jerárquica de la empresa:
 - Medición de saturación por especialista y velocímetro de balance del área (Equilibrada, Moderada, Alta).
 - Gráficos interactivos en tiempo real con Chart.js (Curvas spline horarias y gráficos de dona por complejidad).
 
-### ⏱️ Workspace de Atención y Cronometraje 100% Automatizado
+###  Workspace de Atención y Cronometraje 100% Automatizado
 - **Cero ingreso manual de tiempos:** Al abrir un correo (`Atender`), el backend registra `claimed_at = now()` e inicia un cronómetro en vivo (`HH:MM:SS`).
 - **Botón de Pausa (En Espera de Terreno):** Permite pausar el ticket si la cuadrilla de terreno debe revisar acometida o drop. El tiempo en pausa se descuenta automáticamente del MTTR.
 - **Bloqueo Concurrente FSM:** Impide que dos analistas atiendan el mismo ticket al mismo tiempo.
 
-### 🧠 Algoritmo de Extracción de Casos Reales (`TelcoEmailParser`)
+###  Algoritmo de Extracción de Casos Reales (`TelcoEmailParser`)
 Procesamiento heurístico y determinista de correos de soporte sin dependencias de LLM ni costos externos:
 - **Número de Abonado (10 Dígitos):** Extrae el código de 10 dígitos y detecta automáticamente el **Permisor** asociado (primeros 2 dígitos, ej. `P-10`, `P-25`).
 - **Serial PON (12 Caracteres):** Discrimina el fabricante y la topología:
@@ -47,7 +47,7 @@ Procesamiento heurístico y determinista de correos de soporte sin dependencias 
 - **Posición OLT:** Si el correo no incluye Slot/PON, asigna inteligentemente: *"Consultar en OLT vía Serial PON"*.
 - **Alerta de Seguridad en Modo Bridge:** Si detecta términos de IP Certificada o Bridge, despliega una alerta crítica que prohíbe comandos de *Refresh* o *Reaprovisionamiento*.
 
-### 📊 Módulo de Reportes Gerenciales y Auditoría Forense
+###  Módulo de Reportes Gerenciales y Auditoría Forense
 - Panel de supervisión interactivo con filtros por período (*Todo, Mes Actual, Últimos 7d, Hoy*) y célula.
 - **Exportación en 1 clic a Excel (`.xlsx`)** mediante `openpyxl` con 3 pestañas:
   1. *Resumen Ejecutivo y Células:* KPIs globales, balance comparativo y % de esfuerzo.
