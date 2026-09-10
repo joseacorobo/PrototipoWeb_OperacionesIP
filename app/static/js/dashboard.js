@@ -28,10 +28,24 @@ function toggleDarkMode() {
     const isDark = document.documentElement.classList.toggle('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     updateThemeIcon(isDark);
-    updateChartsTheme(isDark);
+    try {
+        updateChartsTheme(isDark);
+    } catch (err) {
+        console.warn("Error actualizando tema de graficos:", err);
+    }
 }
 
 function updateThemeIcon(isDark) {
+    const container = document.getElementById("theme-icon-container");
+    if (container) {
+        const iconName = isDark ? "sun" : "moon";
+        const iconClass = isDark ? "w-4 h-4 text-amber-400" : "w-4 h-4 text-snow-muted";
+        container.innerHTML = `<i data-lucide="${iconName}" class="${iconClass}"></i>`;
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons({ root: container });
+        }
+        return;
+    }
     const icon = document.getElementById("theme-icon");
     if (!icon) return;
     if (isDark) {
@@ -41,7 +55,9 @@ function updateThemeIcon(isDark) {
         icon.setAttribute("data-lucide", "moon");
         icon.className = "w-4 h-4 text-snow-muted";
     }
-    lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
 }
 
 function updateChartsTheme(isDark) {
@@ -49,28 +65,42 @@ function updateChartsTheme(isDark) {
     const tickColor = isDark ? '#8E8E93' : '#717579';
     const bgCard = isDark ? '#1C1C1E' : '#FFFFFF';
 
-    if (chartHourly) {
-        chartHourly.options.scales.y.grid.color = gridColor;
-        if (!chartHourly.options.scales.x.ticks) chartHourly.options.scales.x.ticks = {};
-        chartHourly.options.scales.x.ticks.color = tickColor;
-        if (!chartHourly.options.scales.y.ticks) chartHourly.options.scales.y.ticks = {};
-        chartHourly.options.scales.y.ticks.color = tickColor;
-        chartHourly.data.datasets[0].pointBorderColor = bgCard;
+    if (chartHourly && chartHourly.options && chartHourly.options.scales) {
+        if (chartHourly.options.scales.y && chartHourly.options.scales.y.grid) {
+            chartHourly.options.scales.y.grid.color = gridColor;
+        }
+        if (chartHourly.options.scales.x) {
+            if (!chartHourly.options.scales.x.ticks) chartHourly.options.scales.x.ticks = {};
+            chartHourly.options.scales.x.ticks.color = tickColor;
+        }
+        if (chartHourly.options.scales.y) {
+            if (!chartHourly.options.scales.y.ticks) chartHourly.options.scales.y.ticks = {};
+            chartHourly.options.scales.y.ticks.color = tickColor;
+        }
+        if (chartHourly.data && chartHourly.data.datasets && chartHourly.data.datasets[0]) {
+            chartHourly.data.datasets[0].pointBorderColor = bgCard;
+        }
         chartHourly.update();
     }
 
-    if (chartTechnicians) {
-        chartTechnicians.options.scales.y.grid.color = gridColor;
-        if (!chartTechnicians.options.scales.x.ticks) chartTechnicians.options.scales.x.ticks = {};
-        chartTechnicians.options.scales.x.ticks.color = tickColor;
-        if (!chartTechnicians.options.scales.y.ticks) chartTechnicians.options.scales.y.ticks = {};
-        chartTechnicians.options.scales.y.ticks.color = tickColor;
+    if (chartTechnicians && chartTechnicians.options && chartTechnicians.options.scales) {
+        if (chartTechnicians.options.scales.y && chartTechnicians.options.scales.y.grid) {
+            chartTechnicians.options.scales.y.grid.color = gridColor;
+        }
+        if (chartTechnicians.options.scales.x) {
+            if (!chartTechnicians.options.scales.x.ticks) chartTechnicians.options.scales.x.ticks = {};
+            chartTechnicians.options.scales.x.ticks.color = tickColor;
+        }
+        if (chartTechnicians.options.scales.y) {
+            if (!chartTechnicians.options.scales.y.ticks) chartTechnicians.options.scales.y.ticks = {};
+            chartTechnicians.options.scales.y.ticks.color = tickColor;
+        }
         chartTechnicians.update();
     }
 
-    if (chartWeights) {
+    if (chartWeights && chartWeights.data && chartWeights.data.datasets && chartWeights.data.datasets[0]) {
         chartWeights.data.datasets[0].borderColor = bgCard;
-        if (chartWeights.options.plugins && chartWeights.options.plugins.legend) {
+        if (chartWeights.options && chartWeights.options.plugins && chartWeights.options.plugins.legend && chartWeights.options.plugins.legend.labels) {
             chartWeights.options.plugins.legend.labels.color = tickColor;
         }
         chartWeights.update();
