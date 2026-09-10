@@ -30,6 +30,7 @@ def seed():
         ("Paola Mendoza", "Telefonía", "ESPECIALISTA", "PM", "Tarde", "Activo", "paola.mendoza@inter.com.ve", default_hash),
         ("Víctor Hernández", "Telefonía", "ESPECIALISTA", "VH", "Noche", "Activo", "victor.hernandez@inter.com.ve", default_hash),
         ("David Rodríguez", "Acceso", "ADMINISTRADOR", "DR", "General", "Activo", "david.rodriguez@inter.com.ve", default_hash),
+        ("Administrador General", "Todas", "ADMINISTRADOR", "AD", "General", "Activo", "admin@inter.com.ve", default_hash),
     ]
     cur.executemany("INSERT INTO users (name, area, role, avatar, shift, status, email, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", users)
     

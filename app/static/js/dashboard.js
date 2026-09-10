@@ -11,6 +11,7 @@ let isPaused = false;
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
     lucide.createIcons();
+    loadCurrentUserProfile();
     loadDashboardData();
     setInterval(loadMailWorkerStatus, 20000);
 });
@@ -1633,4 +1634,33 @@ function checkGroupContainsActiveArea(groupId) {
         return currentArea === "Telefonía";
     }
     return false;
+}
+
+// =============================================================
+// GESTIÓN DE SESIÓN Y PERFIL DE USUARIO
+// =============================================================
+
+async function loadCurrentUserProfile() {
+    try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+            const nameEl = document.getElementById("sidebar-user-name");
+            const roleEl = document.getElementById("sidebar-user-role");
+            const avatarEl = document.getElementById("sidebar-user-avatar");
+            if (nameEl) nameEl.innerText = user.name;
+            if (roleEl) roleEl.innerText = user.role === 'ADMINISTRADOR' ? 'Administrador NOC' : (user.role + ' - ' + user.area);
+            if (avatarEl && user.avatar) avatarEl.innerText = user.avatar;
+        }
+    } catch (e) {
+        console.error("Error loading user profile:", e);
+    }
+}
+
+async function logoutSession() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+    } catch (e) {
+        window.location.href = '/login';
+    }
 }

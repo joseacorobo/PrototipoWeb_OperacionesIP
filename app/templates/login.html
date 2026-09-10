@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inter | Inicio de Sesión - Operaciones IP NOC</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .bg-datacenter {
+            background-image: linear-gradient(135deg, rgba(8, 14, 26, 0.90) 0%, rgba(15, 23, 42, 0.82) 45%, rgba(10, 37, 72, 0.85) 100%), url('/static/img/datacenter_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .dark .glass-panel {
+            background: rgba(28, 28, 30, 0.92);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="h-full bg-datacenter text-gray-900 select-none flex items-center justify-center p-4 md:p-8">
+
+    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center my-auto">
+
+        <!-- ============================================================== -->
+        <!-- ZONA IZQUIERDA: BIENVENIDA, IDENTIDAD CORPORATIVA Y PROPÓSITO  -->
+        <!-- ============================================================== -->
+        <div class="lg:col-span-7 text-white space-y-6">
+            
+            <!-- Logotipo Oficial de Inter en Escala Destacada -->
+            <div class="flex items-center gap-4">
+                <div class="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 shadow-lg inline-flex">
+                    <img src="/static/img/inter_logo.png" alt="Inter" class="h-9 md:h-11 w-auto object-contain">
+                </div>
+                <div class="h-9 w-px bg-white/20 hidden sm:block"></div>
+                <div class="hidden sm:block">
+                    <span class="text-xs font-bold tracking-widest uppercase text-blue-200 block">NOC Central</span>
+                    <span class="text-[11px] text-white/70">Red Nacional de Telecomunicaciones</span>
+                </div>
+            </div>
+
+            <!-- Frase de Bienvenida Principal y Declaración Operativa -->
+            <div class="space-y-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-semibold">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-300"></i>
+                    <span>Portal de Operaciones IP | v2.6 Core</span>
+                </div>
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                    Bienvenido a <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-sky-200 to-indigo-200">
+                        Operaciones IP
+                    </span>
+                </h1>
+                <p class="text-sm sm:text-base text-blue-100/90 max-w-xl leading-relaxed">
+                    Plataforma de supervisión en tiempo real, telemetría de fallas y balanceo de carga cognitiva para las células de <strong class="text-white">Soporte FTTH</strong>, <strong class="text-white">Cabecera OLT</strong> y <strong class="text-white">Telefonía</strong>.
+                </p>
+            </div>
+
+            <!-- Tarjetas de Características Operacionales (Figma Millineal Spec) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 transition hover:bg-white/15">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/30 flex items-center justify-center text-blue-200 mb-2.5">
+                        <i data-lucide="gauge" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-xs font-bold text-white mb-0.5">Control de SLA</p>
+                    <p class="text-[11px] text-blue-100/70">Medición de MTTR neto con cronómetro y pausas.</p>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 transition hover:bg-white/15">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/30 flex items-center justify-center text-emerald-200 mb-2.5">
+                        <i data-lucide="scale" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-xs font-bold text-white mb-0.5">Distribución Justa</p>
+                    <p class="text-[11px] text-blue-100/70">Escala de ponderación (1 a 13 pts) por esfuerzo.</p>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 transition hover:bg-white/15">
+                    <div class="w-8 h-8 rounded-xl bg-purple-500/30 flex items-center justify-center text-purple-200 mb-2.5">
+                        <i data-lucide="mail-check" class="w-4 h-4"></i>
+                    </div>
+                    <p class="text-xs font-bold text-white mb-0.5">Outlook 365</p>
+                    <p class="text-[11px] text-blue-100/70">Ingesta y extracción de datos OLT automatizada.</p>
+                </div>
+            </div>
+
+            <!-- Certificación de Conexión Segura -->
+            <div class="flex items-center gap-2 text-xs text-blue-200/80 pt-1">
+                <i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Conexión segura y cifrada TLS 1.3 — Infraestructura Inter Data Center</span>
+            </div>
+
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- ZONA DERECHA: TARJETA DE LOGIN (FROSTED GLASS MILLINEAL SPEC)   -->
+        <!-- ============================================================== -->
+        <div class="lg:col-span-5 w-full max-w-md mx-auto">
+            <div class="glass-panel border border-white/40 dark:border-white/10 rounded-3xl p-7 sm:p-9 shadow-2xl space-y-6">
+                
+                <!-- Encabezado de la Tarjeta -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-[#0078D4] border border-blue-100">
+                            Acceso Autorizado
+                        </span>
+                        <span class="text-[11px] text-gray-500 font-mono">NOC Inter</span>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight">Iniciar Sesión</h2>
+                    <p class="text-xs text-gray-600 mt-1">Ingrese sus credenciales de red para acceder al sistema.</p>
+                </div>
+
+                <!-- Mensaje de Alerta de Error (Dinámico) -->
+                <div id="login-alert" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 shrink-0"></i>
+                    <span id="login-alert-text">Credenciales incorrectas. Verifique su correo o clave.</span>
+                </div>
+
+                <!-- Formulario de Autenticación -->
+                <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                    
+                    <!-- Campo 1: Correo Corporativo -->
+                    <div>
+                        <label for="email" class="block text-xs font-semibold text-gray-800 mb-1.5">
+                            Correo Corporativo
+                        </label>
+                        <div class="relative">
+                            <i data-lucide="mail" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3 pointer-events-none"></i>
+                            <input type="email" id="email" required autocomplete="email" placeholder="admin@inter.com.ve" class="w-full pl-10 pr-4 py-2.5 bg-gray-50/80 border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] focus:border-transparent transition font-medium">
+                        </div>
+                    </div>
+
+                    <!-- Campo 2: Contraseña con Toggle Ojo -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="password" class="block text-xs font-semibold text-gray-800">
+                                Contraseña
+                            </label>
+                            <a href="javascript:void(0)" onclick="alert('Comuníquese con el Administrador NOC para el restablecimiento de credenciales corporativas.')" class="text-[11px] text-[#0078D4] hover:underline font-medium">
+                                ¿Olvidó su clave?
+                            </a>
+                        </div>
+                        <div class="relative">
+                            <i data-lucide="lock" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3 pointer-events-none"></i>
+                            <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••" class="w-full pl-10 pr-10 py-2.5 bg-gray-50/80 border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] focus:border-transparent transition font-medium">
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 p-0.5 cursor-pointer" title="Mostrar/Ocultar contraseña">
+                                <i data-lucide="eye" id="icon-eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recordar sesión -->
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="remember" checked class="w-3.5 h-3.5 text-[#0078D4] border-gray-300 rounded focus:ring-[#0078D4] cursor-pointer">
+                        <label for="remember" class="text-xs text-gray-600 cursor-pointer">Mantener sesión activa</label>
+                    </div>
+
+                    <!-- Botón de Envío Primario -->
+                    <button type="submit" id="btn-submit-login" class="w-full py-2.5 px-4 rounded-xl bg-[#0078D4] hover:bg-[#0067b8] text-white font-semibold text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Ingresar al Sistema</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <!-- Divisor Visual -->
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-gray-200"></div>
+                    <span class="flex-shrink mx-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Acceso de Demostración</span>
+                    <div class="flex-grow border-t border-gray-200"></div>
+                </div>
+
+                <!-- ACCESO RÁPIDO ADMIN GENERAL (TAL COMO SOLICITÓ EL USUARIO) -->
+                <div class="space-y-2">
+                    <button type="button" onclick="quickFillAndLogin('admin@inter.com.ve', 'admin')" class="w-full p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 hover:border-blue-300 text-left flex items-center justify-between transition group shadow-2xs cursor-pointer">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                                AD
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-900 group-hover:text-[#0078D4] transition">Administrador General</p>
+                                <p class="text-[10px] text-gray-500 font-mono">admin@inter.com.ve (Acceso Total)</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-[#0078D4]">Entrar</span>
+                    </button>
+
+                    <!-- Otros Perfiles de Demostración -->
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <button type="button" onclick="quickFillAndLogin('david.rodriguez@inter.com.ve', 'inter2026')" class="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-left flex items-center gap-2 transition cursor-pointer">
+                            <div class="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px]">
+                                DR
+                            </div>
+                            <div class="truncate">
+                                <p class="text-[11px] font-semibold text-gray-800 truncate">David Rodríguez</p>
+                                <p class="text-[9px] text-gray-500 truncate">Ing. Operaciones</p>
+                            </div>
+                        </button>
+
+                        <button type="button" onclick="quickFillAndLogin('carlos.mendez@inter.com.ve', 'inter2026')" class="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-left flex items-center gap-2 transition cursor-pointer">
+                            <div class="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
+                                CM
+                            </div>
+                            <div class="truncate">
+                                <p class="text-[11px] font-semibold text-gray-800 truncate">Carlos Méndez</p>
+                                <p class="text-[9px] text-gray-500 truncate">Coord. Soporte</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pie de Seguridad -->
+                <div class="text-center pt-1 border-t border-gray-100">
+                    <p class="text-[10px] text-gray-400">
+                        Inter Telecomunicaciones C.A. — Todos los derechos reservados.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts de Interacción de Login -->
+    <script>
+        lucide.createIcons();
+
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById("password");
+            const eyeIcon = document.getElementById("icon-eye");
+            if (passInput.type === "password") {
+                passInput.type = "text";
+                eyeIcon.setAttribute("data-lucide", "eye-off");
+            } else {
+                passInput.type = "password";
+                eyeIcon.setAttribute("data-lucide", "eye");
+            }
+            lucide.createIcons();
+        }
+
+        function quickFillAndLogin(email, password) {
+            document.getElementById("email").value = email;
+            document.getElementById("password").value = password;
+            document.getElementById("loginForm").requestSubmit();
+        }
+
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const alertBox = document.getElementById("login-alert");
+            const alertText = document.getElementById("login-alert-text");
+            const submitBtn = document.getElementById("btn-submit-login");
+
+            alertBox.classList.add("hidden");
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Verificando credenciales...</span>';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.status === 'ok') {
+                    submitBtn.innerHTML = '<span>Acceso Concedido...</span>';
+                    window.location.href = '/';
+                } else {
+                    alertBox.classList.remove("hidden");
+                    alertText.innerText = data.message || "Credenciales inválidas. Por favor intente de nuevo.";
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span>Ingresar al Sistema</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>';
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                alertBox.classList.remove("hidden");
+                alertText.innerText = "Error de comunicación con el servidor. Intente más tarde.";
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Ingresar al Sistema</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>';
+                lucide.createIcons();
+            }
+        }
+    </script>
+</body>
+</html>
