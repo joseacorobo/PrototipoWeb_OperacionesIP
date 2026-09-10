@@ -52,110 +52,147 @@
     <!-- ============================================================== -->
     <!-- 1. LEFT SIDEBAR (Estilo SnowUI) -->
     <!-- ============================================================== -->
-    <aside class="w-64 bg-snow-sidebar border-r border-snow-border flex flex-col justify-between p-4 select-none">
-        <div>
-            <!-- Logo & Workspace -->
-            <div class="flex items-center gap-3 px-2 py-3 mb-6">
-                <div class="w-9 h-9 rounded-xl bg-snow-blue flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-                    <i data-lucide="activity" class="w-5 h-5"></i>
+        <!-- ============================================================== -->
+    <!-- 1. LEFT SIDEBAR MINIMALISTA (SnowUI Design System)           -->
+    <!-- ============================================================== -->
+    <aside class="w-64 bg-snow-sidebar border-r border-snow-border flex flex-col justify-between p-4 select-none h-screen">
+        
+        <!-- Contenedor Superior: Perfil del Ingeniero y Navegación -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            
+            <!-- Perfil del Ingeniero / Usuario Logeado (Top Sidebar) -->
+            <div class="p-3 bg-gray-50 rounded-2xl border border-snow-border mb-4 flex items-center justify-between shadow-2xs">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="relative shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center font-bold text-xs shadow-xs border border-snow-border">
+                            DR
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#1C1C1E]"></span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-bold text-gray-900 truncate">David Rodríguez</p>
+                        <p class="text-[10px] text-snow-muted truncate font-medium">Ingeniero Operaciones IP</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="font-bold text-sm leading-tight text-gray-900">Operaciones IP</h1>
-                    <span class="text-xs text-snow-muted">Metrics & Points Core</span>
+                <div class="flex items-center">
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-100">Online</span>
                 </div>
             </div>
 
-            <!-- Navigation Sections -->
-            <div class="space-y-5">
+            <!-- Navegación Minimalista con Scroll Limpio -->
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1">
                 
-                <!-- Vista Global -->
+                <!-- Vista Global / General -->
                 <div>
-                    <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-gray-100 text-snow-blue transition">
+                    <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-snow-blue transition">
                         <i data-lucide="layout-grid" class="w-4 h-4"></i>
                         <span>Todas las Áreas</span>
                     </button>
                 </div>
 
-                <!-- Categoría 1: Redes de Acceso -->
+                <!-- Categoría 1: Redes de Acceso y Aprovisionamiento -->
                 <div>
-                    <div class="flex items-center justify-between px-3 mb-2">
-                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Redes de Acceso</p>
+                    <div class="flex items-center justify-between px-2 mb-1.5">
+                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Redes de Acceso y Aprovisionamiento</p>
                         <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-600">Activo</span>
                     </div>
                     <nav class="space-y-1">
-                        <button onclick="changeArea('Acceso')" id="nav-area-acceso" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="network" class="w-4 h-4 text-emerald-600"></i>
-                            <span>Redes de Acceso (General)</span>
+                        <button onclick="changeArea('Acceso')" id="nav-area-acceso" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                            <i data-lucide="network" class="w-3.5 h-3.5 text-emerald-600"></i>
+                            <span>División Acceso (General)</span>
                         </button>
-                        <button onclick="changeArea('Soporte')" id="nav-area-soporte" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-5">
-                            <i data-lucide="headset" class="w-4 h-4 text-blue-500"></i>
-                            <span>Soporte FTTH</span>
+                        <button onclick="changeArea('Soporte')" id="nav-area-soporte" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-4">
+                            <i data-lucide="headset" class="w-3.5 h-3.5 text-blue-500"></i>
+                            <span>Redes FTTH</span>
                         </button>
-                        <button onclick="changeArea('Cabecera')" id="nav-area-cabecera" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-5">
-                            <i data-lucide="server" class="w-4 h-4 text-amber-500"></i>
-                            <span>Cabecera OLT</span>
+                        <button onclick="changeArea('Cabecera')" id="nav-area-cabecera" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-4">
+                            <i data-lucide="server" class="w-3.5 h-3.5 text-amber-500"></i>
+                            <span>Cabecera</span>
                         </button>
                     </nav>
                 </div>
 
-                <!-- Categoría 2: Servicios & Clientes -->
+                <!-- Categoría 2: Telefonía -->
                 <div>
-                    <div class="flex items-center justify-between px-3 mb-2">
-                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Servicios & Clientes</p>
+                    <div class="flex items-center justify-between px-2 mb-1.5">
+                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Telefonía</p>
                         <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-600">Operativo</span>
                     </div>
                     <nav class="space-y-1">
-                        <button onclick="changeArea('Telefonía')" id="nav-area-telefonia" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="phone-call" class="w-4 h-4 text-purple-500"></i>
-                            <span>Telefonía VoIP</span>
+                        <button onclick="changeArea('Telefonía')" id="nav-area-telefonia" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                            <i data-lucide="phone-call" class="w-3.5 h-3.5 text-purple-500"></i>
+                            <span>Soporte VoIP</span>
                         </button>
-                        <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-gray-400 cursor-not-allowed select-none bg-gray-50/50">
-                            <i data-lucide="building-2" class="w-4 h-4 text-gray-400"></i>
-                            <span>Grandes Cuentas</span>
-                            <span class="ml-auto text-[9px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-medium">Fase 3</span>
-                        </div>
-                        <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-gray-400 cursor-not-allowed select-none bg-gray-50/50">
-                            <i data-lucide="globe" class="w-4 h-4 text-gray-400"></i>
-                            <span>Redes WAN & Core</span>
-                            <span class="ml-auto text-[9px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-medium">Fase 3</span>
+                        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-400 select-none pl-4">
+                            <i data-lucide="git-commit" class="w-3.5 h-3.5 text-gray-400"></i>
+                            <span>Troncales SIP</span>
+                            <span class="ml-auto text-[8px] bg-gray-200 text-gray-600 px-1 py-0.2 rounded font-semibold">Prox.</span>
                         </div>
                     </nav>
                 </div>
 
-                <!-- Supervisión, FSM y Auditoría -->
+                <!-- Categoría 3: Grandes Cuentas -->
                 <div>
-                    <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-3 mb-2">Supervisión & Auditoría</p>
+                    <div class="flex items-center justify-between px-2 mb-1.5">
+                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Grandes Cuentas</p>
+                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-gray-100 text-gray-500">Fase 3</span>
+                    </div>
                     <nav class="space-y-1">
-                        <a href="#inbox-section" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="mail-check" class="w-4 h-4 text-emerald-500"></i>
+                        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-400 select-none pl-4">
+                            <i data-lucide="building-2" class="w-3.5 h-3.5 text-gray-400"></i>
+                            <span>Clientes Corporativos</span>
+                        </div>
+                        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-400 select-none pl-4">
+                            <i data-lucide="radio" class="w-3.5 h-3.5 text-gray-400"></i>
+                            <span>Enlaces Dedicados</span>
+                        </div>
+                    </nav>
+                </div>
+
+                <!-- Próximamente Más Áreas -->
+                <div>
+                    <div class="px-2 mb-1.5">
+                        <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Próximamente más...</p>
+                    </div>
+                    <nav class="space-y-1">
+                        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-400 select-none pl-4">
+                            <i data-lucide="globe" class="w-3.5 h-3.5 text-gray-400"></i>
+                            <span>Redes WAN & Core</span>
+                        </div>
+                        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-gray-400 select-none pl-4">
+                            <i data-lucide="cpu" class="w-3.5 h-3.5 text-gray-400"></i>
+                            <span>Infraestructura IP</span>
+                        </div>
+                    </nav>
+                </div>
+
+                <!-- Supervisión Operativa & Auditoría -->
+                <div class="pt-2 border-t border-snow-border">
+                    <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-2 mb-1.5">Supervisión</p>
+                    <nav class="space-y-1">
+                        <a href="#inbox-section" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                            <i data-lucide="mail-check" class="w-3.5 h-3.5 text-emerald-500"></i>
                             <span>Bandeja de Correos</span>
-                            <span id="badge-inbox-count" class="ml-auto text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold">3</span>
+                            <span id="badge-inbox-count" class="ml-auto text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold">--</span>
                         </a>
-                        <button onclick="openReportsModal()" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-blue-50 hover:text-snow-blue transition text-left">
-                            <i data-lucide="file-bar-chart-2" class="w-4 h-4 text-blue-600"></i>
-                            <span>Reportes y Auditoría</span>
-                            <span class="ml-auto text-[9px] bg-blue-100 text-snow-blue px-1.5 py-0.5 rounded font-bold">Excel</span>
+                        <button onclick="openReportsModal()" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-blue-50 hover:text-snow-blue transition text-left">
+                            <i data-lucide="file-bar-chart-2" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span>Reportes Excel</span>
+                            <span class="ml-auto text-[9px] bg-blue-100 text-snow-blue px-1.5 py-0.5 rounded font-bold">XLSX</span>
                         </button>
-                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="terminal" class="w-4 h-4 text-indigo-500"></i>
-                            <span>Comandos OLT/815</span>
-                            <span class="ml-auto text-[10px] bg-blue-50 text-snow-blue px-2 py-0.5 rounded-full font-semibold">Fase 2</span>
-                        </a>
                     </nav>
                 </div>
 
             </div>
         </div>
 
-        <!-- User Profile Card -->
-        <div class="p-3 bg-gray-50 rounded-2xl border border-snow-border flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center font-bold text-xs">
-                DR
+        <!-- Pie Minimalista del Sidebar -->
+        <div class="pt-3 border-t border-snow-border flex items-center justify-between text-[11px] text-snow-muted">
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-snow-blue"></i>
+                <span class="font-medium">NOC Inter</span>
             </div>
-            <div class="overflow-hidden">
-                <p class="text-xs font-semibold text-gray-900 truncate">David Rodríguez</p>
-                <p class="text-[10px] text-snow-muted truncate">Supervisor Operaciones IP</p>
-            </div>
+            <span class="text-[10px] font-mono font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">v2.4 Core</span>
         </div>
     </aside>
 
@@ -234,9 +271,9 @@
                 <div class="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-medium border border-snow-border">
                     <button onclick="changeArea('Todas')" id="pill-area-todas" class="px-3 py-1.5 rounded-lg bg-white shadow-xs text-gray-900 font-semibold transition">Todas</button>
                     <button onclick="changeArea('Acceso')" id="pill-area-acceso" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Redes de Acceso</button>
-                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Soporte FTTH</button>
-                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Cabecera OLT</button>
-                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Telefonía VoIP</button>
+                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Redes FTTH</button>
+                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Cabecera</button>
+                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Telefonía</button>
                 </div>
             </div>
 
