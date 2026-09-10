@@ -132,6 +132,13 @@ function changeArea(area) {
         }
     }
     
+    // Auto-expandir el grupo acordeón correspondiente al área seleccionada
+    if (area === "Acceso" || area === "Redes de Acceso" || area === "Soporte" || area === "Cabecera") {
+        toggleSidebarMenu("acceso", true);
+    } else if (area === "Telefonía") {
+        toggleSidebarMenu("telefonia", true);
+    }
+
     const areas = ['todas', 'acceso', 'soporte', 'cabecera', 'telefonia'];
     areas.forEach(a => {
         const pill = document.getElementById(`pill-area-${a}`);
@@ -1279,3 +1286,48 @@ document.addEventListener("keydown", (e) => {
         }
     }
 });
+
+// =============================================================
+// GESTOR DE ACORDEÓN ANIMADO SIDEBAR (MODELO FIGMA NODE 80-1461)
+// =============================================================
+
+function toggleSidebarMenu(groupId, forceState = null) {
+    const submenu = document.getElementById(`submenu-${groupId}`);
+    const chevron = document.getElementById(`chevron-${groupId}`);
+    if (!submenu) return;
+
+    const isExpanded = submenu.classList.contains("expanded");
+    const shouldOpen = forceState !== null ? forceState : !isExpanded;
+
+    if (shouldOpen) {
+        submenu.classList.remove("collapsed");
+        submenu.classList.add("expanded");
+        if (chevron) chevron.classList.add("rotate-180");
+    } else {
+        submenu.classList.remove("expanded");
+        submenu.classList.add("collapsed");
+        if (chevron) chevron.classList.remove("rotate-180");
+    }
+}
+
+function handleGroupHover(groupId, isHovering) {
+    // Si el usuario pasa el mouse por encima, expandir suavemente
+    if (isHovering) {
+        toggleSidebarMenu(groupId, true);
+    } else {
+        // Al quitar el mouse, solo colapsar si esta casilla NO contiene el área actualmente activa
+        const isActiveAreaInGroup = checkGroupContainsActiveArea(groupId);
+        if (!isActiveAreaInGroup) {
+            toggleSidebarMenu(groupId, false);
+        }
+    }
+}
+
+function checkGroupContainsActiveArea(groupId) {
+    if (groupId === "acceso") {
+        return currentArea === "Acceso" || currentArea === "Redes de Acceso" || currentArea === "Soporte" || currentArea === "Cabecera";
+    } else if (groupId === "telefonia") {
+        return currentArea === "Telefonía";
+    }
+    return false;
+}

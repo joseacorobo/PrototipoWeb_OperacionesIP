@@ -303,3 +303,35 @@ body {
     color: #8E8E93 !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
+
+/* ============================================================== */
+/* FIGMA ANIMATED SIDEBAR ACCORDION (NODE 80-1461 SPEC)           */
+/* ============================================================== */
+
+.sidebar-accordion-group {
+    border-radius: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-submenu-wrapper {
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, margin 0.25s ease;
+}
+
+.sidebar-submenu-wrapper.collapsed {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    pointer-events: none;
+}
+
+.sidebar-submenu-wrapper.expanded {
+    max-height: 280px !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+}
+
+.rotate-180 {
+    transform: rotate(180deg);
+}
