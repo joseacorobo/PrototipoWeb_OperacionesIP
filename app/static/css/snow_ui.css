@@ -289,3 +289,17 @@ body {
     color: #E4E4E7 !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
+
+/* Inter Logo styling in Header */
+.header-logo-inter {
+    transition: filter 0.2s ease, opacity 0.2s ease;
+}
+.dark .header-logo-inter {
+    filter: brightness(1.22) drop-shadow(0 0 1px rgba(255, 255, 255, 0.12));
+}
+
+.dark kbd {
+    background-color: #2C2C2E !important;
+    color: #8E8E93 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}

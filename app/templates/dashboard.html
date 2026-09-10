@@ -11,7 +11,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom Style inspired by SnowUI -->
-    <link rel="stylesheet" href="/static/css/snow_ui.css?v=2.2">
+    <link rel="stylesheet" href="/static/css/snow_ui.css?v=2.3">
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -164,48 +164,81 @@
     <!-- ============================================================== -->
     <main class="flex-1 flex flex-col overflow-hidden bg-snow-bg">
 
-        <!-- Top Header: Area Tabs Selector + Email Simulator Action -->
-        <header class="h-16 bg-snow-sidebar border-b border-snow-border px-6 flex items-center justify-between">
+        <!-- Top Header: Relevancia Corporativa Inter (ByeWind Snow UI Kit) -->
+        <header class="relative h-16 bg-snow-sidebar border-b border-snow-border px-6 flex items-center justify-between select-none">
             
-            <!-- Breadcrumbs con jerarquía departamental -->
-            <div class="flex items-center gap-2 text-xs md:text-sm text-snow-muted">
-                <i data-lucide="folder-kanban" class="w-4 h-4 text-snow-blue"></i>
-                <span class="font-semibold text-gray-700">Operaciones IP</span>
-                <span>/</span>
-                <span class="text-gray-500">Acceso & Aprov.</span>
-                <span>/</span>
-                <span id="breadcrumb-area" class="text-gray-900 font-bold">Todas las Células</span>
+            <!-- Left Zone: Navegación & Breadcrumbs -->
+            <div class="flex items-center gap-2 text-xs text-snow-muted">
+                <button class="p-1.5 rounded-lg hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center" title="Panel de Navegación">
+                    <i data-lucide="panel-left" class="w-4 h-4"></i>
+                </button>
+                <button class="p-1.5 rounded-lg hover:bg-gray-100 text-snow-muted hover:text-amber-500 transition flex items-center justify-center" title="Marcador">
+                    <i data-lucide="star" class="w-4 h-4"></i>
+                </button>
+                <div class="flex items-center gap-1.5 text-xs text-snow-muted ml-1">
+                    <span class="font-medium text-gray-600">Operaciones IP</span>
+                    <span class="text-gray-400">/</span>
+                    <span id="breadcrumb-area" class="text-gray-900 font-bold">Todas las Células</span>
+                </div>
             </div>
-            <!-- Filter by Area Pills (Reemplaza el filtro por turnos) -->
-            <div class="flex items-center gap-3">
-                <div class="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-medium">
-                    <button onclick="changeArea('Todas')" id="pill-area-todas" class="px-3 py-1.5 rounded-lg bg-white shadow-xs text-gray-900 font-semibold transition">Todas</button>
-                    <button onclick="changeArea('Acceso')" id="pill-area-acceso" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Redes de Acceso</button>
-                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Soporte FTTH</button>
-                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Cabecera OLT</button>
-                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Telefonía VoIP</button>
+
+            <!-- Center Zone: Logo Oficial INTER en buena escala centrado -->
+            <div class="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none">
+                <img src="/static/img/inter_logo.png" alt="Inter" class="h-7 md:h-8 w-auto object-contain header-logo-inter">
+            </div>
+
+            <!-- Right Zone: Controles Globales Esenciales -->
+            <div class="flex items-center gap-2.5">
+                <!-- Buscador Rápido Global -->
+                <div class="relative hidden sm:flex items-center">
+                    <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 text-snow-muted pointer-events-none"></i>
+                    <input type="text" id="global-search-input" onkeyup="filterInboxBySearch(this.value)" placeholder="Buscar ticket..." class="w-36 md:w-48 lg:w-56 pl-8 pr-10 py-1.5 text-xs bg-gray-100 rounded-xl text-gray-900 placeholder-snow-muted border border-snow-border focus:outline-none focus:ring-1 focus:ring-snow-blue transition font-medium">
+                    <kbd class="absolute right-2.5 text-[10px] text-snow-muted font-mono bg-white px-1.5 py-0.2 rounded border border-snow-border pointer-events-none">⌘ /</kbd>
                 </div>
 
-                <!-- Simulation Action: Simular Nuevo Correo Entrante -->
-                <button onclick="openTesterModal()" class="bg-blue-50 text-snow-blue hover:bg-blue-100 text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-blue-200">
-                    <i data-lucide="scan-search" class="w-4 h-4"></i>
-                    <span>Analizar Caso Real</span>
-                </button>
-                <button onclick="simulateEmail()" class="bg-gray-900 hover:bg-black text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
-                    <i data-lucide="mail-plus" class="w-4 h-4 text-emerald-400"></i>
-                    <span>+ Simular Correo</span>
-                </button>
                 <!-- Selector Modo Oscuro / Claro (SnowUI) -->
                 <button id="theme-toggle-btn" onclick="toggleDarkMode()" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center cursor-pointer" title="Alternar Modo Oscuro / Claro">
                     <span id="theme-icon-container" class="flex items-center justify-center pointer-events-none">
                         <i data-lucide="moon" class="w-4 h-4"></i>
                     </span>
                 </button>
+
+                <!-- Historial de Tareas -->
+                <a href="#feed-section" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center" title="Historial Forense de Tareas">
+                    <i data-lucide="history" class="w-4 h-4"></i>
+                </a>
+
+                <!-- Notificaciones con Indicador Activo -->
+                <a href="#inbox-section" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center relative" title="Bandeja de Correos FSM">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    <span id="header-badge-count" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-snow-blue animate-pulse"></span>
+                </a>
+
+                <!-- Reportes Gerenciales -->
+                <button onclick="openReportsModal()" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center" title="Supervisión y Reportes">
+                    <i data-lucide="panel-right" class="w-4 h-4"></i>
+                </button>
             </div>
         </header>
 
         <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+            <!-- Barra Superior del Dashboard: Título de Vista y Filtro de Área -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-1">
+                <div>
+                    <h1 class="text-base md:text-lg font-bold text-gray-900 tracking-tight" id="main-view-title">Dashboard General de Operaciones</h1>
+                    <p class="text-xs text-snow-muted">Métricas en tiempo real, productividad técnica y balance de carga por célula</p>
+                </div>
+                <!-- Pastillas de Selección de Área -->
+                <div class="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-medium border border-snow-border">
+                    <button onclick="changeArea('Todas')" id="pill-area-todas" class="px-3 py-1.5 rounded-lg bg-white shadow-xs text-gray-900 font-semibold transition">Todas</button>
+                    <button onclick="changeArea('Acceso')" id="pill-area-acceso" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Redes de Acceso</button>
+                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Soporte FTTH</button>
+                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Cabecera OLT</button>
+                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Telefonía VoIP</button>
+                </div>
+            </div>
 
             <!-- ROW 1: 4 KPI CARDS (SnowUI Style) -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -349,7 +382,7 @@
 
             <!-- ROW 4: BANDEJA DE CORREOS FSM (AUTOMATIZACIÓN DE TAREAS Y PUNTOS) -->
             <div id="inbox-section" class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div>
                         <h2 class="text-sm font-bold text-gray-900 flex items-center gap-2">
                             <i data-lucide="inbox" class="w-4 h-4 text-snow-blue"></i>
@@ -362,11 +395,20 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pendiente
                         </span>
                         <span class="inline-flex items-center gap-1 bg-blue-50 text-snow-blue px-2 py-0.5 rounded-full font-medium">
-                            <span class="w-1.5 h-1.5 rounded-full bg-snow-blue"></span> En Progreso (Lock)
+                            <span class="w-1.5 h-1.5 rounded-full bg-snow-blue"></span> En Progreso
                         </span>
                         <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Completado
                         </span>
+                        <!-- Botones Operativos Integrados en Bandeja -->
+                        <button onclick="openTesterModal()" class="ml-2 bg-blue-50 text-snow-blue hover:bg-blue-100 text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition border border-blue-200">
+                            <i data-lucide="scan-search" class="w-3.5 h-3.5"></i>
+                            <span>Analizar Caso Real</span>
+                        </button>
+                        <button onclick="simulateEmail()" class="bg-gray-900 hover:bg-black text-white text-xs font-semibold px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition">
+                            <i data-lucide="mail-plus" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>+ Simular Correo</span>
+                        </button>
                     </div>
                 </div>
 
@@ -441,7 +483,7 @@
             </div>
 
             <!-- ROW 5: RECENT ACTIVITY FEED (SnowUI Feed) -->
-            <div class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
+            <div id="feed-section" class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h2 class="text-sm font-bold text-gray-900">Historial de Tareas Automatizadas</h2>
@@ -979,6 +1021,6 @@
     </div>
 
     <!-- Dashboard Controller Script -->
-    <script src="/static/js/dashboard.js?v=2.2"></script>
+    <script src="/static/js/dashboard.js?v=2.3"></script>
 </body>
 </html>

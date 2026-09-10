@@ -121,6 +121,16 @@ function changeArea(area) {
         label = "Célula Telefonía VoIP";
     }
     document.getElementById("breadcrumb-area").innerText = label;
+    const mainTitle = document.getElementById("main-view-title");
+    if (mainTitle) {
+        if (area === "Todas") {
+            mainTitle.innerText = "Dashboard General de Operaciones";
+        } else if (area === "Acceso" || area === "Redes de Acceso") {
+            mainTitle.innerText = "Dashboard: División Redes de Acceso";
+        } else {
+            mainTitle.innerText = `Dashboard: ${label}`;
+        }
+    }
     
     const areas = ['todas', 'acceso', 'soporte', 'cabecera', 'telefonia'];
     areas.forEach(a => {
@@ -391,6 +401,10 @@ async function loadInbox() {
     
     const pendingCount = tickets.filter(t => t.status === 'PENDIENTE').length;
     document.getElementById('badge-inbox-count').innerText = pendingCount;
+    const headerBadge = document.getElementById('header-badge-count');
+    if (headerBadge) {
+        headerBadge.style.display = pendingCount > 0 ? 'block' : 'none';
+    }
     
     if (tickets.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-snow-muted italic">No hay correos en esta área.</td></tr>`;
@@ -1054,3 +1068,31 @@ async function saveMailWorkerConfig(e) {
     }
 }
 
+
+// =============================================================
+// BUSCADOR RÁPIDO GLOBAL Y ACCESOS DE TECLADO
+// =============================================================
+
+function filterInboxBySearch(query) {
+    const term = (query || "").trim().toLowerCase();
+    const rows = document.querySelectorAll("#inbox-tbody tr");
+    rows.forEach(r => {
+        if (!term) {
+            r.style.display = "";
+            return;
+        }
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(term) ? "" : "none";
+    });
+}
+
+document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        const searchInput = document.getElementById("global-search-input");
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+});
