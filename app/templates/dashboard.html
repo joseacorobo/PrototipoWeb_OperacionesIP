@@ -4,7 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Operaciones IP — Dashboard de Métricas y Puntos por Área (SnowUI)</title>
-    <!-- Tailwind CSS -->
+    <!-- Script de Inicialización Inmediata de Tema (Evita FOUC / Parpadeo Blanco) -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -19,12 +27,15 @@
                 extend: {
                     colors: {
                         snow: {
-                            bg: '#F7F9FB',
-                            sidebar: '#FFFFFF',
-                            card: '#FFFFFF',
-                            border: '#EBEFF3',
-                            text: '#1C1D21',
-                            muted: '#717579',
+                            bg: 'var(--snow-bg)',
+                            sidebar: 'var(--snow-sidebar)',
+                            card: 'var(--snow-card)',
+                            border: 'var(--snow-border)',
+                            text: 'var(--snow-text)',
+                            muted: 'var(--snow-muted)',
+                            subtle: 'var(--snow-subtle)',
+                            hover: 'var(--snow-hover)',
+                            input: 'var(--snow-input-bg)',
                             blue: '#437EF7',
                             green: '#10B981',
                             yellow: '#F59E0B',
@@ -40,22 +51,31 @@
         }
     </script>
 </head>
-<body class="bg-snow-bg text-snow-text font-sans antialiased flex h-screen overflow-hidden">
+<body class="bg-snow-bg text-snow-text font-sans antialiased flex h-screen overflow-hidden theme-transition">
+
+    <!-- Telón de Fondo para Sidebar Móvil / Pantallas Reducidas -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-30 hidden md:hidden transition-opacity duration-300"></div>
 
     <!-- ============================================================== -->
-    <!-- 1. LEFT SIDEBAR (Estilo SnowUI) -->
+    <!-- 1. LEFT SIDEBAR (Estilo SnowUI con Modo Oscuro y Repliegue)    -->
     <!-- ============================================================== -->
-    <aside class="w-64 bg-snow-sidebar border-r border-snow-border flex flex-col justify-between p-4 select-none">
+    <aside id="app-sidebar" class="w-64 shrink-0 bg-snow-sidebar border-r border-snow-border flex flex-col justify-between p-4 select-none theme-transition fixed md:static inset-y-0 left-0 z-40 -translate-x-full md:translate-x-0 transition-transform duration-300">
         <div>
             <!-- Logo & Workspace -->
-            <div class="flex items-center gap-3 px-2 py-3 mb-6">
-                <div class="w-9 h-9 rounded-xl bg-snow-blue flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">
-                    <i data-lucide="activity" class="w-5 h-5"></i>
+            <div class="flex items-center justify-between px-2 py-3 mb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-snow-blue flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20 shrink-0">
+                        <i data-lucide="activity" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-sm leading-tight text-snow-text">Operaciones IP</h1>
+                        <span class="text-xs text-snow-muted">Metrics & Points Core</span>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="font-bold text-sm leading-tight text-gray-900">Operaciones IP</h1>
-                    <span class="text-xs text-snow-muted">Metrics & Points Core</span>
-                </div>
+                <!-- Botón de Cerrar Sidebar en Móvil/Zoom -->
+                <button onclick="toggleSidebar()" class="md:hidden p-1.5 rounded-lg text-snow-muted hover:bg-snow-hover transition" title="Cerrar Menú">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
 
             <!-- Navigation Sections -->
@@ -63,7 +83,7 @@
                 
                 <!-- Vista Global -->
                 <div>
-                    <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-gray-100 text-snow-blue transition">
+                    <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-blue-500/10 text-snow-blue transition">
                         <i data-lucide="layout-grid" class="w-4 h-4"></i>
                         <span>Todas las Áreas</span>
                     </button>
@@ -73,18 +93,18 @@
                 <div>
                     <div class="flex items-center justify-between px-3 mb-2">
                         <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Redes de Acceso</p>
-                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-600">Activo</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-500">Activo</span>
                     </div>
                     <nav class="space-y-1">
-                        <button onclick="changeArea('Acceso')" id="nav-area-acceso" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="network" class="w-4 h-4 text-emerald-600"></i>
+                        <button onclick="changeArea('Acceso')" id="nav-area-acceso" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-snow-hover hover:text-snow-text transition">
+                            <i data-lucide="network" class="w-4 h-4 text-emerald-500"></i>
                             <span>Redes de Acceso (General)</span>
                         </button>
-                        <button onclick="changeArea('Soporte')" id="nav-area-soporte" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-5">
+                        <button onclick="changeArea('Soporte')" id="nav-area-soporte" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-snow-hover hover:text-snow-text transition pl-5">
                             <i data-lucide="headset" class="w-4 h-4 text-blue-500"></i>
                             <span>Soporte FTTH</span>
                         </button>
-                        <button onclick="changeArea('Cabecera')" id="nav-area-cabecera" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition pl-5">
+                        <button onclick="changeArea('Cabecera')" id="nav-area-cabecera" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-snow-hover hover:text-snow-text transition pl-5">
                             <i data-lucide="server" class="w-4 h-4 text-amber-500"></i>
                             <span>Cabecera OLT</span>
                         </button>
@@ -95,22 +115,22 @@
                 <div>
                     <div class="flex items-center justify-between px-3 mb-2">
                         <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase">Servicios & Clientes</p>
-                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-600">Operativo</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400">Operativo</span>
                     </div>
                     <nav class="space-y-1">
-                        <button onclick="changeArea('Telefonía')" id="nav-area-telefonia" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="phone-call" class="w-4 h-4 text-purple-500"></i>
+                        <button onclick="changeArea('Telefonía')" id="nav-area-telefonia" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-snow-hover hover:text-snow-text transition">
+                            <i data-lucide="phone-call" class="w-4 h-4 text-purple-400"></i>
                             <span>Telefonía VoIP</span>
                         </button>
-                        <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-gray-400 cursor-not-allowed select-none bg-gray-50/50">
-                            <i data-lucide="building-2" class="w-4 h-4 text-gray-400"></i>
+                        <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-snow-muted/50 cursor-not-allowed select-none bg-snow-subtle/50">
+                            <i data-lucide="building-2" class="w-4 h-4 text-snow-muted/50"></i>
                             <span>Grandes Cuentas</span>
-                            <span class="ml-auto text-[9px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-medium">Fase 3</span>
+                            <span class="ml-auto text-[9px] bg-snow-border text-snow-muted px-1.5 py-0.5 rounded font-medium">Fase 3</span>
                         </div>
-                        <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-gray-400 cursor-not-allowed select-none bg-gray-50/50">
-                            <i data-lucide="globe" class="w-4 h-4 text-gray-400"></i>
+                        <div class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-snow-muted/50 cursor-not-allowed select-none bg-snow-subtle/50">
+                            <i data-lucide="globe" class="w-4 h-4 text-snow-muted/50"></i>
                             <span>Redes WAN & Core</span>
-                            <span class="ml-auto text-[9px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-medium">Fase 3</span>
+                            <span class="ml-auto text-[9px] bg-snow-border text-snow-muted px-1.5 py-0.5 rounded font-medium">Fase 3</span>
                         </div>
                     </nav>
                 </div>
@@ -119,20 +139,20 @@
                 <div>
                     <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-3 mb-2">Supervisión & Auditoría</p>
                     <nav class="space-y-1">
-                        <a href="#inbox-section" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                        <a href="#inbox-section" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-snow-hover hover:text-snow-text transition">
                             <i data-lucide="mail-check" class="w-4 h-4 text-emerald-500"></i>
                             <span>Bandeja de Correos</span>
-                            <span id="badge-inbox-count" class="ml-auto text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold">3</span>
+                            <span id="badge-inbox-count" class="ml-auto text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-bold">3</span>
                         </a>
-                        <button onclick="openReportsModal()" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-blue-50 hover:text-snow-blue transition text-left">
-                            <i data-lucide="file-bar-chart-2" class="w-4 h-4 text-blue-600"></i>
+                        <button onclick="openReportsModal()" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-blue-500/10 hover:text-snow-blue transition text-left">
+                            <i data-lucide="file-bar-chart-2" class="w-4 h-4 text-snow-blue"></i>
                             <span>Reportes y Auditoría</span>
-                            <span class="ml-auto text-[9px] bg-blue-100 text-snow-blue px-1.5 py-0.5 rounded font-bold">Excel</span>
+                            <span class="ml-auto text-[9px] bg-blue-500/10 text-snow-blue px-1.5 py-0.5 rounded font-bold">Excel</span>
                         </button>
-                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
-                            <i data-lucide="terminal" class="w-4 h-4 text-indigo-500"></i>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-snow-hover hover:text-snow-text transition">
+                            <i data-lucide="terminal" class="w-4 h-4 text-indigo-400"></i>
                             <span>Comandos OLT/815</span>
-                            <span class="ml-auto text-[10px] bg-blue-50 text-snow-blue px-2 py-0.5 rounded-full font-semibold">Fase 2</span>
+                            <span class="ml-auto text-[10px] bg-blue-500/10 text-snow-blue px-2 py-0.5 rounded-full font-semibold">Fase 2</span>
                         </a>
                     </nav>
                 </div>
@@ -141,72 +161,91 @@
         </div>
 
         <!-- User Profile Card -->
-        <div class="p-3 bg-gray-50 rounded-2xl border border-snow-border flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-gray-900 text-white flex items-center justify-center font-bold text-xs">
-                DR
+        <div class="p-3 bg-snow-subtle rounded-2xl border border-snow-border flex items-center justify-between gap-3 theme-transition">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-9 h-9 shrink-0 rounded-xl bg-gray-900 dark:bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+                    DR
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-semibold text-snow-text truncate">David Rodríguez</p>
+                    <p class="text-[10px] text-snow-muted truncate">Supervisor Operaciones IP</p>
+                </div>
             </div>
-            <div class="overflow-hidden">
-                <p class="text-xs font-semibold text-gray-900 truncate">David Rodríguez</p>
-                <p class="text-[10px] text-snow-muted truncate">Supervisor Operaciones IP</p>
-            </div>
+            <div class="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Sesión Activa"></div>
         </div>
     </aside>
 
     <!-- ============================================================== -->
-    <!-- 2. MAIN VIEW AREA -->
+    <!-- 2. MAIN VIEW AREA (Elástica y Resistente a Zoom)               -->
     <!-- ============================================================== -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-snow-bg">
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-snow-bg theme-transition">
 
-        <!-- Top Header: Area Tabs Selector + Email Simulator Action -->
-        <header class="h-16 bg-snow-sidebar border-b border-snow-border px-6 flex items-center justify-between">
+        <!-- Top Header: Area Tabs Selector + Acciones + Botón Modo Oscuro -->
+        <header class="min-h-16 h-auto py-2.5 px-4 md:px-6 bg-snow-sidebar border-b border-snow-border flex flex-wrap items-center justify-between gap-3 theme-transition">
             
-            <!-- Breadcrumbs con jerarquía departamental -->
-            <div class="flex items-center gap-2 text-xs md:text-sm text-snow-muted">
-                <i data-lucide="folder-kanban" class="w-4 h-4 text-snow-blue"></i>
-                <span class="font-semibold text-gray-700">Operaciones IP</span>
-                <span>/</span>
-                <span class="text-gray-500">Acceso & Aprov.</span>
-                <span>/</span>
-                <span id="breadcrumb-area" class="text-gray-900 font-bold">Todas las Células</span>
+            <!-- Izquierda: Botón Menú Móvil + Breadcrumbs -->
+            <div class="flex items-center gap-2.5 shrink-0">
+                <button onclick="toggleSidebar()" class="md:hidden p-2 rounded-xl text-snow-muted hover:bg-snow-hover hover:text-snow-text transition shrink-0" title="Menú de Navegación">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-1.5 text-xs md:text-sm text-snow-muted">
+                    <i data-lucide="folder-kanban" class="w-4 h-4 text-snow-blue shrink-0"></i>
+                    <span class="font-semibold text-snow-text">Operaciones IP</span>
+                    <span>/</span>
+                    <span class="text-snow-muted hidden sm:inline">Acceso & Aprov.</span>
+                    <span class="hidden sm:inline">/</span>
+                    <span id="breadcrumb-area" class="text-snow-text font-bold">Todas las Células</span>
+                </div>
             </div>
-            <!-- Filter by Area Pills (Reemplaza el filtro por turnos) -->
-            <div class="flex items-center gap-3">
-                <div class="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-medium">
-                    <button onclick="changeArea('Todas')" id="pill-area-todas" class="px-3 py-1.5 rounded-lg bg-white shadow-xs text-gray-900 font-semibold transition">Todas</button>
-                    <button onclick="changeArea('Acceso')" id="pill-area-acceso" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Redes de Acceso</button>
-                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Soporte FTTH</button>
-                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Cabecera OLT</button>
-                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition">Telefonía VoIP</button>
+
+            <!-- Derecha: Selector de Pastillas + Acciones + Modo Oscuro -->
+            <div class="flex items-center flex-wrap gap-2.5 sm:gap-3">
+                
+                <!-- Selector de Pastillas con Scroll Horizontal Seguro -->
+                <div class="flex items-center bg-snow-subtle p-1 rounded-xl text-xs font-medium border border-snow-border overflow-x-auto no-scrollbar max-w-[90vw] sm:max-w-none shrink-0">
+                    <button onclick="changeArea('Todas')" id="pill-area-todas" class="px-3 py-1.5 rounded-lg bg-snow-card shadow-xs text-snow-text font-semibold transition shrink-0 whitespace-nowrap">Todas</button>
+                    <button onclick="changeArea('Acceso')" id="pill-area-acceso" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-snow-text transition shrink-0 whitespace-nowrap">Redes de Acceso</button>
+                    <button onclick="changeArea('Soporte')" id="pill-area-soporte" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-snow-text transition shrink-0 whitespace-nowrap">Soporte FTTH</button>
+                    <button onclick="changeArea('Cabecera')" id="pill-area-cabecera" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-snow-text transition shrink-0 whitespace-nowrap">Cabecera OLT</button>
+                    <button onclick="changeArea('Telefonía')" id="pill-area-telefonia" class="px-3 py-1.5 rounded-lg text-snow-muted hover:text-snow-text transition shrink-0 whitespace-nowrap">Telefonía VoIP</button>
                 </div>
 
-                <!-- Simulation Action: Simular Nuevo Correo Entrante -->
-                <button onclick="openTesterModal()" class="bg-blue-50 text-snow-blue hover:bg-blue-100 text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-blue-200">
-                    <i data-lucide="scan-search" class="w-4 h-4"></i>
-                    <span>Analizar Caso Real</span>
-                </button>
-                <button onclick="simulateEmail()" class="bg-gray-900 hover:bg-black text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
-                    <i data-lucide="mail-plus" class="w-4 h-4 text-emerald-400"></i>
-                    <span>+ Simular Correo</span>
-                </button>
+                <!-- Botones de Acción (Resistentes a Zoom) -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="openTesterModal()" class="bg-blue-500/10 text-snow-blue hover:bg-blue-500/20 text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition border border-blue-500/20 shrink-0 whitespace-nowrap">
+                        <i data-lucide="scan-search" class="w-4 h-4"></i>
+                        <span>Analizar Caso Real</span>
+                    </button>
+                    <button onclick="simulateEmail()" class="bg-gray-900 hover:bg-black dark:bg-blue-600 dark:hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs transition shrink-0 whitespace-nowrap">
+                        <i data-lucide="mail-plus" class="w-4 h-4 text-emerald-400"></i>
+                        <span>+ Simular Correo</span>
+                    </button>
+                    
+                    <!-- BOTÓN SELECTOR DE MODO OSCURO / CLARO -->
+                    <button id="theme-toggle-btn" onclick="toggleDarkMode()" class="p-2 rounded-xl bg-snow-subtle hover:bg-snow-hover text-snow-muted hover:text-snow-text border border-snow-border transition shrink-0 flex items-center justify-center" title="Alternar Modo Oscuro / Claro">
+                        <i data-lucide="moon" id="theme-icon" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
             </div>
         </header>
 
         <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 md:space-y-6">
 
-            <!-- ROW 1: 4 KPI CARDS (SnowUI Style) -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <!-- ROW 1: 4 KPI CARDS (Cuadrícula Elástica 1-2-4 Cols) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
                 
                 <!-- Card 1: Puntos Totales -->
-                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
+                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between theme-transition">
                     <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
                         <span>PUNTOS ACUMULADOS</span>
-                        <div class="w-7 h-7 rounded-lg bg-blue-50 text-snow-blue flex items-center justify-center">
+                        <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-snow-blue flex items-center justify-center">
                             <i data-lucide="zap" class="w-4 h-4"></i>
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span id="kpi-total-points" class="text-3xl font-bold text-gray-900">--</span>
+                        <span id="kpi-total-points" class="text-2xl lg:text-3xl font-bold text-snow-text">--</span>
                         <span class="text-xs text-snow-green font-semibold flex items-center gap-0.5">
                             <i data-lucide="trending-up" class="w-3 h-3"></i> Ponderado
                         </span>
@@ -215,63 +254,65 @@
                 </div>
 
                 <!-- Card 2: MTTR Neto -->
-                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
+                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between theme-transition">
                     <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
                         <span>MTTR PROMEDIO NETO</span>
-                        <div class="w-7 h-7 rounded-lg bg-emerald-50 text-snow-green flex items-center justify-center">
+                        <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
                             <i data-lucide="clock" class="w-4 h-4"></i>
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span id="kpi-avg-mttr" class="text-3xl font-bold text-gray-900">--</span>
-                        <span class="text-xs text-gray-500 font-medium">min</span>
+                        <span id="kpi-avg-mttr" class="text-2xl lg:text-3xl font-bold text-snow-text">--</span>
+                        <span class="text-xs text-snow-muted font-medium">minutos/tarea</span>
                     </div>
-                    <p class="text-[11px] text-snow-muted mt-2">Descontando pausas y esperas de terreno</p>
+                    <p class="text-[11px] text-snow-muted mt-2">Excluye pausas por espera de terreno</p>
                 </div>
 
-                <!-- Card 3: Total Tareas -->
-                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
+                <!-- Card 3: Tickets Cerrados -->
+                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between theme-transition">
                     <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
-                        <span>CORREOS / TAREAS RESUELTAS</span>
-                        <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>TICKETS RESUELTOS</span>
+                        <div class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span id="kpi-total-tasks" class="text-3xl font-bold text-gray-900">--</span>
-                        <span class="text-xs text-gray-500 font-medium">tickets</span>
+                        <span id="kpi-total-tasks" class="text-2xl lg:text-3xl font-bold text-snow-text">--</span>
+                        <span class="text-xs text-purple-400 font-semibold flex items-center gap-0.5">
+                            <i data-lucide="cpu" class="w-3 h-3"></i> FSM Inbox
+                        </span>
                     </div>
-                    <p class="text-[11px] text-snow-muted mt-2">Alimentación 100% automatizada vía correo</p>
+                    <p class="text-[11px] text-snow-muted mt-2">Procesados con cierre técnico certificado</p>
                 </div>
 
-                <!-- Card 4: Estado de Balance -->
-                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
+                <!-- Card 4: Balance Operativo -->
+                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between theme-transition">
                     <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
-                        <span>PROMEDIO POR ESPECIALISTA</span>
-                        <div class="w-7 h-7 rounded-lg bg-amber-50 text-snow-yellow flex items-center justify-center">
+                        <span>BALANCE DE CARGA</span>
+                        <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
                             <i data-lucide="scale" class="w-4 h-4"></i>
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span id="kpi-avg-pts-tech" class="text-3xl font-bold text-gray-900">--</span>
-                        <span class="text-xs text-gray-500 font-medium">pts/op</span>
+                        <span id="kpi-avg-pts-tech" class="text-2xl lg:text-3xl font-bold text-snow-text">--</span>
+                        <span class="text-xs text-snow-muted font-medium">pts prom / técnico</span>
                     </div>
                     <div class="mt-2 flex items-center justify-between">
-                        <span id="kpi-balance-status" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-snow-green">Equilibrado</span>
+                        <span id="kpi-balance-status" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">Equilibrado</span>
                         <span class="text-[10px] text-snow-muted" id="kpi-tech-count">-- especialistas</span>
                     </div>
                 </div>
 
             </div>
 
-            <!-- ROW 2: SPLINE CHART & AREA EFFORT BREAKDOWN -->
+            <!-- ROW 2: POINTS EVOLUTION + AREA WORKLOAD DISTRIBUTION -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 
                 <!-- Main Chart: Points Evolution (2 cols) -->
-                <div class="lg:col-span-2 bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
+                <div class="lg:col-span-2 bg-snow-card rounded-snow-card p-5 md:p-6 border border-snow-border shadow-xs theme-transition">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h2 class="text-sm font-bold text-gray-900">Curva de Puntos por Hora</h2>
+                            <h2 class="text-sm font-bold text-snow-text">Curva de Puntos por Hora</h2>
                             <p class="text-xs text-snow-muted" id="chart-hourly-sub">Evolución del esfuerzo acumulado en la jornada</p>
                         </div>
                         <span class="inline-flex items-center gap-1.5 text-xs text-snow-muted">
@@ -284,9 +325,9 @@
                 </div>
 
                 <!-- Area Effort Distribution Card (1 col) -->
-                <div class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs flex flex-col justify-between">
+                <div class="bg-snow-card rounded-snow-card p-5 md:p-6 border border-snow-border shadow-xs flex flex-col justify-between theme-transition">
                     <div>
-                        <h2 class="text-sm font-bold text-gray-900 mb-1">Distribución de Puntos por Área</h2>
+                        <h2 class="text-sm font-bold text-snow-text mb-1">Distribución de Puntos por Área</h2>
                         <p class="text-xs text-snow-muted mb-4">Comparativa de carga entre frentes</p>
                         
                         <div class="space-y-4" id="area-progress-bars">
@@ -294,7 +335,7 @@
                         </div>
                     </div>
 
-                    <div class="p-3 bg-gray-50 rounded-xl border border-snow-border mt-4 text-[11px] text-snow-muted flex items-start gap-2">
+                    <div class="p-3 bg-snow-subtle rounded-xl border border-snow-border mt-4 text-[11px] text-snow-muted flex items-start gap-2">
                         <i data-lucide="info" class="w-4 h-4 text-snow-blue shrink-0 mt-0.5"></i>
                         <span>Los puntos no provienen de registro manual, sino de la resolución automatizada de correos.</span>
                     </div>
@@ -306,16 +347,16 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 
                 <!-- Individual Workload Bars (2 cols) -->
-                <div class="lg:col-span-2 bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
+                <div class="lg:col-span-2 bg-snow-card rounded-snow-card p-5 md:p-6 border border-snow-border shadow-xs theme-transition">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h2 class="text-sm font-bold text-gray-900" id="tech-chart-title">Carga Individual por Especialista</h2>
+                            <h2 class="text-sm font-bold text-snow-text" id="tech-chart-title">Carga Individual por Especialista</h2>
                             <p class="text-xs text-snow-muted">Puntos acumulados con semáforo de saturación</p>
                         </div>
                         <div class="flex items-center gap-3 text-xs">
-                            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Óptimo</span>
-                            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Moderado</span>
-                            <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Alerta</span>
+                            <span class="inline-flex items-center gap-1 text-snow-muted"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Óptimo</span>
+                            <span class="inline-flex items-center gap-1 text-snow-muted"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Moderado</span>
+                            <span class="inline-flex items-center gap-1 text-snow-muted"><span class="w-2 h-2 rounded-full bg-red-500"></span> Alerta</span>
                         </div>
                     </div>
                     <div class="h-64">
@@ -324,8 +365,8 @@
                 </div>
 
                 <!-- Donut Chart of Task Weights (1 col) -->
-                <div class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
-                    <h2 class="text-sm font-bold text-gray-900 mb-1">Complejidad de Tareas (P1 a P5)</h2>
+                <div class="bg-snow-card rounded-snow-card p-5 md:p-6 border border-snow-border shadow-xs theme-transition">
+                    <h2 class="text-sm font-bold text-snow-text mb-1">Complejidad de Tareas (P1 a P5)</h2>
                     <p class="text-xs text-snow-muted mb-4">Proporción según dificultad técnica</p>
                     <div class="h-56 flex items-center justify-center">
                         <canvas id="chartWeights"></canvas>
@@ -335,80 +376,80 @@
             </div>
 
             <!-- ROW 4: BANDEJA DE CORREOS FSM (AUTOMATIZACIÓN DE TAREAS Y PUNTOS) -->
-            <div id="inbox-section" class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
-                <div class="flex items-center justify-between mb-4">
+            <div id="inbox-section" class="bg-snow-card rounded-snow-card p-5 md:p-6 border border-snow-border shadow-xs theme-transition">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div>
-                        <h2 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                        <h2 class="text-sm font-bold text-snow-text flex items-center gap-2">
                             <i data-lucide="inbox" class="w-4 h-4 text-snow-blue"></i>
                             Bandeja de Correos FSM (Automatización de Puntos)
                         </h2>
                         <p class="text-xs text-snow-muted">Al atender y completar un correo, los puntos y el MTTR se registran automáticamente</p>
                     </div>
                     <div class="flex items-center gap-2 text-xs">
-                        <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                        <span class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pendiente
                         </span>
-                        <span class="inline-flex items-center gap-1 bg-blue-50 text-snow-blue px-2 py-0.5 rounded-full font-medium">
+                        <span class="inline-flex items-center gap-1 bg-blue-500/10 text-snow-blue px-2 py-0.5 rounded-full font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-snow-blue"></span> En Progreso (Lock)
                         </span>
-                        <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+                        <span class="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Completado
                         </span>
                     </div>
                 </div>
 
                 <!-- Panel de Control y Telemetría del Worker de Correo (Módulo 6) -->
-                <div class="mb-4 p-3 bg-gray-50 rounded-2xl border border-snow-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="mb-4 p-3 bg-snow-subtle rounded-2xl border border-snow-border flex flex-wrap items-center justify-between gap-3 text-xs theme-transition">
                     <div class="flex flex-wrap items-center gap-3">
                         <!-- Badge de Modo -->
                         <div class="flex items-center gap-1.5">
                             <span class="text-snow-muted font-medium">Worker:</span>
-                            <span id="worker-mode-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-snow-blue border border-blue-100 flex items-center gap-1.5">
+                            <span id="worker-mode-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-snow-blue border border-blue-500/20 flex items-center gap-1.5">
                                 <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
                                 <span id="worker-mode-text">Modo: Simulador</span>
                             </span>
                         </div>
                         
                         <!-- Badge de Estado Activo / Pausado -->
-                        <span id="worker-state-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5">
+                        <span id="worker-state-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span id="worker-state-text">Activo (Cada 60s)</span>
                         </span>
 
                         <!-- Telemetría: Última Sincronización e Ingestados -->
-                        <div class="flex items-center gap-3 pl-2 border-l border-gray-200 text-snow-muted">
+                        <div class="flex items-center gap-3 pl-2 border-l border-snow-border text-snow-muted">
                             <span class="flex items-center gap-1">
-                                <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-snow-muted"></i>
                                 <span>Última sync:</span>
-                                <strong id="worker-last-sync" class="text-gray-800 font-mono">--</strong>
+                                <strong id="worker-last-sync" class="text-snow-text font-mono">--</strong>
                             </span>
                             <span class="flex items-center gap-1">
-                                <i data-lucide="mail-check" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <i data-lucide="mail-check" class="w-3.5 h-3.5 text-snow-muted"></i>
                                 <span>Ingestados:</span>
-                                <strong id="worker-total-count" class="text-gray-800 font-mono">0</strong>
+                                <strong id="worker-total-count" class="text-snow-text font-mono">0</strong>
                             </span>
                         </div>
                     </div>
 
                     <!-- Botones de Acción Operativa del Worker -->
                     <div class="flex items-center gap-2">
-                        <button id="btn-worker-toggle" onclick="toggleMailWorker()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-snow-border text-gray-700 font-semibold flex items-center gap-1.5 shadow-2xs transition">
-                            <i data-lucide="pause" class="w-3.5 h-3.5 text-amber-600" id="icon-worker-toggle"></i>
+                        <button id="btn-worker-toggle" onclick="toggleMailWorker()" class="px-3 py-1.5 rounded-xl bg-snow-card hover:bg-snow-hover border border-snow-border text-snow-text font-semibold flex items-center gap-1.5 shadow-2xs transition">
+                            <i data-lucide="pause" class="w-3.5 h-3.5 text-amber-500" id="icon-worker-toggle"></i>
                             <span id="btn-worker-toggle-text">Pausar</span>
                         </button>
                         <button id="btn-worker-sync" onclick="syncMailWorkerNow()" class="px-3 py-1.5 rounded-xl bg-snow-blue hover:bg-blue-600 text-white font-semibold flex items-center gap-1.5 shadow-xs transition">
                             <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="icon-sync-spin"></i>
                             <span>Sincronizar Ahora</span>
                         </button>
-                        <button onclick="openMailConfigModal()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-snow-border text-gray-700 font-semibold flex items-center gap-1.5 shadow-2xs transition" title="Configurar Parámetros IMAP / Simulador">
-                            <i data-lucide="settings" class="w-3.5 h-3.5 text-gray-600"></i>
+                        <button onclick="openMailConfigModal()" class="px-3 py-1.5 rounded-xl bg-snow-card hover:bg-snow-hover border border-snow-border text-snow-text font-semibold flex items-center gap-1.5 shadow-2xs transition" title="Configurar Parámetros IMAP / Simulador">
+                            <i data-lucide="settings" class="w-3.5 h-3.5 text-snow-muted"></i>
                             <span>Configurar</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="overflow-x-auto min-w-full no-scrollbar">
+                    <table class="w-full text-left text-xs min-w-[700px]">
                         <thead>
                             <tr class="border-b border-snow-border text-snow-muted font-medium">
                                 <th class="pb-3 px-3">Ticket</th>
@@ -428,10 +469,10 @@
             </div>
 
             <!-- ROW 5: RECENT ACTIVITY FEED (SnowUI Feed) -->
-            <div class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
+            <div class="bg-snow-card rounded-snow-card p-5 md:p-6 border border-snow-border shadow-xs theme-transition">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 class="text-sm font-bold text-gray-900">Historial de Tareas Automatizadas</h2>
+                        <h2 class="text-sm font-bold text-snow-text">Historial de Tareas Automatizadas</h2>
                         <p class="text-xs text-snow-muted">Puntos computados al cerrar tickets de correo</p>
                     </div>
                     <span class="text-xs text-snow-blue font-medium flex items-center gap-1">
@@ -439,8 +480,8 @@
                     </span>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="overflow-x-auto min-w-full no-scrollbar">
+                    <table class="w-full text-left text-xs min-w-[700px]">
                         <thead>
                             <tr class="border-b border-snow-border text-snow-muted font-medium">
                                 <th class="pb-3 px-3">Ticket</th>
@@ -463,39 +504,38 @@
 
     </main>
 
-    <!-- Modal para Resolver Ticket de Correo (Automatizado) -->
     <!-- ============================================================== -->
-    <!-- WORKSPACE DE ATENCIÓN DE CORREO / TICKET (CON CRONÓMETRO EN VIVO) -->
+    <!-- MODAL 1: WORKSPACE DE ATENCIÓN DE TICKET (CRONÓMETRO EN VIVO)  -->
     <!-- ============================================================== -->
-    <div id="modalTicketWorkspace" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-4xl max-h-[90vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div id="modalTicketWorkspace" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-snow-card text-snow-text rounded-snow-card w-full max-w-4xl max-h-[90vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 theme-transition">
             
             <!-- Top Bar del Ticket -->
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span id="ws-ticket-code" class="text-sm font-mono font-bold px-2.5 py-1 rounded-lg bg-white border border-snow-border text-gray-900 shadow-2xs">INC-XXXXX</span>
-                    <span id="ws-ticket-source-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-snow-blue border border-blue-100">Simulador</span>
-                    <span id="ws-ticket-status-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-snow-blue flex items-center gap-1.5">
+            <div class="px-6 py-4 bg-snow-subtle border-b border-snow-border flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center flex-wrap gap-2.5">
+                    <span id="ws-ticket-code" class="text-sm font-mono font-bold px-2.5 py-1 rounded-lg bg-snow-card border border-snow-border text-snow-text shadow-2xs">INC-XXXXX</span>
+                    <span id="ws-ticket-source-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-snow-blue border border-blue-500/20">Simulador</span>
+                    <span id="ws-ticket-status-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/10 text-snow-blue flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-snow-blue animate-pulse"></span> En Atención
                     </span>
                     <span id="ws-ticket-sender" class="text-xs text-snow-muted truncate max-w-xs">remitente@inter.com.ve</span>
                 </div>
 
                 <!-- CRONÓMETRO 100% AUTOMÁTICO EN VIVO -->
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-snow-border shadow-2xs">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-snow-card border border-snow-border shadow-2xs">
                         <i data-lucide="timer" class="w-4 h-4 text-snow-blue"></i>
                         <span class="text-xs text-snow-muted font-medium">Tiempo Transcurrido:</span>
-                        <span id="ws-live-timer" class="font-mono font-bold text-sm text-gray-900">00:00:00</span>
+                        <span id="ws-live-timer" class="font-mono font-bold text-sm text-snow-text">00:00:00</span>
                     </div>
 
                     <!-- Botón de Pausa (En Espera por Terreno / ARU) -->
-                    <button id="btn-pause-ticket" onclick="togglePauseTicket()" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-semibold flex items-center gap-1.5 transition">
+                    <button id="btn-pause-ticket" onclick="togglePauseTicket()" class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 text-xs font-semibold flex items-center gap-1.5 transition">
                         <i data-lucide="pause-circle" class="w-4 h-4"></i>
                         <span id="btn-pause-text">Pausar (En Espera)</span>
                     </button>
 
-                    <button onclick="closeWorkspaceModal()" class="text-snow-muted hover:text-gray-900 ml-2">
+                    <button onclick="closeWorkspaceModal()" class="text-snow-muted hover:text-snow-text ml-1">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -506,12 +546,12 @@
                 
                 <!-- Asunto del Correo -->
                 <div>
-                    <h2 id="ws-ticket-subject" class="text-base font-bold text-gray-900">Asunto de la solicitud de soporte</h2>
+                    <h2 id="ws-ticket-subject" class="text-base font-bold text-snow-text">Asunto de la solicitud de soporte</h2>
                 </div>
 
                 <!-- Alerta Contextual Dinámica (ej. Si es Modo Bridge) -->
-                <div id="ws-bridge-alert" class="hidden p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-start gap-2.5">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
+                <div id="ws-bridge-alert" class="hidden p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 flex items-start gap-2.5">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 shrink-0 mt-0.5"></i>
                     <div>
                         <span class="font-bold">POLÍTICA CRÍTICA DE MODO BRIDGE:</span>
                         <span> Bajo ninguna circunstancia aplicar reaprovisionamiento ni enviar comando REFRESH por Soporte FibraHogar a esta ONT. Verificar la WANMAC del router del cliente directamente en Servidor 815.</span>
@@ -519,54 +559,54 @@
                 </div>
 
                 <!-- Tarjeta de Parámetros Técnicos Extraídos de la Petición -->
-                <div class="bg-gray-50/80 rounded-2xl border border-snow-border p-4">
+                <div class="bg-snow-subtle rounded-2xl border border-snow-border p-4">
                     <p class="text-[11px] font-bold text-snow-muted uppercase tracking-wider mb-3 flex items-center gap-1.5">
                         <i data-lucide="cpu" class="w-3.5 h-3.5 text-snow-blue"></i>
                         Parámetros Técnicos Detectados en el Correo
                     </p>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div class="bg-white p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-card p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block">Código Abonado</span>
-                            <span id="ws-param-subscriber" class="font-bold text-gray-900 font-mono">--</span>
+                            <span id="ws-param-subscriber" class="font-bold text-snow-text font-mono">--</span>
                         </div>
-                        <div class="bg-white p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-card p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block">Serial PON</span>
-                            <span id="ws-param-serial" class="font-bold text-gray-900 font-mono">--</span>
+                            <span id="ws-param-serial" class="font-bold text-snow-text font-mono">--</span>
                         </div>
-                        <div class="bg-white p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-card p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block">Nodo OLT & Ubicación</span>
-                            <span id="ws-param-node" class="font-bold text-gray-900">--</span>
+                            <span id="ws-param-node" class="font-bold text-snow-text">--</span>
                         </div>
-                        <div class="bg-white p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-card p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block">Slot / PON</span>
-                            <span id="ws-param-slotpon" class="font-bold text-gray-900 font-mono">--</span>
+                            <span id="ws-param-slotpon" class="font-bold text-snow-text font-mono">--</span>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3 mt-3 text-xs">
-                        <div class="bg-white p-2.5 rounded-xl border border-snow-border flex items-center justify-between">
+                        <div class="bg-snow-card p-2.5 rounded-xl border border-snow-border flex items-center justify-between">
                             <div>
                                 <span class="text-[10px] text-snow-muted block">Dirección MAC Abonado</span>
-                                <span id="ws-param-mac" class="font-bold text-gray-900 font-mono">--</span>
+                                <span id="ws-param-mac" class="font-bold text-snow-text font-mono">--</span>
                             </div>
-                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-gray-100 font-mono text-gray-600">L2 / L3</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-snow-subtle font-mono text-snow-muted border border-snow-border">L2 / L3</span>
                         </div>
-                        <div class="bg-white p-2.5 rounded-xl border border-snow-border flex items-center justify-between">
+                        <div class="bg-snow-card p-2.5 rounded-xl border border-snow-border flex items-center justify-between">
                             <div>
                                 <span class="text-[10px] text-snow-muted block">Complejidad Ponderada</span>
                                 <span id="ws-param-points-badge" class="font-bold text-snow-blue">+5 pts (P4)</span>
                             </div>
-                            <span id="ws-param-taskname" class="text-xs text-gray-700 font-medium">Soporte a Modo Bridge</span>
+                            <span id="ws-param-taskname" class="text-xs text-snow-text font-medium">Soporte a Modo Bridge</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Cuerpo Completo del Correo Solicitante -->
-                <div class="border border-snow-border rounded-2xl p-4 bg-white">
+                <div class="border border-snow-border rounded-2xl p-4 bg-snow-card">
                     <p class="text-[11px] font-bold text-snow-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
                         <i data-lucide="mail-open" class="w-3.5 h-3.5 text-snow-blue"></i>
                         Mensaje Original del Solicitante
                     </p>
-                    <div id="ws-ticket-body" class="text-xs text-gray-800 leading-relaxed bg-gray-50/50 p-3 rounded-xl border border-snow-border/60">
+                    <div id="ws-ticket-body" class="text-xs text-snow-text leading-relaxed bg-snow-subtle p-3 rounded-xl border border-snow-border">
                         Cargando cuerpo del correo...
                     </div>
                 </div>
@@ -574,18 +614,18 @@
                 <!-- Formulario de Respuesta y Cierre -->
                 <form id="formCompleteTicketAutomated" onsubmit="submitCompleteAutomated(event)" class="space-y-3 pt-2">
                     <div>
-                        <label class="block font-semibold text-gray-800 text-xs mb-1">
+                        <label class="block font-semibold text-snow-text text-xs mb-1">
                             Diagnóstico / Comandos Aplicados / Respuesta al Correo:
                         </label>
-                        <textarea id="ws_resolution_notes" required rows="2" placeholder="Ej. Se validó atenuación óptica en -19.2 dBm. Demonio OLT desatascado en Slot 3 PON 4. ONT pasó a Whitelist y MAC en VERDE." class="w-full bg-gray-50 border border-snow-border rounded-xl p-3 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-snow-blue"></textarea>
+                        <textarea id="ws_resolution_notes" required rows="2" placeholder="Ej. Se validó atenuación óptica en -19.2 dBm. Demonio OLT desatascado en Slot 3 PON 4. ONT pasó a Whitelist y MAC en VERDE." class="w-full bg-snow-input border border-snow-border rounded-xl p-3 text-xs text-snow-text focus:outline-none focus:ring-2 focus:ring-snow-blue"></textarea>
                     </div>
 
-                    <div class="bg-emerald-50/60 border border-emerald-100 rounded-xl p-3 flex items-center justify-between text-xs">
+                    <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                         <div class="flex items-center gap-2">
-                            <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
-                            <span class="text-emerald-800 font-medium">El tiempo de atención y los puntos se calcularán de manera 100% automática al enviar.</span>
+                            <i data-lucide="sparkles" class="w-4 h-4 text-emerald-500"></i>
+                            <span class="text-emerald-500 font-medium">El tiempo de atención y los puntos se calcularán de manera 100% automática al enviar.</span>
                         </div>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition shadow-xs flex items-center gap-2">
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition shadow-xs flex items-center gap-2 shrink-0">
                             <i data-lucide="send" class="w-4 h-4"></i>
                             <span>Resolver y Computar Puntos</span>
                         </button>
@@ -598,22 +638,22 @@
     </div>
     
     <!-- ============================================================== -->
-    <!-- MODAL: PROBADOR Y ANALIZADOR DE CASOS REALES (ALGORITMO NLP) -->
+    <!-- MODAL 2: PROBADOR Y ANALIZADOR DE CASOS REALES (NLP)           -->
     <!-- ============================================================== -->
-    <div id="modalParserTester" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-3xl max-h-[90vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div id="modalParserTester" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-snow-card text-snow-text rounded-snow-card w-full max-w-3xl max-h-[90vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 theme-transition">
             
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
+            <div class="px-6 py-4 bg-snow-subtle border-b border-snow-border flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-snow-blue flex items-center justify-center font-bold">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-snow-blue flex items-center justify-center font-bold shrink-0">
                         <i data-lucide="cpu" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 text-sm">Algoritmo de Extracción y Distribución de Datos</h3>
+                        <h3 class="font-bold text-snow-text text-sm">Algoritmo de Extracción y Distribución de Datos</h3>
                         <p class="text-[11px] text-snow-muted">Pega el texto libre de cualquier correo y observa la distribución en casillas de texto</p>
                     </div>
                 </div>
-                <button onclick="closeTesterModal()" class="text-snow-muted hover:text-gray-900">
+                <button onclick="closeTesterModal()" class="text-snow-muted hover:text-snow-text">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -621,17 +661,17 @@
             <div class="flex-1 overflow-y-auto p-6 space-y-4">
                 
                 <!-- Botones de Ejemplos Rápidos -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center flex-wrap gap-2">
                     <span class="text-xs text-snow-muted font-medium">Casos predefinidos:</span>
-                    <button onclick="loadExampleText(1)" class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">Discovery FiberHome</button>
-                    <button onclick="loadExampleText(2)" class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">Bridge IP Certificada (Alerta)</button>
-                    <button onclick="loadExampleText(3)" class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">Alerta Troncal 20G Cabecera</button>
+                    <button onclick="loadExampleText(1)" class="text-xs px-2.5 py-1 rounded-lg bg-snow-subtle hover:bg-snow-hover text-snow-text border border-snow-border font-medium transition">Discovery FiberHome</button>
+                    <button onclick="loadExampleText(2)" class="text-xs px-2.5 py-1 rounded-lg bg-snow-subtle hover:bg-snow-hover text-snow-text border border-snow-border font-medium transition">Bridge IP Certificada (Alerta)</button>
+                    <button onclick="loadExampleText(3)" class="text-xs px-2.5 py-1 rounded-lg bg-snow-subtle hover:bg-snow-hover text-snow-text border border-snow-border font-medium transition">Alerta Troncal 20G Cabecera</button>
                 </div>
 
                 <!-- Textarea para pegar correo real -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-800 mb-1">Texto Libre del Correo (Copia y Pega aquí):</label>
-                    <textarea id="tester_raw_text" rows="5" placeholder="Ej: Buenas tardes soporte, favor apoyo con el siguiente caso: Abonado: 9021882, Serial: FHTT09182312, OLT-CHAC-01 slot 3 pon 4..." class="w-full bg-gray-50 border border-snow-border rounded-xl p-3 text-xs font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-snow-blue"></textarea>
+                    <label class="block text-xs font-semibold text-snow-text mb-1">Texto Libre del Correo (Copia y Pega aquí):</label>
+                    <textarea id="tester_raw_text" rows="5" placeholder="Ej: Buenas tardes soporte, favor apoyo con el siguiente caso: Abonado: 9021882, Serial: FHTT09182312, OLT-CHAC-01 slot 3 pon 4..." class="w-full bg-snow-input border border-snow-border rounded-xl p-3 text-xs font-mono text-snow-text focus:outline-none focus:ring-2 focus:ring-snow-blue"></textarea>
                 </div>
 
                 <div class="flex justify-end">
@@ -643,63 +683,63 @@
 
                 <!-- RESULTADOS DE LA EXTRACCIÓN (DISTRIBUCIÓN EN CASILLAS) -->
                 <div id="tester-results-container" class="hidden space-y-3 pt-3 border-t border-snow-border">
-                    <p class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                    <p class="text-xs font-bold text-snow-text flex items-center gap-1.5">
                         <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
                         Parámetros Técnicos Identificados y Distribuidos:
                     </p>
 
                     <!-- Alerta de Modo Bridge si se detectó -->
-                    <div id="tester-bridge-alert" class="hidden p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 font-medium flex items-center gap-2">
-                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0"></i>
+                    <div id="tester-bridge-alert" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 font-medium flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 shrink-0"></i>
                         <span><strong>REGLA DE SEGURIDAD OPERACIONAL:</strong> ONT en Modo Bridge con IP Certificada. PROHIBIDO enviar comandos de Refresh o Reaprovisionar.</span>
                     </div>
 
                     <!-- Casillas Distribuidas Fila 1 -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-subtle p-2.5 rounded-xl border border-snow-border">
                             <div class="flex items-center justify-between">
                                 <span class="text-[10px] text-snow-muted block font-semibold uppercase">Abonado (10 Dígitos)</span>
-                                <span id="res_permisor_badge" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-snow-blue hidden">P-10</span>
+                                <span id="res_permisor_badge" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-snow-blue hidden">P-10</span>
                             </div>
-                            <input type="text" id="res_subscriber" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
+                            <input type="text" id="res_subscriber" readonly class="w-full bg-transparent font-mono font-bold text-snow-text text-xs focus:outline-none">
                         </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-subtle p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block font-semibold uppercase">Serial PON / Vendor</span>
-                            <input type="text" id="res_serial" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
+                            <input type="text" id="res_serial" readonly class="w-full bg-transparent font-mono font-bold text-snow-text text-xs focus:outline-none">
                         </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-subtle p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block font-semibold uppercase">Nodo OLT</span>
-                            <input type="text" id="res_node" readonly class="w-full bg-transparent font-bold text-gray-900 text-xs">
+                            <input type="text" id="res_node" readonly class="w-full bg-transparent font-bold text-snow-text text-xs focus:outline-none">
                         </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-subtle p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block font-semibold uppercase">Slot / PON / Ct.Onu</span>
-                            <input type="text" id="res_slotpon" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
+                            <input type="text" id="res_slotpon" readonly class="w-full bg-transparent font-mono font-bold text-snow-text text-xs focus:outline-none">
                         </div>
                     </div>
 
                     <!-- Casillas Distribuidas Fila 2 -->
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-subtle p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block font-semibold uppercase">Dirección MAC</span>
-                            <input type="text" id="res_mac" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
+                            <input type="text" id="res_mac" readonly class="w-full bg-transparent font-mono font-bold text-snow-text text-xs focus:outline-none">
                         </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-subtle p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block font-semibold uppercase">Potencia Óptica (dBm)</span>
-                            <input type="text" id="res_power" readonly class="w-full bg-transparent font-bold text-emerald-600 text-xs">
+                            <input type="text" id="res_power" readonly class="w-full bg-transparent font-bold text-emerald-500 text-xs focus:outline-none">
                         </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-snow-border">
+                        <div class="bg-snow-subtle p-2.5 rounded-xl border border-snow-border">
                             <span class="text-[10px] text-snow-muted block font-semibold uppercase">Ponderación Asignada</span>
-                            <input type="text" id="res_points" readonly class="w-full bg-transparent font-bold text-snow-blue text-xs">
+                            <input type="text" id="res_points" readonly class="w-full bg-transparent font-bold text-snow-blue text-xs focus:outline-none">
                         </div>
                     </div>
 
                     <!-- Fila 3: Tarea Sugerida y Botón de Conversión a Ticket -->
-                    <div class="bg-blue-50/60 p-3 rounded-xl border border-blue-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs">
+                    <div class="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs">
                         <div class="flex items-center gap-2">
                             <span class="text-snow-muted">Área y Tarea Clasificada:</span>
-                            <span id="res_taskname" class="font-bold text-gray-900">--</span>
+                            <span id="res_taskname" class="font-bold text-snow-text">--</span>
                         </div>
-                        <button onclick="convertAnalysisToTicket()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1.5 transition shadow-xs">
+                        <button onclick="convertAnalysisToTicket()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1.5 transition shadow-xs shrink-0">
                             <i data-lucide="plus-circle" class="w-4 h-4"></i>
                             <span>Crear Ticket en Bandeja e Iniciar</span>
                         </button>
@@ -711,31 +751,30 @@
         </div>
     </div>
 
-    
     <!-- ============================================================== -->
-    <!-- MODAL: REPORTES GERENCIALES Y AUDITORÍA FORENSE -->
+    <!-- MODAL 3: REPORTES GERENCIALES Y AUDITORÍA FORENSE              -->
     <!-- ============================================================== -->
-    <div id="modalReportsAudit" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-5xl max-h-[92vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div id="modalReportsAudit" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-snow-card text-snow-text rounded-snow-card w-full max-w-5xl max-h-[92vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 theme-transition">
             
             <!-- Cabecera del Modal -->
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
+            <div class="px-6 py-4 bg-snow-subtle border-b border-snow-border flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20">
+                    <div class="w-9 h-9 rounded-xl bg-snow-blue text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0">
                         <i data-lucide="file-bar-chart-2" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 text-sm">Supervisión y Auditoría Gerencial</h3>
+                        <h3 class="font-bold text-snow-text text-sm">Supervisión y Auditoría Gerencial</h3>
                         <p class="text-[11px] text-snow-muted">Métricas consolidadas de productividad y trazabilidad técnica forense</p>
                     </div>
                 </div>
                 
                 <div class="flex items-center gap-2">
-                    <button onclick="downloadExcelReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
+                    <button onclick="downloadExcelReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition shrink-0 whitespace-nowrap">
                         <i data-lucide="download" class="w-4 h-4"></i>
                         <span>Descargar Excel (.xlsx)</span>
                     </button>
-                    <button onclick="closeReportsModal()" class="text-snow-muted hover:text-gray-900 p-1">
+                    <button onclick="closeReportsModal()" class="text-snow-muted hover:text-snow-text p-1">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -745,23 +784,23 @@
             <div class="flex-1 overflow-y-auto p-6 space-y-6">
                 
                 <!-- Barra de Filtros Rápidos -->
-                <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-50 p-3 rounded-2xl border border-snow-border text-xs">
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-snow-subtle p-3 rounded-2xl border border-snow-border text-xs">
                     
                     <!-- Filtro de Rango Temporal -->
                     <div class="flex items-center gap-1.5">
                         <span class="text-snow-muted font-semibold">Período:</span>
-                        <div class="flex items-center bg-white p-1 rounded-xl border border-snow-border">
-                            <button onclick="changeReportRange('all')" id="btn-rep-all" class="px-2.5 py-1 rounded-lg bg-gray-900 text-white font-semibold transition">Todo</button>
-                            <button onclick="changeReportRange('month')" id="btn-rep-month" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 transition">Mes Actual</button>
-                            <button onclick="changeReportRange('7days')" id="btn-rep-7days" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 transition">Últimos 7d</button>
-                            <button onclick="changeReportRange('today')" id="btn-rep-today" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 transition">Hoy</button>
+                        <div class="flex items-center bg-snow-card p-1 rounded-xl border border-snow-border">
+                            <button onclick="changeReportRange('all')" id="btn-rep-all" class="px-2.5 py-1 rounded-lg bg-snow-blue text-white font-semibold transition">Todo</button>
+                            <button onclick="changeReportRange('month')" id="btn-rep-month" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-snow-text transition">Mes Actual</button>
+                            <button onclick="changeReportRange('7days')" id="btn-rep-7days" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-snow-text transition">Últimos 7d</button>
+                            <button onclick="changeReportRange('today')" id="btn-rep-today" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-snow-text transition">Hoy</button>
                         </div>
                     </div>
 
                     <!-- Filtro de Célula / Área -->
                     <div class="flex items-center gap-1.5">
                         <span class="text-snow-muted font-semibold">Célula:</span>
-                        <select id="select-report-area" onchange="changeReportArea(this.value)" class="bg-white border border-snow-border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
+                        <select id="select-report-area" onchange="changeReportArea(this.value)" class="bg-snow-card border border-snow-border rounded-xl px-3 py-1.5 text-xs font-semibold text-snow-text focus:ring-2 focus:ring-snow-blue outline-none">
                             <option value="Todas">Todas las Áreas</option>
                             <option value="Acceso">Redes de Acceso (Soporte + Cabecera)</option>
                             <option value="Soporte">Soporte FTTH</option>
@@ -774,37 +813,37 @@
 
                 <!-- 4 Tarjetas de Métricas Ejecutivas -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                    <div class="bg-blue-500/10 p-4 rounded-2xl border border-blue-500/20">
                         <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">Puntos Totales Acumulados</span>
                         <span id="rep-kpi-points" class="text-2xl font-bold text-snow-blue">-- pts</span>
                         <span class="text-[10px] text-snow-muted block mt-1">Carga total ponderada</span>
                     </div>
-                    <div class="bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
+                    <div class="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
                         <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">Tickets Resueltos</span>
-                        <span id="rep-kpi-tasks" class="text-2xl font-bold text-purple-700">--</span>
+                        <span id="rep-kpi-tasks" class="text-2xl font-bold text-purple-400">--</span>
                         <span class="text-[10px] text-snow-muted block mt-1">100% automatizados</span>
                     </div>
-                    <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                    <div class="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20">
                         <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">MTTR Promedio Neto</span>
-                        <span id="rep-kpi-mttr" class="text-2xl font-bold text-emerald-700">-- min</span>
+                        <span id="rep-kpi-mttr" class="text-2xl font-bold text-emerald-500">-- min</span>
                         <span class="text-[10px] text-snow-muted block mt-1">Sin esperas de terreno</span>
                     </div>
-                    <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100">
+                    <div class="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20">
                         <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">Cumplimiento de SLA</span>
-                        <span id="rep-kpi-sla" class="text-2xl font-bold text-amber-700">--%</span>
+                        <span id="rep-kpi-sla" class="text-2xl font-bold text-amber-500">--%</span>
                         <span class="text-[10px] text-snow-muted block mt-1">Dentro del tiempo meta</span>
                     </div>
                 </div>
 
                 <!-- Tabla 1: Balance Comparativo por Célula -->
-                <div class="border border-snow-border rounded-2xl p-4 bg-white space-y-3">
-                    <p class="text-xs font-bold text-gray-900 flex items-center gap-2">
+                <div class="border border-snow-border rounded-2xl p-4 bg-snow-card space-y-3">
+                    <p class="text-xs font-bold text-snow-text flex items-center gap-2">
                         <i data-lucide="scale" class="w-4 h-4 text-snow-blue"></i>
                         Balance Operativo por Célula (Redes de Acceso y Aprovisionamiento)
                     </p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-50 text-snow-muted uppercase text-[10px] border-b border-snow-border">
+                    <div class="overflow-x-auto min-w-full no-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[600px]">
+                            <thead class="bg-snow-subtle text-snow-muted uppercase text-[10px] border-b border-snow-border">
                                 <tr>
                                     <th class="py-2.5 px-3">Célula / Área</th>
                                     <th class="py-2.5 px-3 text-center">Especialistas</th>
@@ -815,7 +854,7 @@
                                     <th class="py-2.5 px-3 text-center">Estado de Carga</th>
                                 </tr>
                             </thead>
-                            <tbody id="rep-table-areas" class="divide-y divide-gray-100 font-medium">
+                            <tbody id="rep-table-areas" class="divide-y divide-snow-border font-medium text-snow-text">
                                 <tr><td colspan="7" class="py-4 text-center text-snow-muted">Cargando métricas...</td></tr>
                             </tbody>
                         </table>
@@ -823,14 +862,14 @@
                 </div>
 
                 <!-- Tabla 2: Ranking de Productividad de Especialistas -->
-                <div class="border border-snow-border rounded-2xl p-4 bg-white space-y-3">
-                    <p class="text-xs font-bold text-gray-900 flex items-center gap-2">
-                        <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
+                <div class="border border-snow-border rounded-2xl p-4 bg-snow-card space-y-3">
+                    <p class="text-xs font-bold text-snow-text flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
                         Rendimiento Individual y Distribución de Puntos por Dificultad (P1 - P5)
                     </p>
-                    <div class="overflow-x-auto max-h-72 overflow-y-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-50 text-snow-muted uppercase text-[10px] border-b border-snow-border sticky top-0">
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto min-w-full no-scrollbar">
+                        <table class="w-full text-left text-xs min-w-[700px]">
+                            <thead class="bg-snow-subtle text-snow-muted uppercase text-[10px] border-b border-snow-border sticky top-0">
                                 <tr>
                                     <th class="py-2.5 px-3">Especialista</th>
                                     <th class="py-2.5 px-3">Célula</th>
@@ -845,7 +884,7 @@
                                     <th class="py-2.5 px-3 text-center">Saturación</th>
                                 </tr>
                             </thead>
-                            <tbody id="rep-table-techs" class="divide-y divide-gray-100">
+                            <tbody id="rep-table-techs" class="divide-y divide-snow-border text-snow-text">
                                 <tr><td colspan="11" class="py-4 text-center text-snow-muted">Cargando especialistas...</td></tr>
                             </tbody>
                         </table>
@@ -855,12 +894,12 @@
             </div>
 
             <!-- Footer con Botón de Exportación -->
-            <div class="px-6 py-3 bg-gray-50 border-t border-snow-border flex items-center justify-between text-xs">
+            <div class="px-6 py-3 bg-snow-subtle border-t border-snow-border flex items-center justify-between text-xs">
                 <span class="text-snow-muted flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
                     El archivo Excel incluye 3 hojas completas con el log forense de todos los tickets.
                 </span>
-                <button onclick="downloadExcelReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
+                <button onclick="downloadExcelReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition shrink-0 whitespace-nowrap">
                     <i data-lucide="download" class="w-4 h-4"></i>
                     <span>Descargar Reporte Excel (.xlsx)</span>
                 </button>
@@ -870,22 +909,22 @@
     </div>
 
     <!-- ============================================================== -->
-    <!-- MODAL: CONFIGURACIÓN DEL WORKER DE CORREO (IMAP / SIMULADOR) -->
+    <!-- MODAL 4: CONFIGURACIÓN DEL WORKER DE CORREO (IMAP / SIMULADOR) -->
     <!-- ============================================================== -->
-    <div id="modalMailWorkerConfig" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-lg flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div id="modalMailWorkerConfig" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-snow-card text-snow-text rounded-snow-card w-full max-w-lg flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 theme-transition">
             
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
+            <div class="px-6 py-4 bg-snow-subtle border-b border-snow-border flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-snow-blue text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20">
+                    <div class="w-9 h-9 rounded-xl bg-snow-blue text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0">
                         <i data-lucide="mail-search" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 text-sm">Configuración del Ingestor de Correo</h3>
+                        <h3 class="font-bold text-snow-text text-sm">Configuración del Ingestor de Correo</h3>
                         <p class="text-[11px] text-snow-muted">Módulo 6: Worker en Segundo Plano (IMAP SSL / Simulador)</p>
                     </div>
                 </div>
-                <button onclick="closeMailConfigModal()" class="text-snow-muted hover:text-gray-900 p-1">
+                <button onclick="closeMailConfigModal()" class="text-snow-muted hover:text-snow-text p-1">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -894,8 +933,8 @@
                 
                 <!-- Selector de Modo -->
                 <div>
-                    <label class="block font-semibold text-gray-800 mb-1">Modo de Operación:</label>
-                    <select id="cfg_mode" onchange="toggleImapFieldsVisibility()" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-semibold focus:ring-2 focus:ring-snow-blue outline-none">
+                    <label class="block font-semibold text-snow-text mb-1">Modo de Operación:</label>
+                    <select id="cfg_mode" onchange="toggleImapFieldsVisibility()" class="w-full bg-snow-input border border-snow-border rounded-xl p-2.5 text-xs text-snow-text font-semibold focus:ring-2 focus:ring-snow-blue outline-none">
                         <option value="SIMULATOR">Modo Simulador de Laboratorio (Recomendado sin Internet)</option>
                         <option value="REAL_IMAP">Buzón IMAP Real SSL (Puerto 993)</option>
                     </select>
@@ -903,55 +942,55 @@
 
                 <!-- Intervalo de Consulta -->
                 <div>
-                    <label class="block font-semibold text-gray-800 mb-1">Intervalo de Verificación Automática (segundos):</label>
-                    <input type="number" id="cfg_interval" min="15" max="3600" value="60" required class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                    <label class="block font-semibold text-snow-text mb-1">Intervalo de Verificación Automática (segundos):</label>
+                    <input type="number" id="cfg_interval" min="15" max="3600" value="60" required class="w-full bg-snow-input border border-snow-border rounded-xl p-2.5 text-xs text-snow-text font-mono focus:ring-2 focus:ring-snow-blue outline-none">
                     <span class="text-[10px] text-snow-muted mt-0.5 block">Frecuencia de escaneo en segundo plano (Recomendado: 60s).</span>
                 </div>
 
                 <!-- Campos de Conexión IMAP Real (visibles u ocultos según modo) -->
                 <div id="cfg_imap_fields" class="space-y-3 pt-2 border-t border-snow-border">
-                    <p class="font-bold text-gray-900 uppercase tracking-wider text-[10px] text-snow-muted flex items-center gap-1.5">
+                    <p class="font-bold text-snow-text uppercase tracking-wider text-[10px] text-snow-muted flex items-center gap-1.5">
                         <i data-lucide="server" class="w-3.5 h-3.5 text-snow-blue"></i>
                         Credenciales del Buzón IMAP
                     </p>
 
                     <div class="grid grid-cols-3 gap-3">
                         <div class="col-span-2">
-                            <label class="block font-medium text-gray-700 mb-1">Servidor IMAP Host:</label>
-                            <input type="text" id="cfg_imap_server" placeholder="imap.gmail.com" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                            <label class="block font-medium text-snow-text mb-1">Servidor IMAP Host:</label>
+                            <input type="text" id="cfg_imap_server" placeholder="imap.gmail.com" class="w-full bg-snow-input border border-snow-border rounded-xl p-2.5 text-xs text-snow-text font-mono focus:ring-2 focus:ring-snow-blue outline-none">
                         </div>
                         <div>
-                            <label class="block font-medium text-gray-700 mb-1">Puerto SSL:</label>
-                            <input type="number" id="cfg_imap_port" placeholder="993" value="993" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                            <label class="block font-medium text-snow-text mb-1">Puerto SSL:</label>
+                            <input type="number" id="cfg_imap_port" placeholder="993" value="993" class="w-full bg-snow-input border border-snow-border rounded-xl p-2.5 text-xs text-snow-text font-mono focus:ring-2 focus:ring-snow-blue outline-none">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Carpeta de Correo:</label>
-                        <input type="text" id="cfg_imap_mailbox" placeholder="INBOX" value="INBOX" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                        <label class="block font-medium text-snow-text mb-1">Carpeta de Correo:</label>
+                        <input type="text" id="cfg_imap_mailbox" placeholder="INBOX" value="INBOX" class="w-full bg-snow-input border border-snow-border rounded-xl p-2.5 text-xs text-snow-text font-mono focus:ring-2 focus:ring-snow-blue outline-none">
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Usuario / Dirección de Correo:</label>
-                        <input type="text" id="cfg_imap_user" placeholder="ejemplo@inter.com.ve" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
+                        <label class="block font-medium text-snow-text mb-1">Usuario / Dirección de Correo:</label>
+                        <input type="text" id="cfg_imap_user" placeholder="ejemplo@inter.com.ve" class="w-full bg-snow-input border border-snow-border rounded-xl p-2.5 text-xs text-snow-text focus:ring-2 focus:ring-snow-blue outline-none">
                     </div>
 
                     <div>
-                        <label class="block font-medium text-gray-700 mb-1">Contraseña de Aplicación / Token:</label>
-                        <input type="password" id="cfg_imap_password" placeholder="••••••••••••••••" class="w-full bg-gray-50 border border-snow-border rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
+                        <label class="block font-medium text-snow-text mb-1">Contraseña de Aplicación / Token:</label>
+                        <input type="password" id="cfg_imap_password" placeholder="••••••••••••••••" class="w-full bg-snow-input border border-snow-border rounded-xl p-2.5 text-xs text-snow-text font-mono focus:ring-2 focus:ring-snow-blue outline-none">
                         <span class="text-[10px] text-snow-muted mt-0.5 block">Dejar en blanco para mantener la contraseña actual.</span>
                     </div>
                 </div>
 
                 <!-- Nota Informativa -->
-                <div class="p-3 bg-blue-50/60 border border-blue-100 rounded-xl text-[11px] text-blue-900 flex items-start gap-2">
+                <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[11px] text-snow-blue flex items-start gap-2">
                     <i data-lucide="shield-check" class="w-4 h-4 text-snow-blue shrink-0 mt-0.5"></i>
                     <span>En <strong>Modo Simulador</strong>, el worker genera periódicamente casos reales de soporte FTTH y cabecera con validación de nomenclatura DERS, sin requerir acceso a internet.</span>
                 </div>
 
                 <!-- Footer Acciones -->
                 <div class="flex items-center justify-end gap-2 pt-3 border-t border-snow-border">
-                    <button type="button" onclick="closeMailConfigModal()" class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition">
+                    <button type="button" onclick="closeMailConfigModal()" class="px-4 py-2 rounded-xl bg-snow-subtle hover:bg-snow-hover text-snow-text border border-snow-border font-semibold transition">
                         Cancelar
                     </button>
                     <button type="submit" class="px-4 py-2 rounded-xl bg-snow-blue hover:bg-blue-600 text-white font-semibold flex items-center gap-1.5 shadow-xs transition">

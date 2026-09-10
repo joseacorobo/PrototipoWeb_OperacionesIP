@@ -7,12 +7,97 @@ let currentOpenTicket = null;
 let liveTimerInterval = null;
 let timerStartMs = 0;
 let isPaused = false;
+let currentWorkerStatus = null;
 
 document.addEventListener("DOMContentLoaded", () => {
+    initTheme();
     lucide.createIcons();
     loadDashboardData();
     setInterval(loadMailWorkerStatus, 20000);
 });
+
+// =============================================================
+// GESTOR DE MODO OSCURO (SNOWUI DARK THEME) & RESPONSIVIDAD
+// =============================================================
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
+
+    if (isDark) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    updateThemeIcon(isDark);
+}
+
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    updateThemeIcon(isDark);
+    updateChartsTheme(isDark);
+}
+
+function updateThemeIcon(isDark) {
+    const icon = document.getElementById("theme-icon");
+    if (!icon) return;
+    if (isDark) {
+        icon.setAttribute("data-lucide", "sun");
+        icon.className = "w-4 h-4 text-amber-400";
+    } else {
+        icon.setAttribute("data-lucide", "moon");
+        icon.className = "w-4 h-4 text-snow-muted";
+    }
+    lucide.createIcons();
+}
+
+function updateChartsTheme(isDark) {
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+    const tickColor = isDark ? '#8E97A8' : '#717579';
+    const bgCard = isDark ? '#151924' : '#FFFFFF';
+    const textTitle = isDark ? '#F1F4F9' : '#1C1D21';
+    const borderColor = isDark ? '#202637' : '#EBEFF3';
+
+    if (chartHourly) {
+        chartHourly.options.scales.y.grid.color = gridColor;
+        chartHourly.options.scales.x.ticks.color = tickColor;
+        chartHourly.options.scales.y.ticks.color = tickColor;
+        chartHourly.data.datasets[0].pointBorderColor = bgCard;
+        chartHourly.update();
+    }
+
+    if (chartTechnicians) {
+        chartTechnicians.options.scales.y.grid.color = gridColor;
+        chartTechnicians.options.scales.x.ticks.color = tickColor;
+        chartTechnicians.options.scales.y.ticks.color = tickColor;
+        chartTechnicians.update();
+    }
+
+    if (chartWeights) {
+        chartWeights.data.datasets[0].borderColor = bgCard;
+        if (chartWeights.options.plugins && chartWeights.options.plugins.legend) {
+            chartWeights.options.plugins.legend.labels.color = tickColor;
+        }
+        chartWeights.update();
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById("app-sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    if (!sidebar) return;
+    
+    sidebar.classList.toggle("-translate-x-full");
+    if (backdrop) {
+        backdrop.classList.toggle("hidden");
+    }
+}
+
+// =============================================================
+// NAVEGACIÓN Y FILTRO POR CÉLULAS / DIVISIONES
+// =============================================================
 
 function changeArea(area) {
     currentArea = area;
@@ -39,13 +124,13 @@ function changeArea(area) {
         
         if (pill) {
             pill.className = isActive 
-                ? "px-3 py-1.5 rounded-lg bg-white shadow-xs text-gray-900 font-semibold transition"
-                : "px-3 py-1.5 rounded-lg text-snow-muted hover:text-gray-900 transition";
+                ? "px-3 py-1.5 rounded-lg bg-snow-card shadow-xs text-snow-text font-semibold transition shrink-0 whitespace-nowrap"
+                : "px-3 py-1.5 rounded-lg text-snow-muted hover:text-snow-text transition shrink-0 whitespace-nowrap";
         }
         if (nav) {
             nav.className = isActive
-                ? "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-gray-100 text-snow-blue transition"
-                : "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition";
+                ? "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium bg-blue-500/10 text-snow-blue transition"
+                : "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-snow-muted hover:bg-snow-hover hover:text-snow-text transition";
         }
     });
     
@@ -74,11 +159,11 @@ async function loadDashboardData() {
         const badgeEl = document.getElementById("kpi-balance-status");
         badgeEl.innerText = kpis.balance_status;
         if (kpis.balance_badge === "success") {
-            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600";
+            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500";
         } else if (kpis.balance_badge === "warning") {
-            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600";
+            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500";
         } else {
-            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600";
+            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500";
         }
         
         renderAreaProgress(kpis.points_by_area, kpis.total_points);
@@ -130,10 +215,10 @@ function renderAreaProgress(areaPoints, totalPoints) {
         const html = `
             <div class="${borderStyle} transition cursor-pointer" onclick="changeArea('${a.key}')">
                 <div class="flex justify-between items-center text-xs mb-1">
-                    <span class="font-medium ${isSelected ? 'text-snow-blue font-bold' : 'text-gray-800'}">${a.name}</span>
+                    <span class="font-medium ${isSelected ? 'text-snow-blue font-bold' : 'text-snow-text'}">${a.name}</span>
                     <span class="text-snow-muted font-semibold">${pts} pts (${pct}%)</span>
                 </div>
-                <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                <div class="w-full bg-snow-subtle h-2 rounded-full overflow-hidden border border-snow-border">
                     <div class="${a.color} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
                 </div>
             </div>
@@ -142,9 +227,18 @@ function renderAreaProgress(areaPoints, totalPoints) {
     });
 }
 
+// =============================================================
+// RENDERIZADO DE GRÁFICOS CHART.JS CON MODO OSCURO NATIVO
+// =============================================================
+
 function renderHourlyChart(hourlyData) {
     const ctx = document.getElementById('chartHourly').getContext('2d');
     if (chartHourly) chartHourly.destroy();
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+    const tickColor = isDark ? '#8E97A8' : '#717579';
+    const bgCard = isDark ? '#151924' : '#FFFFFF';
     
     chartHourly = new Chart(ctx, {
         type: 'line',
@@ -154,14 +248,14 @@ function renderHourlyChart(hourlyData) {
                 label: 'Puntos Acumulados',
                 data: hourlyData.data,
                 borderColor: '#437EF7',
-                backgroundColor: 'rgba(67, 126, 247, 0.08)',
+                backgroundColor: 'rgba(67, 126, 247, 0.12)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 4,
                 pointHoverRadius: 6,
                 pointBackgroundColor: '#437EF7',
-                pointBorderColor: '#FFFFFF',
+                pointBorderColor: bgCard,
                 pointBorderWidth: 2
             }]
         },
@@ -170,8 +264,15 @@ function renderHourlyChart(hourlyData) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: '#F1F5F9' }, beginAtZero: true }
+                x: { 
+                    grid: { display: false },
+                    ticks: { color: tickColor, font: { size: 11 } }
+                },
+                y: { 
+                    grid: { color: gridColor }, 
+                    ticks: { color: tickColor, font: { size: 11 } },
+                    beginAtZero: true 
+                }
             }
         }
     });
@@ -181,6 +282,10 @@ function renderTechniciansChart(techData) {
     const ctx = document.getElementById('chartTechnicians').getContext('2d');
     if (chartTechnicians) chartTechnicians.destroy();
     
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+    const tickColor = isDark ? '#8E97A8' : '#717579';
+
     const labels = techData.map(t => t.name.split(' ')[0] + ' ' + (t.name.split(' ')[1] || '')[0] + '.');
     const points = techData.map(t => t.points);
     const colors = techData.map(t => t.color);
@@ -212,8 +317,15 @@ function renderTechniciansChart(techData) {
                 }
             },
             scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: '#F1F5F9' }, beginAtZero: true }
+                x: { 
+                    grid: { display: false },
+                    ticks: { color: tickColor, font: { size: 11 } }
+                },
+                y: { 
+                    grid: { color: gridColor }, 
+                    ticks: { color: tickColor, font: { size: 11 } },
+                    beginAtZero: true 
+                }
             }
         }
     });
@@ -223,6 +335,10 @@ function renderWeightsChart(weightsData) {
     const ctx = document.getElementById('chartWeights').getContext('2d');
     if (chartWeights) chartWeights.destroy();
     
+    const isDark = document.documentElement.classList.contains('dark');
+    const bgCard = isDark ? '#151924' : '#FFFFFF';
+    const tickColor = isDark ? '#8E97A8' : '#717579';
+
     const labels = weightsData.map(w => w.category);
     const data = weightsData.map(w => w.count);
     const colors = ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA'];
@@ -235,7 +351,7 @@ function renderWeightsChart(weightsData) {
                 data: data,
                 backgroundColor: colors,
                 borderWidth: 2,
-                borderColor: '#FFFFFF',
+                borderColor: bgCard,
                 hoverOffset: 4
             }]
         },
@@ -246,7 +362,11 @@ function renderWeightsChart(weightsData) {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { boxWidth: 10, font: { size: 10 } }
+                    labels: { 
+                        boxWidth: 10, 
+                        font: { size: 10 },
+                        color: tickColor
+                    }
                 }
             }
         }
@@ -278,44 +398,44 @@ async function loadInbox() {
         let actionBtn = '';
         
         if (t.status === 'PENDIENTE') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">Pendiente</span>`;
-            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-snow-blue text-white font-semibold hover:bg-blue-600 transition shadow-2xs flex items-center gap-1"><i data-lucide="folder-open" class="w-3 h-3"></i> Atender</button>`;
+            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-semibold">Pendiente</span>`;
+            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-snow-blue text-white font-semibold hover:bg-blue-600 transition shadow-2xs flex items-center gap-1 shrink-0"><i data-lucide="folder-open" class="w-3 h-3"></i> Atender</button>`;
         } else if (t.status === 'EN PROGRESO') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-blue-50 text-snow-blue font-semibold flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> ${t.claimed_by_name || 'En Atención'}</span>`;
-            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition shadow-2xs flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Continuar</button>`;
+            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-snow-blue font-semibold flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> ${t.claimed_by_name || 'En Atención'}</span>`;
+            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition shadow-2xs flex items-center gap-1 shrink-0"><i data-lucide="play" class="w-3 h-3"></i> Continuar</button>`;
         } else if (t.status === 'EN ESPERA') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold flex items-center gap-1"><i data-lucide="pause" class="w-3 h-3"></i> En Espera</span>`;
-            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 transition shadow-2xs flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Reanudar</button>`;
+            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 font-semibold flex items-center gap-1"><i data-lucide="pause" class="w-3 h-3"></i> En Espera</span>`;
+            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 transition shadow-2xs flex items-center gap-1 shrink-0"><i data-lucide="play" class="w-3 h-3"></i> Reanudar</button>`;
         } else {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-semibold">Completado</span>`;
-            actionBtn = `<span class="text-emerald-600 font-bold flex items-center justify-end gap-1"><i data-lucide="check-check" class="w-3.5 h-3.5"></i> +${t.suggested_points} pts</span>`;
+            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-snow-subtle text-snow-muted font-semibold">Completado</span>`;
+            actionBtn = `<span class="text-emerald-500 font-bold flex items-center justify-end gap-1"><i data-lucide="check-check" class="w-3.5 h-3.5"></i> +${t.suggested_points} pts</span>`;
         }
 
         // Badge de Origen de Ingesta (Módulo 6)
         let sourceBadge = '';
         const src = (t.source || 'MANUAL').toUpperCase();
         if (src === 'REAL_IMAP') {
-            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">IMAP Real</span>`;
+            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">IMAP Real</span>`;
         } else if (src === 'SIMULATOR' || src === 'SIMULADOR') {
-            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-100">Simulador</span>`;
+            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-500/10 text-snow-blue border border-blue-500/20">Simulador</span>`;
         } else {
-            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200">Manual</span>`;
+            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-snow-subtle text-snow-muted border border-snow-border">Manual</span>`;
         }
         
         const row = `
-            <tr class="hover:bg-gray-50/60 transition cursor-pointer" onclick="openTicketWorkspace(${t.id})">
+            <tr class="hover:bg-snow-hover/60 transition cursor-pointer text-snow-text" onclick="openTicketWorkspace(${t.id})">
                 <td class="py-2.5 px-3">
-                    <span class="font-mono font-semibold text-gray-900 block">${t.ticket_code}</span>
+                    <span class="font-mono font-semibold text-snow-text block">${t.ticket_code}</span>
                     <div class="mt-0.5">${sourceBadge}</div>
                 </td>
                 <td class="py-2.5 px-3">
-                    <p class="font-medium text-gray-900 truncate max-w-xs">${t.subject}</p>
+                    <p class="font-medium text-snow-text truncate max-w-xs">${t.subject}</p>
                     <p class="text-[10px] text-snow-muted truncate max-w-xs">${t.sender_email}</p>
                 </td>
                 <td class="py-2.5 px-3 font-medium text-snow-muted">${t.area}</td>
-                <td class="py-2.5 px-3 text-gray-700 font-medium">${t.suggested_task_name || 'Operación'}</td>
+                <td class="py-2.5 px-3 text-snow-text font-medium">${t.suggested_task_name || 'Operación'}</td>
                 <td class="py-2.5 px-3 text-center">
-                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-snow-blue">+${t.suggested_points || 2} pts</span>
+                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-snow-blue">+${t.suggested_points || 2} pts</span>
                 </td>
                 <td class="py-2.5 px-3">${statusBadge}</td>
                 <td class="py-2.5 px-3 text-right" onclick="event.stopPropagation()">${actionBtn}</td>
@@ -354,13 +474,13 @@ async function openTicketWorkspace(ticketId) {
             const src = (t.source || 'MANUAL').toUpperCase();
             if (src === 'REAL_IMAP') {
                 srcEl.innerText = "IMAP Real";
-                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100";
+                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
             } else if (src === 'SIMULATOR' || src === 'SIMULADOR') {
                 srcEl.innerText = "Simulador";
-                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-snow-blue border border-blue-100";
+                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-snow-blue border border-blue-500/20";
             } else {
                 srcEl.innerText = "Manual";
-                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 border border-gray-200";
+                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-snow-subtle text-snow-muted border border-snow-border";
             }
         }
 
@@ -398,7 +518,6 @@ async function openTicketWorkspace(ticketId) {
 function startLiveTimer(claimedAtStr) {
     if (liveTimerInterval) clearInterval(liveTimerInterval);
     
-    // Parsear fecha inicial
     let startDate = new Date();
     if (claimedAtStr) {
         startDate = new Date(claimedAtStr.replace(' ', 'T'));
@@ -434,13 +553,13 @@ async function togglePauseTicket() {
         await fetch(`/api/tickets/${currentOpenTicket.id}/pause`, { method: 'POST' });
         currentOpenTicket.status = 'EN ESPERA';
         document.getElementById("btn-pause-text").innerText = "Reanudar Tarea";
-        document.getElementById("ws-ticket-status-badge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 flex items-center gap-1.5";
+        document.getElementById("ws-ticket-status-badge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-500 flex items-center gap-1.5";
         document.getElementById("ws-ticket-status-badge").innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> En Espera`;
     } else {
         await fetch(`/api/tickets/${currentOpenTicket.id}/resume`, { method: 'POST' });
         currentOpenTicket.status = 'EN PROGRESO';
         document.getElementById("btn-pause-text").innerText = "Pausar (En Espera)";
-        document.getElementById("ws-ticket-status-badge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-snow-blue flex items-center gap-1.5";
+        document.getElementById("ws-ticket-status-badge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/10 text-snow-blue flex items-center gap-1.5";
         document.getElementById("ws-ticket-status-badge").innerHTML = `<span class="w-2 h-2 rounded-full bg-snow-blue animate-pulse"></span> En Atención`;
     }
 }
@@ -464,7 +583,7 @@ async function submitCompleteAutomated(e) {
         const result = await res.json();
         if (result.status === 'ok') {
             closeWorkspaceModal();
-            loadDashboardData(); // Recalcula puntos y MTTR en vivo
+            loadDashboardData();
         }
     } catch (err) {
         console.error("Error completing ticket:", err);
@@ -491,16 +610,16 @@ async function loadFeed() {
     
     feed.forEach(f => {
         const row = `
-            <tr class="hover:bg-gray-50/60 transition">
+            <tr class="hover:bg-snow-hover/60 transition text-snow-text">
                 <td class="py-2.5 px-3 font-mono font-semibold text-snow-blue">${f.ticket}</td>
                 <td class="py-2.5 px-3 flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-gray-100 text-[10px] font-bold text-gray-700 flex items-center justify-center">${f.avatar}</span>
-                    <span class="font-medium text-gray-900">${f.user}</span>
+                    <span class="w-6 h-6 rounded-full bg-snow-subtle text-[10px] font-bold text-snow-text flex items-center justify-center border border-snow-border">${f.avatar}</span>
+                    <span class="font-medium text-snow-text">${f.user}</span>
                 </td>
                 <td class="py-2.5 px-3 text-snow-muted">${f.area}</td>
-                <td class="py-2.5 px-3 text-gray-700">${f.task}</td>
+                <td class="py-2.5 px-3 text-snow-text">${f.task}</td>
                 <td class="py-2.5 px-3 text-center">
-                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-snow-blue">+${f.points} pts</span>
+                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-snow-blue">+${f.points} pts</span>
                 </td>
                 <td class="py-2.5 px-3 text-center font-mono text-snow-muted">${f.duration}m</td>
                 <td class="py-2.5 px-3 text-right text-snow-muted">${f.time.split(' ')[1] || ''}</td>
@@ -509,6 +628,7 @@ async function loadFeed() {
         tbody.insertAdjacentHTML('beforeend', row);
     });
 }
+
 // =============================================================
 // PROBADOR INTERACTIVO DEL ALGORITMO DE PARSING (CASOS REALES)
 // =============================================================
@@ -641,9 +761,9 @@ function changeReportRange(range) {
         const btn = document.getElementById(`btn-rep-${r}`);
         if (btn) {
             if (r === range) {
-                btn.className = "px-2.5 py-1 rounded-lg bg-gray-900 text-white font-semibold transition";
+                btn.className = "px-2.5 py-1 rounded-lg bg-snow-blue text-white font-semibold transition";
             } else {
-                btn.className = "px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 transition";
+                btn.className = "px-2.5 py-1 rounded-lg text-snow-muted hover:text-snow-text transition";
             }
         }
     });
@@ -670,16 +790,16 @@ async function loadReportsData() {
         const tbodyAreas = document.getElementById("rep-table-areas");
         tbodyAreas.innerHTML = "";
         data.area_breakdown.forEach(a => {
-            const badgeClass = a.status === 'Equilibrada' ? 'bg-emerald-50 text-emerald-700' :
-                              (a.status === 'Moderada' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700');
+            const badgeClass = a.status === 'Equilibrada' ? 'bg-emerald-500/10 text-emerald-500' :
+                              (a.status === 'Moderada' ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-500');
             const tr = `
-                <tr class="hover:bg-gray-50/60 transition">
-                    <td class="py-2 px-3 font-semibold text-gray-900">${a.area}</td>
+                <tr class="hover:bg-snow-hover/60 transition text-snow-text">
+                    <td class="py-2 px-3 font-semibold text-snow-text">${a.area}</td>
                     <td class="py-2 px-3 text-center text-snow-muted">${a.techs_count}</td>
-                    <td class="py-2 px-3 text-right font-mono">${a.total_tasks}</td>
+                    <td class="py-2 px-3 text-right font-mono text-snow-text">${a.total_tasks}</td>
                     <td class="py-2 px-3 text-right font-bold text-snow-blue">${a.total_points} pts</td>
-                    <td class="py-2 px-3 text-center font-medium">${a.share_percent}%</td>
-                    <td class="py-2 px-3 text-right font-mono">${a.avg_mttr} min</td>
+                    <td class="py-2 px-3 text-center font-medium text-snow-text">${a.share_percent}%</td>
+                    <td class="py-2 px-3 text-right font-mono text-snow-text">${a.avg_mttr} min</td>
                     <td class="py-2 px-3 text-center">
                         <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">
                             ${a.status}
@@ -694,23 +814,23 @@ async function loadReportsData() {
         const tbodyTechs = document.getElementById("rep-table-techs");
         tbodyTechs.innerHTML = "";
         data.tech_rankings.forEach(t => {
-            const stBadge = t.status === 'Equilibrada' ? 'bg-emerald-50 text-emerald-700' :
-                           (t.status === 'Moderada' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700');
+            const stBadge = t.status === 'Equilibrada' ? 'bg-emerald-500/10 text-emerald-500' :
+                           (t.status === 'Moderada' ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-500');
             const tr = `
-                <tr class="hover:bg-gray-50/60 transition text-xs">
+                <tr class="hover:bg-snow-hover/60 transition text-xs text-snow-text">
                     <td class="py-2 px-3 flex items-center gap-2">
-                        <span class="w-5 h-5 rounded-full bg-gray-100 text-[9px] font-bold text-gray-700 flex items-center justify-center">${t.avatar}</span>
-                        <span class="font-semibold text-gray-900">${t.name}</span>
+                        <span class="w-5 h-5 rounded-full bg-snow-subtle text-[9px] font-bold text-snow-text flex items-center justify-center border border-snow-border">${t.avatar}</span>
+                        <span class="font-semibold text-snow-text">${t.name}</span>
                     </td>
                     <td class="py-2 px-3 text-snow-muted font-medium">${t.area}</td>
-                    <td class="py-2 px-3 text-right font-mono">${t.tasks_count}</td>
+                    <td class="py-2 px-3 text-right font-mono text-snow-text">${t.tasks_count}</td>
                     <td class="py-2 px-3 text-right font-bold text-snow-blue">${t.total_points} pts</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p1}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p2}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p3}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p4}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p5}</td>
-                    <td class="py-2 px-3 text-right font-mono">${t.avg_mttr}m</td>
+                    <td class="py-2 px-3 text-center text-snow-muted">${t.p1}</td>
+                    <td class="py-2 px-3 text-center text-snow-muted">${t.p2}</td>
+                    <td class="py-2 px-3 text-center text-snow-muted">${t.p3}</td>
+                    <td class="py-2 px-3 text-center text-snow-muted">${t.p4}</td>
+                    <td class="py-2 px-3 text-center text-snow-muted">${t.p5}</td>
+                    <td class="py-2 px-3 text-right font-mono text-snow-text">${t.avg_mttr}m</td>
                     <td class="py-2 px-3 text-center">
                         <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${stBadge}">
                             ${t.status}
@@ -735,8 +855,6 @@ function downloadExcelReport() {
 // CONTROLADOR DEL WORKER DE INGESTA DE CORREO (MÓDULO 6)
 // =============================================================
 
-let currentWorkerStatus = null;
-
 async function loadMailWorkerStatus() {
     try {
         const res = await fetch('/api/mail-worker/status');
@@ -749,10 +867,10 @@ async function loadMailWorkerStatus() {
         const modeText = document.getElementById("worker-mode-text");
         if (modeBadge && modeText) {
             if (status.config.mode === 'REAL_IMAP') {
-                modeBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1.5";
+                modeBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1.5";
                 modeText.innerText = "Modo: IMAP Real";
             } else {
-                modeBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-snow-blue border border-blue-100 flex items-center gap-1.5";
+                modeBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-snow-blue border border-blue-500/20 flex items-center gap-1.5";
                 modeText.innerText = "Modo: Simulador";
             }
         }
@@ -767,10 +885,10 @@ async function loadMailWorkerStatus() {
 
         if (stateBadge && stateText) {
             if (isRunning) {
-                stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5";
+                stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5";
                 stateBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="worker-state-text">Activo (Cada ${status.config.poll_interval}s)</span>`;
             } else {
-                stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100 flex items-center gap-1.5";
+                stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center gap-1.5";
                 stateBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span id="worker-state-text">Pausado</span>`;
             }
         }
@@ -779,11 +897,11 @@ async function loadMailWorkerStatus() {
             if (isRunning) {
                 btnToggleText.innerText = "Pausar";
                 iconToggle.setAttribute("data-lucide", "pause");
-                iconToggle.className = "w-3.5 h-3.5 text-amber-600";
+                iconToggle.className = "w-3.5 h-3.5 text-amber-500";
             } else {
                 btnToggleText.innerText = "Reanudar";
                 iconToggle.setAttribute("data-lucide", "play");
-                iconToggle.className = "w-3.5 h-3.5 text-emerald-600";
+                iconToggle.className = "w-3.5 h-3.5 text-emerald-500";
             }
         }
 
@@ -929,4 +1047,3 @@ async function saveMailWorkerConfig(e) {
         console.error("Error saving mail worker config:", err);
     }
 }
-
