@@ -1,43 +1,8 @@
-/* SnowUI Custom Refinements - Light & Dark Modes */
+/* SnowUI Custom Refinements */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-:root {
-    /* SnowUI Light Palette */
-    --snow-bg: #F7F9FB;
-    --snow-sidebar: #FFFFFF;
-    --snow-card: #FFFFFF;
-    --snow-border: #EBEFF3;
-    --snow-text: #1C1D21;
-    --snow-muted: #717579;
-    --snow-subtle: #F1F4F9;
-    --snow-hover: #F8FAFC;
-    --snow-input-bg: #F9FAFB;
-    --snow-input-border: #E5E7EB;
-    --snow-scrollbar-thumb: #E2E8F0;
-    --snow-scrollbar-hover: #CBD5E1;
-}
-
-.dark {
-    /* SnowUI Dark Palette (Figma / Slate & Obsidian) */
-    --snow-bg: #0B0E14;
-    --snow-sidebar: #11141D;
-    --snow-card: #151924;
-    --snow-border: #202637;
-    --snow-text: #F1F4F9;
-    --snow-muted: #8E97A8;
-    --snow-subtle: #1C2232;
-    --snow-hover: #1E2638;
-    --snow-input-bg: #10131B;
-    --snow-input-border: #262E42;
-    --snow-scrollbar-thumb: #252D3F;
-    --snow-scrollbar-hover: #323D54;
-}
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: var(--snow-bg);
-    color: var(--snow-text);
-    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom Soft Shadows */
@@ -45,21 +10,7 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.dark .shadow-xs,
-.dark .shadow-2xs {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-/* Utility to hide scrollbars while maintaining scroll functionality */
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* Custom Responsive Scrollbars */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -68,14 +19,9 @@ body {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: var(--snow-scrollbar-thumb);
+    background: #E2E8F0;
     border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--snow-scrollbar-hover);
-}
-
-/* Smooth Transitions for Theme Switchable Containers */
-.theme-transition {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    background: #CBD5E1;
 }

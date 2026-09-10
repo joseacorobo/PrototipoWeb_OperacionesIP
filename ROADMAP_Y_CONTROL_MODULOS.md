@@ -158,8 +158,7 @@ Este módulo queda en espera de que el usuario consolide y registre la lista ofi
 - **v0.9 (2026-09-09):** Especificación arquitectónica del Worker de Ingesta Multi-Buzón.
 - **v1.0 (2026-09-09):** Implementación integral del Módulo 6 (Worker de Ingesta IMAP / Simulador). Eliminación estricta de emojis decorativos en todo el sistema.
 - **v1.1 (2026-09-09):** Reorganización de categorías departamentales: creación de la categoría general **Redes de Acceso** (agrupando Soporte FTTH y Cabecera OLT) y **Servicios & Clientes** (Telefonía VoIP, Grandes Cuentas y WAN Core). Eliminación total de valores fijos de dotación de personal (el conteo de especialistas ahora es 100% dinámico). Diseño y especificación del **Módulo 7: Autenticación, Registro y Roles RBAC (Administrador, Coordinador, Especialista)** con migración de base de datos aplicada.
-- **v1.2 (2026-09-10):** Implementación integral del **Modo Oscuro Simultáneo (SnowUI Dark Theme)** nativo con paleta pizarra/obsidiana (`#0B0E14` / `#151924` / `#202637`), selector Sol/Luna con persistencia en `localStorage` y adaptación reactiva de Chart.js. Incorporación de arquitectura **Escalable y Resistente ante Zoom (50% a 200%) y Minimizado de Ventana**, integrando botones protegidos contra compresión (`shrink-0`, `whitespace-nowrap`), pastillas con desplazamiento horizontal suave (`no-scrollbar`), sidebar replegable con botón hamburguesa para pantallas compactas y grillas fluidas de tarjetas KPI.
 
 ---
 
-*Última actualización: 2026-09-10 09:15*\n
+*Última actualización: 2026-09-09 16:00*\n
