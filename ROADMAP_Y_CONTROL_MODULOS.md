@@ -158,7 +158,8 @@ Este módulo queda en espera de que el usuario consolide y registre la lista ofi
 - **v0.9 (2026-09-09):** Especificación arquitectónica del Worker de Ingesta Multi-Buzón.
 - **v1.0 (2026-09-09):** Implementación integral del Módulo 6 (Worker de Ingesta IMAP / Simulador). Eliminación estricta de emojis decorativos en todo el sistema.
 - **v1.1 (2026-09-09):** Reorganización de categorías departamentales: creación de la categoría general **Redes de Acceso** (agrupando Soporte FTTH y Cabecera OLT) y **Servicios & Clientes** (Telefonía VoIP, Grandes Cuentas y WAN Core). Eliminación total de valores fijos de dotación de personal (el conteo de especialistas ahora es 100% dinámico). Diseño y especificación del **Módulo 7: Autenticación, Registro y Roles RBAC (Administrador, Coordinador, Especialista)** con migración de base de datos aplicada.
+- **v1.2 (2026-09-10):** Configuración del **Modo Oscuro Oficial ByeWind Snow Dashboard UI Kit** (Figma node 98469-145265) respetando 100% la estructura y disposición visual existente sin alteraciones de layout. Paleta basada en tokens Figma (`#141416` fondo, `#1C1C1E` tarjetas/sidebar, `#2C2C2E` bordes y `#FFFFFF` tipografía), botón de alternancia discreto en cabecera y adaptación reactiva de Chart.js.
 
 ---
 
-*Última actualización: 2026-09-09 16:00*\n
+*Última actualización: 2026-09-10 09:20*\n

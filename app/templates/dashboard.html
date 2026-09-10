@@ -13,18 +13,25 @@
     <!-- Custom Style inspired by SnowUI -->
     <link rel="stylesheet" href="/static/css/snow_ui.css">
     <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         snow: {
-                            bg: '#F7F9FB',
-                            sidebar: '#FFFFFF',
-                            card: '#FFFFFF',
-                            border: '#EBEFF3',
-                            text: '#1C1D21',
-                            muted: '#717579',
+                            bg: 'var(--snow-bg, #F7F9FB)',
+                            sidebar: 'var(--snow-sidebar, #FFFFFF)',
+                            card: 'var(--snow-card, #FFFFFF)',
+                            border: 'var(--snow-border, #EBEFF3)',
+                            text: 'var(--snow-text, #1C1D21)',
+                            muted: 'var(--snow-muted, #717579)',
                             blue: '#437EF7',
                             green: '#10B981',
                             yellow: '#F59E0B',
@@ -187,6 +194,10 @@
                 <button onclick="simulateEmail()" class="bg-gray-900 hover:bg-black text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
                     <i data-lucide="mail-plus" class="w-4 h-4 text-emerald-400"></i>
                     <span>+ Simular Correo</span>
+                </button>
+                <!-- Selector Modo Oscuro / Claro (SnowUI) -->
+                <button id="theme-toggle-btn" onclick="toggleDarkMode()" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center" title="Alternar Modo Oscuro / Claro">
+                    <i data-lucide="moon" id="theme-icon" class="w-4 h-4"></i>
                 </button>
             </div>
         </header>

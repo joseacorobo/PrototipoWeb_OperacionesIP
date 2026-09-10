@@ -1,13 +1,51 @@
-/* SnowUI Custom Refinements */
+/* SnowUI Custom Refinements - ByeWind Figma Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* SnowUI Light Mode Tokens */
+    --snow-bg: #F7F9FB;
+    --snow-sidebar: #FFFFFF;
+    --snow-card: #FFFFFF;
+    --snow-border: #EBEFF3;
+    --snow-text: #1C1D21;
+    --snow-muted: #717579;
+    --snow-subtle: #F4F5F7;
+    --snow-hover: #F8F9FA;
+    --snow-input: #FFFFFF;
+    --snow-scrollbar: #E2E8F0;
+    --snow-scrollbar-hover: #CBD5E1;
+}
+
+.dark {
+    /* ByeWind Snow Dashboard UI Kit Dark Mode Tokens (Figma node 98469-145265) */
+    --snow-bg: #141416;
+    --snow-sidebar: #1C1C1E;
+    --snow-card: #1C1C1E;
+    --snow-border: rgba(255, 255, 255, 0.08);
+    --snow-text: #FFFFFF;
+    --snow-muted: #8E8E93;
+    --snow-subtle: #242426;
+    --snow-hover: rgba(255, 255, 255, 0.06);
+    --snow-input: #141416;
+    --snow-scrollbar: #2C2C2E;
+    --snow-scrollbar-hover: #3A3A3C;
+}
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--snow-bg);
+    color: var(--snow-text);
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom Soft Shadows */
 .shadow-xs {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.dark .shadow-xs,
+.dark .shadow-2xs {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Custom Scrollbars */
@@ -19,9 +57,114 @@ body {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: #E2E8F0;
+    background: var(--snow-scrollbar);
     border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #CBD5E1;
+    background: var(--snow-scrollbar-hover);
+}
+
+/* ============================================================== */
+/* BYEWIND SNOW UI KIT DARK MODE RULES (SIN MODIFICAR EL HTML)    */
+/* ============================================================== */
+
+.dark .bg-white {
+    background-color: var(--snow-card) !important;
+}
+
+.dark .bg-gray-50 {
+    background-color: var(--snow-subtle) !important;
+}
+
+.dark .bg-gray-100 {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark .text-gray-900 {
+    color: #FFFFFF !important;
+}
+
+.dark .text-gray-800,
+.dark .text-gray-700 {
+    color: #E4E4E7 !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-500 {
+    color: #8E8E93 !important;
+}
+
+.dark .border-snow-border,
+.dark .border-gray-100,
+.dark .border-gray-200 {
+    border-color: var(--snow-border) !important;
+}
+
+.dark .divide-snow-border > * + *,
+.dark .divide-gray-100 > * + * {
+    border-color: var(--snow-border) !important;
+}
+
+/* Form Controls in Dark Mode */
+.dark input,
+.dark textarea,
+.dark select {
+    background-color: var(--snow-input) !important;
+    color: #FFFFFF !important;
+    border-color: var(--snow-border) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: #636366 !important;
+}
+
+.dark select option {
+    background-color: #1C1C1E !important;
+    color: #FFFFFF !important;
+}
+
+/* Table Hover in Dark Mode */
+.dark tbody tr:hover {
+    background-color: var(--snow-hover) !important;
+}
+
+/* Badges with Soft Dark Accents matching Snow UI Kit */
+.dark .bg-blue-50 {
+    background-color: rgba(67, 126, 247, 0.15) !important;
+    color: #60A5FA !important;
+}
+
+.dark .bg-emerald-50 {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    color: #34D399 !important;
+}
+
+.dark .bg-amber-50 {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #FBBF24 !important;
+}
+
+.dark .bg-purple-50 {
+    background-color: rgba(139, 92, 246, 0.15) !important;
+    color: #A78BFA !important;
+}
+
+.dark .bg-red-50 {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #F87171 !important;
+}
+
+/* Action Button Contrast */
+.dark button.bg-gray-900 {
+    background-color: #2C2C2E !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.dark button.bg-gray-900:hover {
+    background-color: #3A3A3C !important;
+}
+
+.dark #ws-ticket-body {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    color: #E4E4E7 !important;
 }

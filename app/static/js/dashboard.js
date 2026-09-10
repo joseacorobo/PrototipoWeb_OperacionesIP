@@ -9,10 +9,73 @@ let timerStartMs = 0;
 let isPaused = false;
 
 document.addEventListener("DOMContentLoaded", () => {
+    initTheme();
     lucide.createIcons();
     loadDashboardData();
     setInterval(loadMailWorkerStatus, 20000);
 });
+
+// =============================================================
+// GESTOR DE MODO OSCURO SNOWUI (FIGMA DESIGN SYSTEM)
+// =============================================================
+
+function initTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    updateThemeIcon(isDark);
+}
+
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    updateThemeIcon(isDark);
+    updateChartsTheme(isDark);
+}
+
+function updateThemeIcon(isDark) {
+    const icon = document.getElementById("theme-icon");
+    if (!icon) return;
+    if (isDark) {
+        icon.setAttribute("data-lucide", "sun");
+        icon.className = "w-4 h-4 text-amber-400";
+    } else {
+        icon.setAttribute("data-lucide", "moon");
+        icon.className = "w-4 h-4 text-snow-muted";
+    }
+    lucide.createIcons();
+}
+
+function updateChartsTheme(isDark) {
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+    const tickColor = isDark ? '#8E8E93' : '#717579';
+    const bgCard = isDark ? '#1C1C1E' : '#FFFFFF';
+
+    if (chartHourly) {
+        chartHourly.options.scales.y.grid.color = gridColor;
+        if (!chartHourly.options.scales.x.ticks) chartHourly.options.scales.x.ticks = {};
+        chartHourly.options.scales.x.ticks.color = tickColor;
+        if (!chartHourly.options.scales.y.ticks) chartHourly.options.scales.y.ticks = {};
+        chartHourly.options.scales.y.ticks.color = tickColor;
+        chartHourly.data.datasets[0].pointBorderColor = bgCard;
+        chartHourly.update();
+    }
+
+    if (chartTechnicians) {
+        chartTechnicians.options.scales.y.grid.color = gridColor;
+        if (!chartTechnicians.options.scales.x.ticks) chartTechnicians.options.scales.x.ticks = {};
+        chartTechnicians.options.scales.x.ticks.color = tickColor;
+        if (!chartTechnicians.options.scales.y.ticks) chartTechnicians.options.scales.y.ticks = {};
+        chartTechnicians.options.scales.y.ticks.color = tickColor;
+        chartTechnicians.update();
+    }
+
+    if (chartWeights) {
+        chartWeights.data.datasets[0].borderColor = bgCard;
+        if (chartWeights.options.plugins && chartWeights.options.plugins.legend) {
+            chartWeights.options.plugins.legend.labels.color = tickColor;
+        }
+        chartWeights.update();
+    }
+}
 
 function changeArea(area) {
     currentArea = area;
@@ -146,6 +209,11 @@ function renderHourlyChart(hourlyData) {
     const ctx = document.getElementById('chartHourly').getContext('2d');
     if (chartHourly) chartHourly.destroy();
     
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+    const tickColor = isDark ? '#8E8E93' : '#717579';
+    const bgCard = isDark ? '#1C1C1E' : '#FFFFFF';
+
     chartHourly = new Chart(ctx, {
         type: 'line',
         data: {
@@ -154,14 +222,14 @@ function renderHourlyChart(hourlyData) {
                 label: 'Puntos Acumulados',
                 data: hourlyData.data,
                 borderColor: '#437EF7',
-                backgroundColor: 'rgba(67, 126, 247, 0.08)',
+                backgroundColor: 'rgba(67, 126, 247, 0.12)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 4,
                 pointHoverRadius: 6,
                 pointBackgroundColor: '#437EF7',
-                pointBorderColor: '#FFFFFF',
+                pointBorderColor: bgCard,
                 pointBorderWidth: 2
             }]
         },
@@ -170,8 +238,15 @@ function renderHourlyChart(hourlyData) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: '#F1F5F9' }, beginAtZero: true }
+                x: { 
+                    grid: { display: false },
+                    ticks: { color: tickColor }
+                },
+                y: { 
+                    grid: { color: gridColor }, 
+                    ticks: { color: tickColor },
+                    beginAtZero: true 
+                }
             }
         }
     });
@@ -181,6 +256,10 @@ function renderTechniciansChart(techData) {
     const ctx = document.getElementById('chartTechnicians').getContext('2d');
     if (chartTechnicians) chartTechnicians.destroy();
     
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
+    const tickColor = isDark ? '#8E8E93' : '#717579';
+
     const labels = techData.map(t => t.name.split(' ')[0] + ' ' + (t.name.split(' ')[1] || '')[0] + '.');
     const points = techData.map(t => t.points);
     const colors = techData.map(t => t.color);
@@ -212,8 +291,15 @@ function renderTechniciansChart(techData) {
                 }
             },
             scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: '#F1F5F9' }, beginAtZero: true }
+                x: { 
+                    grid: { display: false },
+                    ticks: { color: tickColor }
+                },
+                y: { 
+                    grid: { color: gridColor }, 
+                    ticks: { color: tickColor },
+                    beginAtZero: true 
+                }
             }
         }
     });
@@ -223,6 +309,10 @@ function renderWeightsChart(weightsData) {
     const ctx = document.getElementById('chartWeights').getContext('2d');
     if (chartWeights) chartWeights.destroy();
     
+    const isDark = document.documentElement.classList.contains('dark');
+    const bgCard = isDark ? '#1C1C1E' : '#FFFFFF';
+    const tickColor = isDark ? '#8E8E93' : '#717579';
+
     const labels = weightsData.map(w => w.category);
     const data = weightsData.map(w => w.count);
     const colors = ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA'];
@@ -235,7 +325,7 @@ function renderWeightsChart(weightsData) {
                 data: data,
                 backgroundColor: colors,
                 borderWidth: 2,
-                borderColor: '#FFFFFF',
+                borderColor: bgCard,
                 hoverOffset: 4
             }]
         },
@@ -246,7 +336,11 @@ function renderWeightsChart(weightsData) {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { boxWidth: 10, font: { size: 10 } }
+                    labels: { 
+                        boxWidth: 10, 
+                        font: { size: 10 },
+                        color: tickColor
+                    }
                 }
             }
         }
