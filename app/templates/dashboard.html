@@ -11,7 +11,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom Style inspired by SnowUI -->
-    <link rel="stylesheet" href="/static/css/snow_ui.css?v=2.3">
+    <link rel="stylesheet" href="/static/css/snow_ui.css?v=2.4">
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -240,74 +240,112 @@
                 </div>
             </div>
 
-            <!-- ROW 1: 4 KPI CARDS (SnowUI Style) -->
+            <!-- ============================================================== -->
+            <!-- NIVEL 1: VISIÓN MACRO EN TIEMPO REAL (SCORECARDS EJECUTIVAS)  -->
+            <!-- ============================================================== -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                 
-                <!-- Card 1: Puntos Totales -->
+                <!-- ScoreCard 1: Estado Actual de la Cola de Correos -->
                 <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
-                        <span>PUNTOS ACUMULADOS</span>
+                    <div class="flex items-center justify-between text-snow-muted text-xs font-semibold mb-2">
+                        <span>ESTADO ACTUAL DE CORREOS</span>
                         <div class="w-7 h-7 rounded-lg bg-blue-50 text-snow-blue flex items-center justify-center">
-                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <i data-lucide="inbox" class="w-4 h-4"></i>
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span id="kpi-total-points" class="text-3xl font-bold text-gray-900">--</span>
-                        <span class="text-xs text-snow-green font-semibold flex items-center gap-0.5">
-                            <i data-lucide="trending-up" class="w-3 h-3"></i> Ponderado
+                        <span id="kpi-queue-pending" class="text-3xl font-bold text-gray-900">--</span>
+                        <span class="text-xs text-gray-500 font-medium">en cola</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-1.5 text-[11px]">
+                        <span class="inline-flex items-center gap-1 font-semibold text-snow-blue bg-blue-50 px-2 py-0.5 rounded-md">
+                            <span class="w-1.5 h-1.5 rounded-full bg-snow-blue"></span>
+                            <span id="kpi-queue-progress">--</span> activos
+                        </span>
+                        <span class="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            <span id="kpi-queue-onhold">--</span> en espera
                         </span>
                     </div>
-                    <p class="text-[11px] text-snow-muted mt-2" id="kpi-points-desc">Esfuerzo total en el área evaluada</p>
                 </div>
 
-                <!-- Card 2: MTTR Neto -->
+                <!-- ScoreCard 2: Tickets Realizados & Puntos de Jornada -->
                 <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
-                        <span>MTTR PROMEDIO NETO</span>
+                    <div class="flex items-center justify-between text-snow-muted text-xs font-semibold mb-2">
+                        <span>TICKETS REALIZADOS (JORNADA)</span>
                         <div class="w-7 h-7 rounded-lg bg-emerald-50 text-snow-green flex items-center justify-center">
-                            <i data-lucide="clock" class="w-4 h-4"></i>
-                        </div>
-                    </div>
-                    <div class="flex items-baseline gap-2">
-                        <span id="kpi-avg-mttr" class="text-3xl font-bold text-gray-900">--</span>
-                        <span class="text-xs text-gray-500 font-medium">min</span>
-                    </div>
-                    <p class="text-[11px] text-snow-muted mt-2">Descontando pausas y esperas de terreno</p>
-                </div>
-
-                <!-- Card 3: Total Tareas -->
-                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
-                        <span>CORREOS / TAREAS RESUELTAS</span>
-                        <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
                         <span id="kpi-total-tasks" class="text-3xl font-bold text-gray-900">--</span>
-                        <span class="text-xs text-gray-500 font-medium">tickets</span>
+                        <span class="text-xs text-gray-500 font-medium">resueltos</span>
                     </div>
-                    <p class="text-[11px] text-snow-muted mt-2">Alimentación 100% automatizada vía correo</p>
+                    <div class="mt-2 flex items-center justify-between text-[11px]">
+                        <span class="text-snow-muted font-medium">
+                            <strong id="kpi-total-points" class="text-gray-900 font-bold">--</strong> pts acumulados
+                        </span>
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">P1 - P5</span>
+                    </div>
                 </div>
 
-                <!-- Card 4: Estado de Balance -->
+                <!-- ScoreCard 3: Casos Críticos Sin Asignar -->
                 <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-snow-muted text-xs font-medium mb-2">
-                        <span>PROMEDIO POR ESPECIALISTA</span>
-                        <div class="w-7 h-7 rounded-lg bg-amber-50 text-snow-yellow flex items-center justify-center">
-                            <i data-lucide="scale" class="w-4 h-4"></i>
+                    <div class="flex items-center justify-between text-snow-muted text-xs font-semibold mb-2">
+                        <span>CRÍTICOS SIN ASIGNAR</span>
+                        <div class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
                         </div>
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span id="kpi-avg-pts-tech" class="text-3xl font-bold text-gray-900">--</span>
-                        <span class="text-xs text-gray-500 font-medium">pts/op</span>
+                        <span id="kpi-critical-unassigned" class="text-3xl font-bold text-gray-900">--</span>
+                        <span class="text-xs text-gray-500 font-medium">sin tomar</span>
                     </div>
-                    <div class="mt-2 flex items-center justify-between">
-                        <span id="kpi-balance-status" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-snow-green">Equilibrado</span>
-                        <span class="text-[10px] text-snow-muted" id="kpi-tech-count">-- especialistas</span>
+                    <div class="mt-2 flex items-center justify-between text-[11px]">
+                        <span id="kpi-critical-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">Bandeja Normal</span>
+                        <span class="text-[10px] text-snow-muted">P4 / P5 & Alertas</span>
                     </div>
                 </div>
 
+                <!-- ScoreCard 4: Tiempo Promedio de Primera Respuesta & SLA -->
+                <div class="bg-snow-card rounded-snow-card p-5 border border-snow-border shadow-xs flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-snow-muted text-xs font-semibold mb-2">
+                        <span>TIEMPO PRIMERA RESPUESTA (SLA)</span>
+                        <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                            <i data-lucide="timer" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span id="kpi-first-response" class="text-3xl font-bold text-gray-900">--</span>
+                        <span class="text-xs text-gray-500 font-medium">minutos</span>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between text-[11px]">
+                        <span class="text-snow-muted font-medium">
+                            <strong id="kpi-sla-compliance" class="text-emerald-600 font-bold">--%</strong> dentro de SLA
+                        </span>
+                        <span class="text-[10px] text-snow-muted">MTTR neto <strong id="kpi-avg-mttr" class="text-gray-900">--</strong>m</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================================== -->
+            <!-- NIVEL 2: RENDIMIENTO INDIVIDUAL Y COMPARATIVO DE CARGA        -->
+            <!-- ============================================================== -->
+            <div class="flex items-center justify-between pt-1">
+                <div>
+                    <h2 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-snow-blue"></i>
+                        Rendimiento Individual y Comparativa de Carga
+                    </h2>
+                    <p class="text-xs text-snow-muted">Curva de avance horario, semáforo de saturación por especialista y balance entre frentes</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="kpi-balance-status" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-snow-green">Equilibrado</span>
+                    <span class="text-[11px] text-snow-muted font-semibold bg-gray-100 px-2.5 py-1 rounded-xl border border-snow-border" id="kpi-tech-count">
+                        -- especialistas
+                    </span>
+                </div>
             </div>
 
             <!-- ROW 2: SPLINE CHART & AREA EFFORT BREAKDOWN -->
@@ -380,22 +418,24 @@
 
             </div>
 
-            <!-- ROW 4: BANDEJA DE CORREOS FSM (AUTOMATIZACIÓN DE TAREAS Y PUNTOS) -->
+            <!-- ============================================================== -->
+            <!-- NIVEL 3: DETALLE Y CUELLOS DE BOTELLA (DATOS CRUDOS FILTRABLES)-->
+            <!-- ============================================================== -->
             <div id="inbox-section" class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div>
                         <h2 class="text-sm font-bold text-gray-900 flex items-center gap-2">
-                            <i data-lucide="inbox" class="w-4 h-4 text-snow-blue"></i>
-                            Bandeja de Correos FSM (Automatización de Puntos)
+                            <i data-lucide="layers" class="w-4 h-4 text-snow-blue"></i>
+                            Nivel Inferior: Detalle Operativo y Detección de Cuellos de Botella
                         </h2>
-                        <p class="text-xs text-snow-muted">Al atender y completar un correo, los puntos y el MTTR se registran automáticamente</p>
+                        <p class="text-xs text-snow-muted">Auditoría de tareas estancadas, desviaciones de SLA y resolución forense en tiempo real</p>
                     </div>
                     <div class="flex items-center gap-2 text-xs">
                         <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pendiente
                         </span>
                         <span class="inline-flex items-center gap-1 bg-blue-50 text-snow-blue px-2 py-0.5 rounded-full font-medium">
-                            <span class="w-1.5 h-1.5 rounded-full bg-snow-blue"></span> En Progreso
+                            <span class="w-1.5 h-1.5 rounded-full bg-snow-blue"></span> En Atención
                         </span>
                         <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Completado
@@ -412,66 +452,68 @@
                     </div>
                 </div>
 
-                <!-- Panel de Control y Telemetría del Worker de Correo (Módulo 6) -->
+                <!-- Barra de Filtros de Diagnóstico Forense y Cuellos de Botella -->
                 <div class="mb-4 p-3 bg-gray-50 rounded-2xl border border-snow-border flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div class="flex flex-wrap items-center gap-3">
-                        <!-- Badge de Modo -->
+                        <!-- Filtro por Ingeniero -->
                         <div class="flex items-center gap-1.5">
-                            <span class="text-snow-muted font-medium">Worker:</span>
-                            <span id="worker-mode-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-snow-blue border border-blue-100 flex items-center gap-1.5">
-                                <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
-                                <span id="worker-mode-text">Modo: Simulador</span>
-                            </span>
+                            <span class="text-snow-muted font-semibold">Ingeniero:</span>
+                            <select id="filter-tech" onchange="applyInboxFilters()" class="bg-white border border-snow-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
+                                <option value="todos">Todos los Ingenieros</option>
+                            </select>
                         </div>
-                        
-                        <!-- Badge de Estado Activo / Pausado -->
-                        <span id="worker-state-badge" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span id="worker-state-text">Activo (Cada 60s)</span>
-                        </span>
 
-                        <!-- Telemetría: Última Sincronización e Ingestados -->
-                        <div class="flex items-center gap-3 pl-2 border-l border-gray-200 text-snow-muted">
-                            <span class="flex items-center gap-1">
-                                <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-400"></i>
-                                <span>Última sync:</span>
-                                <strong id="worker-last-sync" class="text-gray-800 font-mono">--</strong>
-                            </span>
-                            <span class="flex items-center gap-1">
-                                <i data-lucide="mail-check" class="w-3.5 h-3.5 text-gray-400"></i>
-                                <span>Ingestados:</span>
-                                <strong id="worker-total-count" class="text-gray-800 font-mono">0</strong>
-                            </span>
+                        <!-- Filtro por Diagnóstico / Cuello de Botella -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-snow-muted font-semibold">Diagnóstico:</span>
+                            <select id="filter-bottleneck" onchange="applyInboxFilters()" class="bg-white border border-snow-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
+                                <option value="todos">Todos los Casos</option>
+                                <option value="estancados">Solo Estancados / Fuera de SLA</option>
+                                <option value="pausados">Solo En Pausa (Espera Terreno)</option>
+                                <option value="criticos">Solo Casos Críticos (P4 / P5)</option>
+                                <option value="pendientes">Solo Pendientes sin Asignar</option>
+                            </select>
                         </div>
+
+                        <!-- Conteo Dinámico -->
+                        <span class="text-[11px] text-snow-muted pl-2 border-l border-gray-200">
+                            Mostrando <strong id="filter-visible-count" class="text-gray-900 font-mono">--</strong> tickets
+                        </span>
                     </div>
 
-                    <!-- Botones de Acción Operativa del Worker -->
-                    <div class="flex items-center gap-2">
-                        <button id="btn-worker-toggle" onclick="toggleMailWorker()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-snow-border text-gray-700 font-semibold flex items-center gap-1.5 shadow-2xs transition">
-                            <i data-lucide="pause" class="w-3.5 h-3.5 text-amber-600" id="icon-worker-toggle"></i>
-                            <span id="btn-worker-toggle-text">Pausar</span>
+                    <!-- Telemetría Rápida del Ingestor -->
+                    <div class="flex items-center gap-3 text-snow-muted text-[11px]">
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="cpu" class="w-3.5 h-3.5 text-snow-blue"></i>
+                            <span>Worker:</span>
+                            <strong id="worker-mode-text" class="text-gray-800 font-mono">Modo: Simulador</strong>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <strong id="worker-state-text" class="text-emerald-700 font-medium">Activo</strong>
+                        </span>
+                        <button onclick="syncMailWorkerNow()" class="px-2 py-1 rounded-lg bg-white border border-snow-border text-snow-blue hover:bg-gray-100 font-semibold flex items-center gap-1 shadow-2xs transition" title="Sincronizar ahora">
+                            <i data-lucide="refresh-cw" class="w-3 h-3" id="icon-sync-spin"></i>
+                            <span>Sync</span>
                         </button>
-                        <button id="btn-worker-sync" onclick="syncMailWorkerNow()" class="px-3 py-1.5 rounded-xl bg-snow-blue hover:bg-blue-600 text-white font-semibold flex items-center gap-1.5 shadow-xs transition">
-                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="icon-sync-spin"></i>
-                            <span>Sincronizar Ahora</span>
-                        </button>
-                        <button onclick="openMailConfigModal()" class="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-100 border border-snow-border text-gray-700 font-semibold flex items-center gap-1.5 shadow-2xs transition" title="Configurar Parámetros IMAP / Simulador">
-                            <i data-lucide="settings" class="w-3.5 h-3.5 text-gray-600"></i>
-                            <span>Configurar</span>
+                        <button onclick="openMailConfigModal()" class="px-2 py-1 rounded-lg bg-white border border-snow-border text-gray-600 hover:bg-gray-100 font-semibold flex items-center gap-1 shadow-2xs transition" title="Configurar IMAP">
+                            <i data-lucide="settings" class="w-3 h-3"></i>
                         </button>
                     </div>
                 </div>
 
+                <!-- Tabla Forense de Datos Crudos con Análisis SLA y Desviaciones -->
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead>
                             <tr class="border-b border-snow-border text-snow-muted font-medium">
-                                <th class="pb-3 px-3">Ticket</th>
-                                <th class="pb-3 px-3">Remitente / Asunto</th>
-                                <th class="pb-3 px-3">Área</th>
-                                <th class="pb-3 px-3">Tarea Sugerida</th>
-                                <th class="pb-3 px-3 text-center">Peso</th>
-                                <th class="pb-3 px-3">Estado FSM</th>
+                                <th class="pb-3 px-3">Ticket / Origen</th>
+                                <th class="pb-3 px-3">Ingeniero a Cargo</th>
+                                <th class="pb-3 px-3">Asunto / Remitente</th>
+                                <th class="pb-3 px-3">Tarea Lógica</th>
+                                <th class="pb-3 px-3 text-center">Tiempo Est. (SLA)</th>
+                                <th class="pb-3 px-3 text-center">Tiempo Real</th>
+                                <th class="pb-3 px-3 text-center">Diagnóstico SLA</th>
                                 <th class="pb-3 px-3 text-right">Acción Operativa</th>
                             </tr>
                         </thead>
@@ -1021,6 +1063,6 @@
     </div>
 
     <!-- Dashboard Controller Script -->
-    <script src="/static/js/dashboard.js?v=2.3"></script>
+    <script src="/static/js/dashboard.js?v=2.4"></script>
 </body>
 </html>

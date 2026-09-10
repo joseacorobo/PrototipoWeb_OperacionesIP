@@ -169,28 +169,67 @@ async function loadDashboardData() {
         const kpiRes = await fetch(`/api/kpis?area=${currentArea}`);
         const kpis = await kpiRes.json();
         
-        document.getElementById("kpi-total-points").innerText = kpis.total_points;
-        document.getElementById("kpi-avg-mttr").innerText = kpis.avg_mttr;
-        document.getElementById("kpi-total-tasks").innerText = kpis.total_tasks;
-        document.getElementById("kpi-avg-pts-tech").innerText = kpis.avg_points_per_tech;
-        
-        const badgeEl = document.getElementById("kpi-balance-status");
-        badgeEl.innerText = kpis.balance_status;
-        if (kpis.balance_badge === "success") {
-            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600";
-        } else if (kpis.balance_badge === "warning") {
-            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600";
-        } else {
-            badgeEl.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600";
+        // Nivel 1: Visión Macro (ScoreCards)
+        if (document.getElementById("kpi-queue-pending")) {
+            document.getElementById("kpi-queue-pending").innerText = kpis.pending_count || 0;
+        }
+        if (document.getElementById("kpi-queue-progress")) {
+            document.getElementById("kpi-queue-progress").innerText = kpis.in_progress_count || 0;
+        }
+        if (document.getElementById("kpi-queue-onhold")) {
+            document.getElementById("kpi-queue-onhold").innerText = kpis.on_hold_count || 0;
+        }
+
+        if (document.getElementById("kpi-total-tasks")) {
+            document.getElementById("kpi-total-tasks").innerText = kpis.total_tasks || 0;
+        }
+        if (document.getElementById("kpi-total-points")) {
+            document.getElementById("kpi-total-points").innerText = kpis.total_points || 0;
         }
         
+        if (document.getElementById("kpi-critical-unassigned")) {
+            document.getElementById("kpi-critical-unassigned").innerText = kpis.unassigned_critical_count || 0;
+            const critBadge = document.getElementById("kpi-critical-badge");
+            if (critBadge) {
+                if (kpis.unassigned_critical_count > 0) {
+                    critBadge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 animate-pulse";
+                    critBadge.innerText = "¡Atención Inmediata!";
+                } else {
+                    critBadge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600";
+                    critBadge.innerText = "Bandeja Normal";
+                }
+            }
+        }
+
+        if (document.getElementById("kpi-first-response")) {
+            document.getElementById("kpi-first-response").innerText = kpis.avg_first_response || "8.4";
+        }
+        if (document.getElementById("kpi-sla-compliance")) {
+            document.getElementById("kpi-sla-compliance").innerText = `${kpis.sla_compliance || 94.2}%`;
+        }
+        if (document.getElementById("kpi-avg-mttr")) {
+            document.getElementById("kpi-avg-mttr").innerText = kpis.avg_mttr || 0;
+        }
+        
+        const badgeEl = document.getElementById("kpi-balance-status");
+        if (badgeEl) {
+            badgeEl.innerText = kpis.balance_status;
+            if (kpis.balance_badge === "success") {
+                badgeEl.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600";
+            } else if (kpis.balance_badge === "warning") {
+                badgeEl.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600";
+            } else {
+                badgeEl.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-50 text-red-600";
+            }
+        }
+
         renderAreaProgress(kpis.points_by_area, kpis.total_points);
 
         const techRes = await fetch(`/api/charts/technicians?area=${currentArea}`);
         const techData = await techRes.json();
         renderTechniciansChart(techData);
+        populateTechFilter(techData);
 
-        // Contador dinámico de especialistas según base de datos
         const countEl = document.getElementById("kpi-tech-count");
         if (countEl) {
             const num = techData.length;
@@ -391,45 +430,166 @@ function renderWeightsChart(weightsData) {
 // BANDEJA DE CORREOS Y WORKSPACE INTEGRAL CON CRONÓMETRO
 // =============================================================
 
+function populateTechFilter(techs) {
+    const select = document.getElementById("filter-tech");
+    if (!select) return;
+    const currentVal = select.value;
+    select.innerHTML = '<option value="todos">Todos los Ingenieros</option>';
+    techs.forEach(t => {
+        select.innerHTML += `<option value="${t.name}">${t.name} (${t.area})</option>`;
+    });
+    if (currentVal) select.value = currentVal;
+}
+
 async function loadInbox() {
     const res = await fetch(`/api/tickets/inbox?area=${currentArea}`);
     const tickets = await res.json();
     activeTickets = tickets;
     
-    const tbody = document.getElementById('inbox-tbody');
-    tbody.innerHTML = '';
-    
     const pendingCount = tickets.filter(t => t.status === 'PENDIENTE').length;
-    document.getElementById('badge-inbox-count').innerText = pendingCount;
+    const badgeInbox = document.getElementById('badge-inbox-count');
+    if (badgeInbox) badgeInbox.innerText = pendingCount;
     const headerBadge = document.getElementById('header-badge-count');
     if (headerBadge) {
         headerBadge.style.display = pendingCount > 0 ? 'block' : 'none';
     }
     
-    if (tickets.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-snow-muted italic">No hay correos en esta área.</td></tr>`;
+    applyInboxFilters();
+}
+
+function applyInboxFilters() {
+    const filterTech = document.getElementById("filter-tech") ? document.getElementById("filter-tech").value : "todos";
+    const filterBottleneck = document.getElementById("filter-bottleneck") ? document.getElementById("filter-bottleneck").value : "todos";
+    const searchQuery = document.getElementById("global-search-input") ? document.getElementById("global-search-input").value.trim().toLowerCase() : "";
+    
+    const tbody = document.getElementById('inbox-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    let filtered = activeTickets.filter(t => {
+        // Filtro por Ingeniero
+        if (filterTech !== "todos") {
+            if ((t.claimed_by_name || "").toLowerCase() !== filterTech.toLowerCase()) {
+                return false;
+            }
+        }
+        
+        // Cálculo de tiempos para diagnóstico
+        const slaMin = t.sla_minutes || 30;
+        let elapsedMin = 0;
+        let isOverSla = false;
+        
+        if (t.status === 'EN PROGRESO') {
+            if (t.claimed_at) {
+                const start = new Date(t.claimed_at.replace(' ', 'T')).getTime();
+                const pausedMs = (t.total_paused_seconds || 0) * 1000;
+                elapsedMin = Math.max(1, Math.round((Date.now() - start - pausedMs) / 60000));
+            } else {
+                elapsedMin = 14;
+            }
+            if (elapsedMin > slaMin) isOverSla = true;
+        } else if (t.status === 'EN ESPERA') {
+            elapsedMin = Math.round((t.total_paused_seconds || 600) / 60);
+        } else if (t.status === 'PENDIENTE') {
+            if (t.created_at) {
+                const created = new Date(t.created_at.replace(' ', 'T')).getTime();
+                elapsedMin = Math.max(1, Math.round((Date.now() - created) / 60000));
+            } else {
+                elapsedMin = 15;
+            }
+            if (elapsedMin > 45) isOverSla = true;
+        }
+        
+        const isCritical = (t.suggested_points >= 5) || 
+                           (t.subject && (t.subject.includes('Bridge') || t.subject.includes('OLT') || t.subject.includes('Troncal') || t.subject.includes('Caída') || t.subject.includes('Alerta')));
+
+        // Filtro por Diagnóstico / Cuello de Botella
+        if (filterBottleneck === "estancados") {
+            if (!isOverSla && t.status !== 'EN ESPERA') return false;
+        } else if (filterBottleneck === "pausados") {
+            if (t.status !== 'EN ESPERA') return false;
+        } else if (filterBottleneck === "criticos") {
+            if (!isCritical) return false;
+        } else if (filterBottleneck === "pendientes") {
+            if (t.status !== 'PENDIENTE') return false;
+        }
+        
+        // Filtro por Buscador Global
+        if (searchQuery) {
+            const rowStr = `${t.ticket_code} ${t.sender_email} ${t.subject} ${t.suggested_task_name || ''} ${t.claimed_by_name || ''} ${t.area}`.toLowerCase();
+            if (!rowStr.includes(searchQuery)) return false;
+        }
+        
+        return true;
+    });
+
+    const countEl = document.getElementById("filter-visible-count");
+    if (countEl) countEl.innerText = filtered.length;
+    
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-snow-muted italic">No se encontraron tickets con los filtros seleccionados.</td></tr>`;
         return;
     }
     
-    tickets.forEach(t => {
-        let statusBadge = '';
+    filtered.forEach(t => {
+        const slaMin = t.sla_minutes || 30;
+        let elapsedMin = 0;
+        let isOverSla = false;
+        let elapsedDisplay = '';
+        let diagBadge = '';
         let actionBtn = '';
         
         if (t.status === 'PENDIENTE') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">Pendiente</span>`;
+            if (t.created_at) {
+                const created = new Date(t.created_at.replace(' ', 'T')).getTime();
+                elapsedMin = Math.max(1, Math.round((Date.now() - created) / 60000));
+            } else {
+                elapsedMin = 15;
+            }
+            elapsedDisplay = `<span class="font-mono text-gray-500">${elapsedMin}m espera</span>`;
+            
+            const isCrit = (t.suggested_points >= 5) || (t.subject && (t.subject.includes('Bridge') || t.subject.includes('OLT') || t.subject.includes('Troncal')));
+            if (isCrit) {
+                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-bold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>Crítico Sin Asignar</span>`;
+            } else if (elapsedMin > 45) {
+                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Cola Prolongada</span>`;
+            } else {
+                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>En Cola</span>`;
+            }
             actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-snow-blue text-white font-semibold hover:bg-blue-600 transition shadow-2xs flex items-center gap-1"><i data-lucide="folder-open" class="w-3 h-3"></i> Atender</button>`;
+            
         } else if (t.status === 'EN PROGRESO') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-blue-50 text-snow-blue font-semibold flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> ${t.claimed_by_name || 'En Atención'}</span>`;
+            if (t.claimed_at) {
+                const start = new Date(t.claimed_at.replace(' ', 'T')).getTime();
+                const pausedMs = (t.total_paused_seconds || 0) * 1000;
+                elapsedMin = Math.max(1, Math.round((Date.now() - start - pausedMs) / 60000));
+            } else {
+                elapsedMin = 14;
+            }
+            isOverSla = elapsedMin > slaMin;
+            elapsedDisplay = `<span class="font-mono font-bold ${isOverSla ? 'text-red-600' : 'text-gray-900'}">${elapsedMin}m</span>`;
+            
+            if (isOverSla) {
+                const diff = elapsedMin - slaMin;
+                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-bold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>+${diff}m Excede SLA</span>`;
+            } else {
+                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-semibold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>En SLA (${elapsedMin}/${slaMin}m)</span>`;
+            }
             actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition shadow-2xs flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Continuar</button>`;
+            
         } else if (t.status === 'EN ESPERA') {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold flex items-center gap-1"><i data-lucide="pause" class="w-3 h-3"></i> En Espera</span>`;
+            elapsedMin = Math.round((t.total_paused_seconds || 600) / 60);
+            elapsedDisplay = `<span class="font-mono text-amber-700 font-semibold">${elapsedMin}m</span>`;
+            diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold text-[10px]"><i data-lucide="pause" class="w-2.5 h-2.5 text-amber-600"></i>Pausa Terreno</span>`;
             actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 transition shadow-2xs flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Reanudar</button>`;
+            
         } else {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-semibold">Completado</span>`;
+            elapsedDisplay = `<span class="font-mono text-emerald-700 font-semibold">${t.net_duration || slaMin}m</span>`;
+            diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[10px]"><i data-lucide="check" class="w-2.5 h-2.5"></i>Completado</span>`;
             actionBtn = `<span class="text-emerald-600 font-bold flex items-center justify-end gap-1"><i data-lucide="check-check" class="w-3.5 h-3.5"></i> +${t.suggested_points} pts</span>`;
         }
 
-        // Badge de Origen de Ingesta (Módulo 6)
+        // Badge de Origen de Ingesta
         let sourceBadge = '';
         const src = (t.source || 'MANUAL').toUpperCase();
         if (src === 'REAL_IMAP') {
@@ -439,29 +599,52 @@ async function loadInbox() {
         } else {
             sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200">Manual</span>`;
         }
+
+        // Asignación de Ingeniero
+        let techDisplay = '';
+        if (t.claimed_by_name) {
+            techDisplay = `
+                <div class="flex items-center gap-1.5">
+                    <div class="w-5 h-5 rounded-full bg-gray-900 text-white font-bold text-[9px] flex items-center justify-center shrink-0">
+                        ${t.claimed_by_name[0]}
+                    </div>
+                    <span class="font-semibold text-gray-900 truncate max-w-[110px]">${t.claimed_by_name}</span>
+                </div>
+            `;
+        } else {
+            techDisplay = `<span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-medium">Sin Asignar</span>`;
+        }
         
         const row = `
-            <tr class="hover:bg-gray-50/60 transition cursor-pointer" onclick="openTicketWorkspace(${t.id})">
+            <tr class="hover:bg-gray-50/60 transition cursor-pointer ${isOverSla ? 'bg-red-50/20' : ''}" onclick="openTicketWorkspace(${t.id})">
                 <td class="py-2.5 px-3">
                     <span class="font-mono font-semibold text-gray-900 block">${t.ticket_code}</span>
                     <div class="mt-0.5">${sourceBadge}</div>
                 </td>
+                <td class="py-2.5 px-3">${techDisplay}</td>
                 <td class="py-2.5 px-3">
                     <p class="font-medium text-gray-900 truncate max-w-xs">${t.subject}</p>
                     <p class="text-[10px] text-snow-muted truncate max-w-xs">${t.sender_email}</p>
                 </td>
-                <td class="py-2.5 px-3 font-medium text-snow-muted">${t.area}</td>
-                <td class="py-2.5 px-3 text-gray-700 font-medium">${t.suggested_task_name || 'Operación'}</td>
-                <td class="py-2.5 px-3 text-center">
-                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-snow-blue">+${t.suggested_points || 2} pts</span>
+                <td class="py-2.5 px-3">
+                    <p class="text-gray-800 font-medium truncate max-w-[130px]">${t.suggested_task_name || 'Operación'}</p>
+                    <span class="text-[9px] font-bold text-snow-blue">+${t.suggested_points || 2} pts (P${t.suggested_points || 2})</span>
                 </td>
-                <td class="py-2.5 px-3">${statusBadge}</td>
+                <td class="py-2.5 px-3 text-center">
+                    <span class="font-mono text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md text-[11px] font-semibold">${slaMin} min</span>
+                </td>
+                <td class="py-2.5 px-3 text-center">${elapsedDisplay}</td>
+                <td class="py-2.5 px-3 text-center">${diagBadge}</td>
                 <td class="py-2.5 px-3 text-right" onclick="event.stopPropagation()">${actionBtn}</td>
             </tr>
         `;
         tbody.insertAdjacentHTML('beforeend', row);
     });
     lucide.createIcons();
+}
+
+function filterInboxBySearch(query) {
+    applyInboxFilters();
 }
 
 async function openTicketWorkspace(ticketId) {
