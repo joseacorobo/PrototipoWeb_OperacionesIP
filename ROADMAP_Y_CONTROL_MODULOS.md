@@ -36,8 +36,9 @@ graph TD
 | **M4** | **Reportes Gerenciales y Auditoría Forense (Excel)** | Fase 1 | **APROBADO** | `app/services/reports.py`, `app/templates/dashboard.html` |
 | **M5** | **Asistente Inteligente de Comandos CLI (OLT / 815 / SW)** | Fase 2 | **PAUSADO / EN REGISTRO DE COMANDOS** | `app/services/command_generator.py` *(Estructura lista)* |
 | **M6** | **Worker de Ingesta de Correo (IMAP / Background Worker)** | Fase 2 | **APROBADO** | `app/services/mail_worker.py`, `app/templates/dashboard.html`, `app/static/js/dashboard.js` |
-| **M7** | **Gestión de Usuarios, Autenticación y Roles RBAC** | Fase 2 | **PLANIFICADO / ESPECIFICADO** | `app/database.py`, `app/main.py` *(Modelo preparado)* |
-| **M8** | **Expansión: Grandes Cuentas y Operaciones WAN** | Fase 3 | **PLANIFICADO** | Arquitectura modular extensible |
+| **M7** | **Portal de Autenticación, Roles RBAC y Sesiones** | Fase 2 | **APROBADO** | `app/templates/login.html`, `app/main.py`, `app/seed.py` |
+| **M8** | **Sidebar Dinámico Plegable y Bandeja Microsoft 365** | Fase 2 | **APROBADO** | `app/templates/dashboard.html`, `app/static/js/dashboard.js` |
+| **M9** | **Expansión: Grandes Cuentas y Operaciones WAN** | Fase 3 | **PLANIFICADO** | Arquitectura modular extensible |
 
 ---
 
@@ -89,77 +90,33 @@ graph TD
 - **Mecanismo Antiduplicidad:** Registro de `Message-ID` (RFC 2822) con índice único en SQLite (`idx_email_tickets_msgid`), garantizando idempotencia absoluta.
 - **Control y Telemetría en Frontend:** Barra de telemetría (modo, estado activo/pausado, última sincronización e ingestados acumulados), botones de sincronización forzada y modal de configuración.
 
----
+### Módulo 7: Portal de Autenticación, Roles RBAC y Sesiones
+- **Propósito:** Control estricto de acceso corporativo para ingenieros de operaciones y gestión de sesiones persistentes.
+- **Diseño Visual de Alto Impacto (`login-operaciones-ip-combinado`):**
+  - Hero visual con datacenter de Inter, telemetría `NOC CENTRAL ONLINE`, imagotipo oficial y métricas de infraestructura crítica (`1,420+` Nodos Activos, `400 Gbps` Backbone, Criptografía `TLS 1.3 / AES-256`).
+  - Panel de login en blanco puro con imagotipo oficial en azul corporativo, campos de usuario y contraseña con conmutador de visibilidad, casilla de recordar sesión y sello de auditoría.
+- **Endpoints de Autenticación:**
+  - `POST /api/auth/login`: Autenticación y emisión de cookie HTTP-Only `auth_user_id`.
+  - `POST /api/auth/logout`: Invalidación de cookie y cierre de sesión seguro.
+  - `GET /api/auth/me`: Consulta del perfil y permisos del usuario activo.
+- **Cuenta de Administrador General:**
+  - Correo: `admin@inter.com.ve` / Contraseña: `admin`.
+  - Acceso total a todas las divisiones y células operativas para auditoría integral.
 
-## 4. Módulo 7: Gestión de Acceso, Autenticación y Roles RBAC (Planificado)
-
-Este módulo se desarrollará para permitir el control de sesiones seguras y la asignación de permisos según el perfil funcional:
-
-### Arquitectura y Especificación Funcional:
-
-1. **Registro de Usuarios (`/api/auth/register`):**
-   - Formulario de registro corporativo restringido a correos institucionales (`@inter.com.ve`).
-   - Asignación de división y célula (`Redes de Acceso -> Soporte FTTH / Cabecera OLT`, `Servicios -> Telefonía VoIP`).
-   - Almacenamiento seguro de contraseñas con funciones de dispersión criptográfica (hash seguro).
-
-2. **Inicio de Sesión (`/api/auth/login`):**
-   - Validación de credenciales contra la tabla `users`.
-   - Generación de token de sesión / Cookie segura.
-   - Menú de perfil en la esquina inferior izquierda con avatar, rol y botón de *Cerrar Sesión* (`Logout`).
-
-3. **Matriz de Roles Estándar (RBAC):**
-   - **Especialista / Operador:**
-     - Atención de tickets en bandeja FSM correspondiente a su célula.
-     - Uso de cronómetro en vivo y resolución automatizada de tickets.
-     - Visualización de sus métricas individuales de puntos y MTTR.
-   - **Coordinador:**
-     - Supervisión táctica de la división asignada (ej. *Redes de Acceso* completa).
-     - Capacidad de reasignar tickets entre especialistas o levantar pausas prolongadas.
-     - Monitoreo en vivo del balance de saturación de su equipo.
-     - Acceso al modal de reportes ejecutivos y descarga de Excel.
-   - **Administrador:**
-     - Control global de la plataforma.
-     - Gestión de usuarios (alta, baja, cambio de rol o célula).
-     - Configuración de buzones IMAP y parámetros del worker.
-     - Ajuste del catálogo de tareas DERS y ponderación de puntos.
-     - Auditoría forense integral de operaciones.
-
-4. **Base de Datos Preparada:**
-   - La tabla `users` ya cuenta con los campos `email TEXT UNIQUE`, `password_hash TEXT`, `role TEXT` y `created_at TIMESTAMP`.
-   - Endpoint activo `GET /api/users` para listar usuarios dinámicamente.
-   - Endpoint activo `GET /api/auth/me` para resolver el perfil de sesión.
+### Módulo 8: Sidebar Dinámico Plegable y Bandeja Microsoft 365
+- **Propósito:** Experiencia de usuario avanzada modelada en base a kits de interfaz de Figma y flujo de trabajo habitual de Outlook 365.
+- **Sidebar Jerárquico Animado:**
+  - Acordeón interactivo con sub-divisiones por célula operativa (Redes FTTH, Cabecera OLT, Soporte, Telefonía, Grandes Cuentas).
+  - Tarjeta de usuario en la esquina superior izquierda con iniciales, nombre y rol del ingeniero conectado.
+- **Bandeja de Correo Dividida Estilo Outlook 365:**
+  - Panel de carpetas de correo a la izquierda (Bandeja de entrada, Sin asignar, En proceso, Pausados, Resueltos).
+  - Lista de mensajes con remitente, asunto, extracto técnico y etiqueta DERS (P1 a P5).
+  - Panel de lectura integrado con chip de entidades técnicas extraídas y botón directo para atender ticket.
 
 ---
 
-## 5. Módulo 5: Asistente Inteligente de Comandos CLI (Pausado para Registro)
+## 4. Próximos Pasos y Roadmap Futuro
 
-Este módulo queda en espera de que el usuario consolide y registre la lista oficial de comandos operativos:
-
-### Alcance a Implementar:
-1. **Catálogo por Fabricante:**
-   - **FiberHome (AN5516 / AN5116):** `show card`, `show pon power`, desatasco de demonio y consulta Whitelist.
-   - **Huawei (MA5608T / MA5800):** `display ont info`, `display ont optical-info`.
-   - **Servidor 815 (Gx):** Consulta de WANMAC y verificación de sesiones PPPoE/IPoE.
-2. **Autocompletado Contextual:** Al abrir el ticket, los comandos se prellenan con el Slot, PON y Serial del caso.
-3. **Barrera de Seguridad:** Bloqueo preventivo de comandos de reinicio o refresh si el ticket está marcado como Modo Bridge con IP Certificada.
-
----
-
-## 6. Registro Cronológico de Versiones (Changelog)
-
-- **v0.1 (2026-09-04):** Análisis de documentación base (`Capacitacion FTTH.pptx`, `EsquemaOLT_SW_815_FTTH_General v2.pptx`).
-- **v0.2 (2026-09-04):** Diseño del catálogo de tareas DERS (20 tipos), matriz Excel inicial y base de datos SQLite.
-- **v0.3 (2026-09-09):** Construcción del Dashboard frontend con diseño SnowUI, gráficos Chart.js y navegación por células.
-- **v0.4 (2026-09-09):** Creación del Workspace Modal de tickets con cronómetro en vivo (`HH:MM:SS`), botón de pausa y cálculo de MTTR neto automatizado.
-- **v0.5 (2026-09-09):** Creación del servicio `TelcoEmailParser` con soporte a abonados de 10 dígitos, detección de Permisor, seriales de 12 caracteres (Inter / Netuno / SimpleTV), OLTs canónicas y botón interactivo *Analizar Caso Real*.
-- **v0.6 (2026-09-09):** Desarrollo del Módulo de Reportes Gerenciales con exportación a Excel en 3 hojas (`openpyxl`).
-- **v0.7 (2026-09-09):** Publicación inicial en GitHub: `joseacorobo/PrototipoWeb_OperacionesIP`.
-- **v0.8 (2026-09-09):** Creación de la bitácora oficial (`ROADMAP_Y_CONTROL_MODULOS.md`).
-- **v0.9 (2026-09-09):** Especificación arquitectónica del Worker de Ingesta Multi-Buzón.
-- **v1.0 (2026-09-09):** Implementación integral del Módulo 6 (Worker de Ingesta IMAP / Simulador). Eliminación estricta de emojis decorativos en todo el sistema.
-- **v1.1 (2026-09-09):** Reorganización de categorías departamentales: creación de la categoría general **Redes de Acceso** (agrupando Soporte FTTH y Cabecera OLT) y **Servicios & Clientes** (Telefonía VoIP, Grandes Cuentas y WAN Core). Eliminación total de valores fijos de dotación de personal (el conteo de especialistas ahora es 100% dinámico). Diseño y especificación del **Módulo 7: Autenticación, Registro y Roles RBAC (Administrador, Coordinador, Especialista)** con migración de base de datos aplicada.
-- **v1.2 (2026-09-10):** Configuración del **Modo Oscuro Oficial ByeWind Snow Dashboard UI Kit** (Figma node 98469-145265) respetando 100% la estructura y disposición visual existente sin alteraciones de layout. Paleta basada en tokens Figma (`#141416` fondo, `#1C1C1E` tarjetas/sidebar, `#2C2C2E` bordes y `#FFFFFF` tipografía), botón de alternancia discreto en cabecera y adaptación reactiva de Chart.js.
-
----
-
-*Última actualización: 2026-09-10 09:20*\n
+- **Módulo 5: Asistente CLI (Fase 2):** Incorporación del motor de comandos específicos para OLT FiberHome / Huawei y switches de distribución.
+- **Módulo 9: Grandes Cuentas y WAN Core (Fase 3):** Ampliación del catálogo DERS y panel de monitoreo para enlaces corporativos dedicados y transporte BGP.
+- **Exportación en PDF:** Generación de reportes ejecutivos estructurados con membrete formal y logotipo oficial.
