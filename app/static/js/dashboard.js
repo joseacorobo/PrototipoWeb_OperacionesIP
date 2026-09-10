@@ -464,28 +464,135 @@ async function loadInbox() {
     applyInboxFilters();
 }
 
+// =============================================================
+// MICROSOFT 365 / OUTLOOK WEB INBOX ENGINE (NODE 160-236405)
+// =============================================================
+
+let currentInboxTab = 'prioritarios'; // 'prioritarios' | 'otros' | 'todos'
+let isOutlookFullscreen = false;
+let selectedTicketId = null;
+
+function toggleOutlookFullscreen() {
+    const inbox = document.getElementById("inbox-section");
+    const icon = document.getElementById("icon-outlook-screen");
+    if (!inbox) return;
+
+    isOutlookFullscreen = !isOutlookFullscreen;
+    if (isOutlookFullscreen) {
+        inbox.classList.add("outlook-fullscreen-mode");
+        if (icon) {
+            icon.setAttribute("data-lucide", "minimize-2");
+        }
+    } else {
+        inbox.classList.remove("outlook-fullscreen-mode");
+        if (icon) {
+            icon.setAttribute("data-lucide", "maximize-2");
+        }
+    }
+    lucide.createIcons();
+}
+
+function switchInboxTab(tab) {
+    currentInboxTab = tab;
+    ['prioritarios', 'otros', 'todos'].forEach(t => {
+        const btn = document.getElementById(`tab-inbox-${t}`);
+        if (btn) {
+            if (t === tab) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+    });
+    applyInboxFilters();
+}
+
+function filterOutlookBySearch(query) {
+    const globalInput = document.getElementById("global-search-input");
+    if (globalInput) globalInput.value = query;
+    applyInboxFilters();
+}
+
+function getSenderInitials(senderName, senderEmail) {
+    if (senderName && senderName.trim().length > 0) {
+        const parts = senderName.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return parts[0].substring(0, 2).toUpperCase();
+    }
+    if (senderEmail) {
+        const user = senderEmail.split('@')[0];
+        return user.substring(0, 2).toUpperCase();
+    }
+    return "IP";
+}
+
+function getAvatarColor(initials) {
+    const colors = [
+        "bg-[#0078D4] text-white",
+        "bg-[#107C41] text-white",
+        "bg-[#8764B8] text-white",
+        "bg-[#D83B01] text-white",
+        "bg-[#008272] text-white",
+        "bg-[#038387] text-white",
+        "bg-[#498205] text-white"
+    ];
+    let sum = 0;
+    for (let i = 0; i < initials.length; i++) {
+        sum += initials.charCodeAt(i);
+    }
+    return colors[sum % colors.length];
+}
+
 function applyInboxFilters() {
     const filterTech = document.getElementById("filter-tech") ? document.getElementById("filter-tech").value : "todos";
     const filterBottleneck = document.getElementById("filter-bottleneck") ? document.getElementById("filter-bottleneck").value : "todos";
-    const searchQuery = document.getElementById("global-search-input") ? document.getElementById("global-search-input").value.trim().toLowerCase() : "";
-    
-    const tbody = document.getElementById('inbox-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    
+    const outlookSearchEl = document.getElementById("outlook-search-input");
+    const globalSearchEl = document.getElementById("global-search-input");
+    const searchQuery = (outlookSearchEl ? outlookSearchEl.value : (globalSearchEl ? globalSearchEl.value : "")).trim().toLowerCase();
+
+    // Contadores para pestañas Prioritarios vs Otros
+    let countPrioritarios = 0;
+    let countOtros = 0;
+
+    activeTickets.forEach(t => {
+        const isCrit = (t.suggested_points >= 4) || 
+                       (t.sla_minutes && t.sla_minutes <= 20) || 
+                       (t.subject && (t.subject.includes('Bridge') || t.subject.includes('OLT') || t.subject.includes('Troncal') || t.subject.includes('Caída') || t.subject.includes('Alerta')));
+        if (isCrit) {
+            countPrioritarios++;
+        } else {
+            countOtros++;
+        }
+    });
+
+    const badgePrio = document.getElementById("badge-tab-prioritarios");
+    if (badgePrio) badgePrio.innerText = countPrioritarios;
+    const badgeOtr = document.getElementById("badge-tab-otros");
+    if (badgeOtr) badgeOtr.innerText = countOtros;
+
     let filtered = activeTickets.filter(t => {
-        // Filtro por Ingeniero
+        // 1. Filtro por Pestaña
+        const isCrit = (t.suggested_points >= 4) || 
+                       (t.sla_minutes && t.sla_minutes <= 20) || 
+                       (t.subject && (t.subject.includes('Bridge') || t.subject.includes('OLT') || t.subject.includes('Troncal') || t.subject.includes('Caída') || t.subject.includes('Alerta')));
+        
+        if (currentInboxTab === 'prioritarios' && !isCrit) return false;
+        if (currentInboxTab === 'otros' && isCrit) return false;
+
+        // 2. Filtro por Ingeniero
         if (filterTech !== "todos") {
             if ((t.claimed_by_name || "").toLowerCase() !== filterTech.toLowerCase()) {
                 return false;
             }
         }
-        
-        // Cálculo de tiempos para diagnóstico
+
+        // 3. Filtro por Diagnóstico / Cuello de Botella
         const slaMin = t.sla_minutes || 30;
         let elapsedMin = 0;
         let isOverSla = false;
-        
+
         if (t.status === 'EN PROGRESO') {
             if (t.claimed_at) {
                 const start = new Date(t.claimed_at.replace(' ', 'T')).getTime();
@@ -506,66 +613,73 @@ function applyInboxFilters() {
             }
             if (elapsedMin > 45) isOverSla = true;
         }
-        
-        const isCritical = (t.suggested_points >= 5) || 
-                           (t.subject && (t.subject.includes('Bridge') || t.subject.includes('OLT') || t.subject.includes('Troncal') || t.subject.includes('Caída') || t.subject.includes('Alerta')));
 
-        // Filtro por Diagnóstico / Cuello de Botella
         if (filterBottleneck === "estancados") {
             if (!isOverSla && t.status !== 'EN ESPERA') return false;
         } else if (filterBottleneck === "pausados") {
             if (t.status !== 'EN ESPERA') return false;
         } else if (filterBottleneck === "criticos") {
-            if (!isCritical) return false;
+            if (!isCrit) return false;
         } else if (filterBottleneck === "pendientes") {
             if (t.status !== 'PENDIENTE') return false;
         }
-        
-        // Filtro por Buscador Global
+
+        // 4. Filtro por Buscador
         if (searchQuery) {
-            const rowStr = `${t.ticket_code} ${t.sender_email} ${t.subject} ${t.suggested_task_name || ''} ${t.claimed_by_name || ''} ${t.area}`.toLowerCase();
+            const rowStr = `${t.ticket_code} ${t.sender_email} ${t.subject} ${t.suggested_task_name || ''} ${t.claimed_by_name || ''} ${t.area} ${t.full_body || ''}`.toLowerCase();
             if (!rowStr.includes(searchQuery)) return false;
         }
-        
+
         return true;
     });
 
     const countEl = document.getElementById("filter-visible-count");
     if (countEl) countEl.innerText = filtered.length;
-    
-    if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-snow-muted italic">No se encontraron tickets con los filtros seleccionados.</td></tr>`;
+
+    renderOutlookMessageList(filtered);
+}
+
+function renderOutlookMessageList(tickets) {
+    const listContainer = document.getElementById("outlook-message-list");
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    if (tickets.length === 0) {
+        listContainer.innerHTML = `
+            <div class="p-8 text-center text-snow-muted italic text-xs">
+                <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                No se encontraron correos con los filtros actuales.
+            </div>
+        `;
+        lucide.createIcons();
+        renderOutlookReadingPaneEmpty();
         return;
     }
-    
-    filtered.forEach(t => {
+
+    tickets.forEach((t, idx) => {
+        const isSelected = (selectedTicketId !== null && t.id === selectedTicketId) || (selectedTicketId === null && idx === 0);
+        if (isSelected && (selectedTicketId === null || selectedTicketId !== t.id)) {
+            selectedTicketId = t.id;
+        }
+
+        const isUnread = t.status === 'PENDIENTE';
+        const senderName = t.sender_email ? t.sender_email.split('@')[0].replace(/[._-]/g, ' ') : "Soporte";
+        const cleanSender = senderName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        const initials = getSenderInitials(cleanSender, t.sender_email);
+        const avatarColor = getAvatarColor(initials);
+
+        // Preview snippet (limita a 100 caracteres)
+        const bodySnippet = (t.full_body || "Sin contenido previo...")
+            .replace(/\r?\n/g, ' ')
+            .substring(0, 110) + '...';
+
+        // SLA tag / diagnóstico
         const slaMin = t.sla_minutes || 30;
         let elapsedMin = 0;
         let isOverSla = false;
-        let elapsedDisplay = '';
-        let diagBadge = '';
-        let actionBtn = '';
-        
-        if (t.status === 'PENDIENTE') {
-            if (t.created_at) {
-                const created = new Date(t.created_at.replace(' ', 'T')).getTime();
-                elapsedMin = Math.max(1, Math.round((Date.now() - created) / 60000));
-            } else {
-                elapsedMin = 15;
-            }
-            elapsedDisplay = `<span class="font-mono text-gray-500">${elapsedMin}m espera</span>`;
-            
-            const isCrit = (t.suggested_points >= 5) || (t.subject && (t.subject.includes('Bridge') || t.subject.includes('OLT') || t.subject.includes('Troncal')));
-            if (isCrit) {
-                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-bold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>Crítico Sin Asignar</span>`;
-            } else if (elapsedMin > 45) {
-                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Cola Prolongada</span>`;
-            } else {
-                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>En Cola</span>`;
-            }
-            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-snow-blue text-white font-semibold hover:bg-blue-600 transition shadow-2xs flex items-center gap-1"><i data-lucide="folder-open" class="w-3 h-3"></i> Atender</button>`;
-            
-        } else if (t.status === 'EN PROGRESO') {
+        let slaPill = '';
+
+        if (t.status === 'EN PROGRESO') {
             if (t.claimed_at) {
                 const start = new Date(t.claimed_at.replace(' ', 'T')).getTime();
                 const pausedMs = (t.total_paused_seconds || 0) * 1000;
@@ -574,87 +688,107 @@ function applyInboxFilters() {
                 elapsedMin = 14;
             }
             isOverSla = elapsedMin > slaMin;
-            elapsedDisplay = `<span class="font-mono font-bold ${isOverSla ? 'text-red-600' : 'text-gray-900'}">${elapsedMin}m</span>`;
-            
             if (isOverSla) {
-                const diff = elapsedMin - slaMin;
-                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-bold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>+${diff}m Excede SLA</span>`;
+                slaPill = `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-red-50 text-red-600 border border-red-100 dark:bg-red-950/40 dark:text-red-400">+${elapsedMin - slaMin}m Fuera SLA</span>`;
             } else {
-                diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-semibold text-[10px]"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>En SLA (${elapsedMin}/${slaMin}m)</span>`;
+                slaPill = `<span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400">En SLA (${elapsedMin}m)</span>`;
             }
-            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition shadow-2xs flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Continuar</button>`;
-            
         } else if (t.status === 'EN ESPERA') {
-            elapsedMin = Math.round((t.total_paused_seconds || 600) / 60);
-            elapsedDisplay = `<span class="font-mono text-amber-700 font-semibold">${elapsedMin}m</span>`;
-            diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold text-[10px]"><i data-lucide="pause" class="w-2.5 h-2.5 text-amber-600"></i>Pausa Terreno</span>`;
-            actionBtn = `<button onclick="openTicketWorkspace(${t.id})" class="px-3 py-1 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 transition shadow-2xs flex items-center gap-1"><i data-lucide="play" class="w-3 h-3"></i> Reanudar</button>`;
-            
+            slaPill = `<span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/40 dark:text-amber-400">Pausa Terreno</span>`;
+        } else if (t.status === 'PENDIENTE') {
+            slaPill = `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#0078D4] border border-blue-100 dark:bg-blue-950/40 dark:text-blue-300">Por Atender</span>`;
         } else {
-            elapsedDisplay = `<span class="font-mono text-emerald-700 font-semibold">${t.net_duration || slaMin}m</span>`;
-            diagBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[10px]"><i data-lucide="check" class="w-2.5 h-2.5"></i>Completado</span>`;
-            actionBtn = `<span class="text-emerald-600 font-bold flex items-center justify-end gap-1"><i data-lucide="check-check" class="w-3.5 h-3.5"></i> +${t.suggested_points} pts</span>`;
+            slaPill = `<span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">Resuelto</span>`;
         }
 
-        // Badge de Origen de Ingesta
-        let sourceBadge = '';
-        const src = (t.source || 'MANUAL').toUpperCase();
-        if (src === 'REAL_IMAP') {
-            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">IMAP Real</span>`;
-        } else if (src === 'SIMULATOR' || src === 'SIMULADOR') {
-            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-100">Simulador</span>`;
-        } else {
-            sourceBadge = `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200">Manual</span>`;
-        }
+        const card = document.createElement("div");
+        card.id = `msg-item-${t.id}`;
+        card.className = `outlook-msg-card p-3 cursor-pointer relative transition hover:bg-gray-50 dark:hover:bg-[#222225] ${isSelected ? 'outlook-item-selected' : 'bg-transparent'}`;
+        card.onclick = () => selectOutlookMessage(t.id);
 
-        // Asignación de Ingeniero
-        let techDisplay = '';
-        if (t.claimed_by_name) {
-            techDisplay = `
-                <div class="flex items-center gap-1.5">
-                    <div class="w-5 h-5 rounded-full bg-gray-900 text-white font-bold text-[9px] flex items-center justify-center shrink-0">
-                        ${t.claimed_by_name[0]}
-                    </div>
-                    <span class="font-semibold text-gray-900 truncate max-w-[110px]">${t.claimed_by_name}</span>
+        card.innerHTML = `
+            <div class="flex items-start gap-2.5">
+                <!-- Avatar -->
+                <div class="w-8 h-8 rounded-full ${avatarColor} shrink-0 flex items-center justify-center font-bold text-[11px] shadow-2xs">
+                    ${initials}
                 </div>
-            `;
-        } else {
-            techDisplay = `<span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-medium">Sin Asignar</span>`;
-        }
-        
-        const row = `
-            <tr class="hover:bg-gray-50/60 transition cursor-pointer ${isOverSla ? 'bg-red-50/20' : ''}" onclick="openTicketWorkspace(${t.id})">
-                <td class="py-2.5 px-3">
-                    <span class="font-mono font-semibold text-gray-900 block">${t.ticket_code}</span>
-                    <div class="mt-0.5">${sourceBadge}</div>
-                </td>
-                <td class="py-2.5 px-3">${techDisplay}</td>
-                <td class="py-2.5 px-3">
-                    <p class="font-medium text-gray-900 truncate max-w-xs">${t.subject}</p>
-                    <p class="text-[10px] text-snow-muted truncate max-w-xs">${t.sender_email}</p>
-                </td>
-                <td class="py-2.5 px-3">
-                    <p class="text-gray-800 font-medium truncate max-w-[130px]">${t.suggested_task_name || 'Operación'}</p>
-                    <span class="text-[9px] font-bold text-snow-blue">+${t.suggested_points || 2} pts (P${t.suggested_points || 2})</span>
-                </td>
-                <td class="py-2.5 px-3 text-center">
-                    <span class="font-mono text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md text-[11px] font-semibold">${slaMin} min</span>
-                </td>
-                <td class="py-2.5 px-3 text-center">${elapsedDisplay}</td>
-                <td class="py-2.5 px-3 text-center">${diagBadge}</td>
-                <td class="py-2.5 px-3 text-right" onclick="event.stopPropagation()">${actionBtn}</td>
-            </tr>
+
+                <!-- Content -->
+                <div class="flex-1 overflow-hidden">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-xs ${isUnread ? 'font-bold text-gray-900 dark:text-white' : 'font-semibold text-gray-800 dark:text-gray-200'} truncate max-w-[170px]">
+                            ${cleanSender}
+                        </span>
+                        <span class="text-[10px] text-snow-muted font-mono shrink-0">
+                            ${t.created_at ? t.created_at.substring(11, 16) : '10:42'}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 mb-1">
+                        <span class="text-[10px] font-mono font-bold text-[#0078D4]">${t.ticket_code}</span>
+                        <p class="text-xs ${isUnread ? 'font-bold text-gray-900 dark:text-white' : 'font-medium text-gray-800 dark:text-gray-300'} truncate">
+                            ${t.subject}
+                        </p>
+                    </div>
+
+                    <p class="text-[11px] text-snow-muted line-clamp-2 leading-relaxed mb-2 font-normal">
+                        ${bodySnippet}
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">${t.area}</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#0078D4] dark:bg-blue-900/40 dark:text-blue-300">+${t.suggested_points || 2} pts</span>
+                        ${slaPill}
+                        ${t.claimed_by_name ? `<span class="text-[9px] text-snow-muted ml-auto truncate max-w-[90px] font-medium">${t.claimed_by_name}</span>` : ''}
+                    </div>
+                </div>
+
+                <!-- Unread Blue Dot Indicator -->
+                ${isUnread ? '<span class="w-2 h-2 rounded-full bg-[#0078D4] shrink-0 mt-1"></span>' : ''}
+            </div>
         `;
-        tbody.insertAdjacentHTML('beforeend', row);
+        listContainer.appendChild(card);
     });
+
+    lucide.createIcons();
+
+    // Cargar en el panel de lectura el ticket seleccionado
+    if (selectedTicketId !== null) {
+        const found = tickets.find(t => t.id === selectedTicketId) || tickets[0];
+        if (found) {
+            loadTicketIntoReadingPane(found);
+        }
+    }
+}
+
+function renderOutlookReadingPaneEmpty() {
+    const pane = document.getElementById("outlook-reading-pane");
+    if (!pane) return;
+    pane.innerHTML = `
+        <div class="flex-1 flex flex-col items-center justify-center p-8 text-center select-none">
+            <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-[#0078D4] flex items-center justify-center mb-4">
+                <i data-lucide="mail" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1">Selecciona un correo para leerlo</h3>
+            <p class="text-xs text-snow-muted max-w-sm">
+                Haz clic en cualquier ticket de la lista de la izquierda para desplegar su ficha técnica, cuerpo del mensaje, parámetros y comenzar su atención técnica con cronómetro en vivo.
+            </p>
+        </div>
+    `;
     lucide.createIcons();
 }
 
-function filterInboxBySearch(query) {
-    applyInboxFilters();
-}
+async function selectOutlookMessage(ticketId) {
+    selectedTicketId = ticketId;
 
-async function openTicketWorkspace(ticketId) {
+    // Actualizar clase activa en la lista
+    document.querySelectorAll(".outlook-msg-card").forEach(el => {
+        el.classList.remove("outlook-item-selected");
+    });
+    const selectedEl = document.getElementById(`msg-item-${ticketId}`);
+    if (selectedEl) selectedEl.classList.add("outlook-item-selected");
+
+    // Fetch y carga del ticket
     try {
         const res = await fetch(`/api/tickets/${ticketId}`);
         const t = await res.json();
@@ -669,64 +803,221 @@ async function openTicketWorkspace(ticketId) {
             });
             t.status = 'EN PROGRESO';
             t.claimed_at = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            t.claimed_by_name = "Carlos Méndez";
         }
 
-        // Llenar datos de la cabecera
-        document.getElementById("ws-ticket-code").innerText = t.ticket_code;
-        document.getElementById("ws-ticket-sender").innerText = t.sender_email;
-        document.getElementById("ws-ticket-subject").innerText = t.subject;
-        document.getElementById("ws-ticket-body").innerText = t.full_body;
-
-        const srcEl = document.getElementById("ws-ticket-source-badge");
-        if (srcEl) {
-            const src = (t.source || 'MANUAL').toUpperCase();
-            if (src === 'REAL_IMAP') {
-                srcEl.innerText = "IMAP Real";
-                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100";
-            } else if (src === 'SIMULATOR' || src === 'SIMULADOR') {
-                srcEl.innerText = "Simulador";
-                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-snow-blue border border-blue-100";
-            } else {
-                srcEl.innerText = "Manual";
-                srcEl.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 border border-gray-200";
-            }
-        }
-
-        // Llenar parámetros técnicos detectados
-        document.getElementById("ws-param-subscriber").innerText = t.subscriber_code || "N/A";
-        document.getElementById("ws-param-serial").innerText = t.serial_pon || "N/A";
-        document.getElementById("ws-param-node").innerText = t.node_name || "N/A";
-        document.getElementById("ws-param-slotpon").innerText = t.slot_pon || "N/A";
-        document.getElementById("ws-param-mac").innerText = t.mac_address || "N/A";
-        document.getElementById("ws-param-points-badge").innerText = `+${t.task_points || 2} pts (${t.task_code || 'P2'})`;
-        document.getElementById("ws-param-taskname").innerText = t.task_name || "Operación Estándar";
-
-        // Advertencia si es Modo Bridge
-        const isBridge = (t.subject + t.full_body).toLowerCase().includes("bridge");
-        const alertEl = document.getElementById("ws-bridge-alert");
-        if (isBridge) {
-            alertEl.classList.remove("hidden");
-        } else {
-            alertEl.classList.add("hidden");
-        }
-
-        // Iniciar cronómetro en vivo 100% automático
-        startLiveTimer(t.claimed_at);
-
-        // Mostrar Workspace
-        document.getElementById("modalTicketWorkspace").classList.remove("hidden");
-        document.getElementById("modalTicketWorkspace").classList.add("flex");
-        lucide.createIcons();
+        loadTicketIntoReadingPane(t);
 
     } catch (e) {
-        console.error("Error opening ticket workspace:", e);
+        console.error("Error fetching ticket details:", e);
+    }
+}
+
+function loadTicketIntoReadingPane(t) {
+    currentOpenTicket = t;
+    const pane = document.getElementById("outlook-reading-pane");
+    if (!pane) return;
+
+    const senderName = t.sender_email ? t.sender_email.split('@')[0].replace(/[._-]/g, ' ') : "Soporte FibraHogar";
+    const cleanSender = senderName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const initials = getSenderInitials(cleanSender, t.sender_email);
+    const avatarColor = getAvatarColor(initials);
+
+    const isBridge = (t.subject + (t.full_body || '')).toLowerCase().includes("bridge");
+
+    // Source badge
+    const src = (t.source || 'MANUAL').toUpperCase();
+    let srcText = "Manual";
+    let srcClass = "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+    if (src === 'REAL_IMAP') {
+        srcText = "IMAP Real";
+        srcClass = "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900";
+    } else if (src === 'SIMULATOR' || src === 'SIMULADOR') {
+        srcText = "Simulador FSM";
+        srcClass = "bg-blue-50 text-[#0078D4] dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-900";
+    }
+
+    // Status badge
+    let statusText = "En Atención";
+    let statusClass = "bg-blue-50 text-[#0078D4] border border-blue-100 dark:bg-blue-950/30 dark:text-blue-300";
+    if (t.status === 'EN ESPERA') {
+        statusText = "En Espera";
+        statusClass = "bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/30 dark:text-amber-300";
+    } else if (t.status === 'COMPLETADO') {
+        statusText = "Completado";
+        statusClass = "bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300";
+    }
+
+    const fullTimestamp = t.created_at || "Hoy, 10:42 AM";
+
+    pane.innerHTML = `
+        <div class="flex-1 flex flex-col h-full overflow-hidden">
+            <!-- 1. Top Ribbon of Email: Ticket info & Live Chronometer -->
+            <div class="px-5 py-3 border-b border-snow-border bg-gray-50/70 dark:bg-[#1E1E20] flex items-center justify-between gap-3 shrink-0">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <span id="ws-ticket-code" class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-white dark:bg-[#2C2C2E] border border-snow-border text-gray-900 dark:text-white shadow-2xs">${t.ticket_code}</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded ${srcClass}">${srcText}</span>
+                    <span id="ws-ticket-status-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full ${statusClass} flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-current ${t.status === 'EN PROGRESO' ? 'animate-pulse' : ''}"></span>
+                        ${statusText}
+                    </span>
+                    <span id="ws-ticket-sender" class="hidden sm:inline text-xs text-snow-muted truncate max-w-xs font-mono">&lt;${t.sender_email}&gt;</span>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <!-- CRONOMETRO EN VIVO -->
+                    <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-[#2C2C2E] border border-snow-border shadow-2xs">
+                        <i data-lucide="timer" class="w-3.5 h-3.5 text-[#0078D4]"></i>
+                        <span class="text-[11px] text-snow-muted font-medium">Tiempo:</span>
+                        <span id="ws-live-timer" class="font-mono font-bold text-xs text-gray-900 dark:text-white">00:00:00</span>
+                    </div>
+
+                    <button id="btn-pause-ticket" onclick="togglePauseTicket()" class="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-xs font-semibold flex items-center gap-1 transition cursor-pointer">
+                        <i data-lucide="pause-circle" class="w-3.5 h-3.5"></i>
+                        <span id="btn-pause-text">${t.status === 'EN ESPERA' ? 'Reanudar' : 'Pausar'}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Email Body & Technical Content (Scrollable) -->
+            <div class="flex-1 overflow-y-auto p-5 space-y-4">
+                
+                <!-- Subject & Badges -->
+                <div>
+                    <h2 id="ws-ticket-subject" class="text-base font-bold text-gray-900 dark:text-white tracking-tight">${t.subject}</h2>
+                    <div class="flex flex-wrap items-center gap-2 mt-1.5">
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-[#0078D4] border border-blue-100 dark:bg-blue-950/40 dark:text-blue-300">${t.area}</span>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-950/40 dark:text-purple-300">${t.suggested_task_name || 'Operación'}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300">+${t.suggested_points || 2} pts (P${t.suggested_points || 2})</span>
+                        <span class="text-[10px] font-mono text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">SLA: ${t.sla_minutes || 30}m</span>
+                    </div>
+                </div>
+
+                <!-- Sender Profile Card (Outlook 365 style) -->
+                <div class="flex items-start justify-between p-3 rounded-xl bg-gray-50/50 dark:bg-[#242426] border border-snow-border">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full ${avatarColor} font-bold text-xs flex items-center justify-center shadow-xs">
+                            ${initials}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                                <span>${cleanSender}</span>
+                                <span class="text-[10px] font-normal text-snow-muted font-mono">&lt;${t.sender_email}&gt;</span>
+                            </p>
+                            <p class="text-[11px] text-snow-muted">Para: <span class="font-medium text-gray-700 dark:text-gray-300">Operaciones IP &lt;operaciones@inter.com.ve&gt;</span></p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] text-snow-muted font-medium">${fullTimestamp}</span>
+                </div>
+
+                <!-- Security Callout (Modo Bridge o Troncal) -->
+                ${isBridge ? `
+                <div id="ws-bridge-alert" class="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-800 dark:text-red-200 flex items-start gap-2.5">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
+                    <div>
+                        <strong class="font-bold">POLÍTICA CRÍTICA DE MODO BRIDGE:</strong>
+                        <span> Bajo ninguna circunstancia aplicar reaprovisionamiento ni enviar comando REFRESH por Soporte FibraHogar a esta ONT. Validar WANMAC directamente en Servidor 815.</span>
+                    </div>
+                </div>` : ''}
+
+                <!-- Adaptive Card: Parámetros Técnicos Detectados -->
+                <div class="bg-gray-50/80 dark:bg-[#202022] rounded-xl border border-snow-border p-3.5">
+                    <div class="flex items-center justify-between mb-2.5">
+                        <span class="text-[10px] font-bold text-snow-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="cpu" class="w-3.5 h-3.5 text-[#0078D4]"></i>
+                            Parámetros Técnicos Detectados (NLP Inter NOC)
+                        </span>
+                        <span class="text-[10px] font-mono text-gray-500 bg-white dark:bg-[#2C2C2E] px-2 py-0.5 rounded border border-snow-border">Ficha FSM</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        <div class="bg-white dark:bg-[#252528] p-2.5 rounded-lg border border-snow-border">
+                            <span class="text-[10px] text-snow-muted block">Abonado (10 Dígitos)</span>
+                            <span id="ws-param-subscriber" class="font-bold font-mono text-gray-900 dark:text-white">${t.subscriber_code || '--'}</span>
+                        </div>
+                        <div class="bg-white dark:bg-[#252528] p-2.5 rounded-lg border border-snow-border">
+                            <span class="text-[10px] text-snow-muted block">Serial PON</span>
+                            <span id="ws-param-serial" class="font-bold font-mono text-gray-900 dark:text-white">${t.serial_pon || '--'}</span>
+                        </div>
+                        <div class="bg-white dark:bg-[#252528] p-2.5 rounded-lg border border-snow-border">
+                            <span class="text-[10px] text-snow-muted block">Nodo OLT</span>
+                            <span id="ws-param-node" class="font-bold text-gray-900 dark:text-white truncate block">${t.node_name || '--'}</span>
+                        </div>
+                        <div class="bg-white dark:bg-[#252528] p-2.5 rounded-lg border border-snow-border">
+                            <span class="text-[10px] text-snow-muted block">Slot / PON</span>
+                            <span id="ws-param-slotpon" class="font-bold font-mono text-gray-900 dark:text-white">${t.slot_pon || '--'}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-2 text-xs">
+                        <div class="bg-white dark:bg-[#252528] p-2.5 rounded-lg border border-snow-border flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-snow-muted block">Dirección MAC Abonado</span>
+                                <span id="ws-param-mac" class="font-bold font-mono text-gray-900 dark:text-white">${t.mac_address || '--'}</span>
+                            </div>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 font-mono text-gray-600 dark:text-gray-300">L2/L3</span>
+                        </div>
+                        <div class="bg-white dark:bg-[#252528] p-2.5 rounded-lg border border-snow-border flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-snow-muted block">Complejidad Ponderada</span>
+                                <span id="ws-param-points-badge" class="font-bold text-[#0078D4]">+${t.suggested_points || 2} pts (P${t.suggested_points || 2})</span>
+                            </div>
+                            <span id="ws-param-taskname" class="text-[11px] text-gray-700 dark:text-gray-300 font-medium truncate">${t.suggested_task_name || 'Operación'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Original Message Body -->
+                <div class="rounded-xl border border-snow-border p-3.5 bg-white dark:bg-[#1E1E20]">
+                    <p class="text-[10px] font-bold text-snow-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <i data-lucide="mail-open" class="w-3.5 h-3.5 text-[#0078D4]"></i>
+                        Mensaje Original del Solicitante
+                    </p>
+                    <div id="ws-ticket-body" class="text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap bg-gray-50/60 dark:bg-[#242426] p-3 rounded-lg border border-snow-border/80 select-text">
+                        ${(t.full_body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                    </div>
+                </div>
+
+                <!-- Formulario de Respuesta y Resolución Inline (Outlook Reply Style) -->
+                <form id="formCompleteTicketAutomated" onsubmit="submitCompleteAutomated(event)" class="space-y-3 pt-1">
+                    <div>
+                        <label class="block font-semibold text-gray-800 dark:text-gray-200 text-xs mb-1">
+                            Diagnóstico Técnico y Comandos Aplicados (Respuesta de Cierre):
+                        </label>
+                        <textarea id="ws_resolution_notes" required rows="2" placeholder="Ej. Se validó atenuación óptica en -19.2 dBm. Demonio OLT desatascado en Slot 3 PON 4. ONT pasó a Whitelist y MAC en VERDE." class="w-full bg-gray-50 dark:bg-[#242426] border border-snow-border rounded-xl p-3 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0078D4]"></textarea>
+                    </div>
+
+                    <div class="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
+                            <span class="text-emerald-800 dark:text-emerald-300 font-medium">El cronómetro y los puntos acumulados se computarán automáticamente al resolver.</span>
+                        </div>
+                        <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition shadow-xs flex items-center gap-2 cursor-pointer">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                            <span>Resolver y Computar Puntos</span>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    `;
+
+    lucide.createIcons();
+
+    // Iniciar cronómetro en vivo
+    if (t.status === 'EN PROGRESO') {
+        startLiveTimer(t.claimed_at);
+    } else {
+        if (liveTimerInterval) clearInterval(liveTimerInterval);
+        const timerEl = document.getElementById("ws-live-timer");
+        if (timerEl) {
+            timerEl.innerText = t.status === 'COMPLETADO' ? `${t.net_duration || 15}:00` : "00:00:00";
+        }
     }
 }
 
 function startLiveTimer(claimedAtStr) {
     if (liveTimerInterval) clearInterval(liveTimerInterval);
     
-    // Parsear fecha inicial
     let startDate = new Date();
     if (claimedAtStr) {
         startDate = new Date(claimedAtStr.replace(' ', 'T'));
@@ -741,7 +1032,8 @@ function startLiveTimer(claimedAtStr) {
         const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
         const secs = String(diffSec % 60).padStart(2, '0');
         
-        document.getElementById("ws-live-timer").innerText = `${hrs}:${mins}:${secs}`;
+        const el = document.getElementById("ws-live-timer");
+        if (el) el.innerText = `${hrs}:${mins}:${secs}`;
     }
 
     update();
@@ -750,8 +1042,6 @@ function startLiveTimer(claimedAtStr) {
 
 function closeWorkspaceModal() {
     if (liveTimerInterval) clearInterval(liveTimerInterval);
-    document.getElementById("modalTicketWorkspace").classList.add("hidden");
-    document.getElementById("modalTicketWorkspace").classList.remove("flex");
     loadInbox();
 }
 
@@ -761,23 +1051,35 @@ async function togglePauseTicket() {
     if (currentOpenTicket.status === 'EN PROGRESO') {
         await fetch(`/api/tickets/${currentOpenTicket.id}/pause`, { method: 'POST' });
         currentOpenTicket.status = 'EN ESPERA';
-        document.getElementById("btn-pause-text").innerText = "Reanudar Tarea";
-        document.getElementById("ws-ticket-status-badge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 flex items-center gap-1.5";
-        document.getElementById("ws-ticket-status-badge").innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> En Espera`;
+        const btnText = document.getElementById("btn-pause-text");
+        if (btnText) btnText.innerText = "Reanudar";
+        const stBadge = document.getElementById("ws-ticket-status-badge");
+        if (stBadge) {
+            stBadge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 flex items-center gap-1";
+            stBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> En Espera`;
+        }
+        if (liveTimerInterval) clearInterval(liveTimerInterval);
     } else {
         await fetch(`/api/tickets/${currentOpenTicket.id}/resume`, { method: 'POST' });
         currentOpenTicket.status = 'EN PROGRESO';
-        document.getElementById("btn-pause-text").innerText = "Pausar (En Espera)";
-        document.getElementById("ws-ticket-status-badge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-snow-blue flex items-center gap-1.5";
-        document.getElementById("ws-ticket-status-badge").innerHTML = `<span class="w-2 h-2 rounded-full bg-snow-blue animate-pulse"></span> En Atención`;
+        const btnText = document.getElementById("btn-pause-text");
+        if (btnText) btnText.innerText = "Pausar";
+        const stBadge = document.getElementById("ws-ticket-status-badge");
+        if (stBadge) {
+            stBadge.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-[#0078D4] border border-blue-100 flex items-center gap-1";
+            stBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-[#0078D4] animate-pulse"></span> En Atención`;
+        }
+        startLiveTimer(currentOpenTicket.claimed_at);
     }
+    applyInboxFilters();
 }
 
 async function submitCompleteAutomated(e) {
     e.preventDefault();
     if (!currentOpenTicket) return;
     
-    const notes = document.getElementById("ws_resolution_notes").value;
+    const notesEl = document.getElementById("ws_resolution_notes");
+    const notes = notesEl ? notesEl.value : "";
     
     try {
         const res = await fetch(`/api/tickets/${currentOpenTicket.id}/complete`, {
@@ -791,8 +1093,9 @@ async function submitCompleteAutomated(e) {
         
         const result = await res.json();
         if (result.status === 'ok') {
+            selectedTicketId = null;
             closeWorkspaceModal();
-            loadDashboardData(); // Recalcula puntos y MTTR en vivo
+            loadDashboardData();
         }
     } catch (err) {
         console.error("Error completing ticket:", err);

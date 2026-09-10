@@ -335,3 +335,95 @@ body {
 .rotate-180 {
     transform: rotate(180deg);
 }
+
+/* ============================================================== */
+/* MICROSOFT 365 / OUTLOOK WEB DESIGN SYSTEM (FIGMA NODE 160-236405) */
+/* ============================================================== */
+
+.outlook-ribbon-bg {
+    background: linear-gradient(135deg, #0078D4 0%, #005A9E 100%);
+}
+
+.dark .outlook-ribbon-bg {
+    background: linear-gradient(135deg, #0f6cbd 0%, #115ea3 100%);
+}
+
+.outlook-btn-primary {
+    background-color: #FFFFFF;
+    color: #0078D4;
+    transition: all 0.15s ease;
+}
+.outlook-btn-primary:hover {
+    background-color: #F3F4F6;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+.dark .outlook-btn-primary {
+    background-color: #FFFFFF;
+    color: #0f6cbd;
+}
+
+.outlook-tab-btn {
+    position: relative;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #616161;
+    transition: color 0.15s ease;
+}
+.dark .outlook-tab-btn {
+    color: #A19F9D;
+}
+.outlook-tab-btn:hover {
+    color: #242424;
+}
+.dark .outlook-tab-btn:hover {
+    color: #FFFFFF;
+}
+.outlook-tab-btn.active {
+    color: #0078D4;
+}
+.dark .outlook-tab-btn.active {
+    color: #2886DE;
+}
+.outlook-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0.75rem;
+    right: 0.75rem;
+    height: 3px;
+    background-color: #0078D4;
+    border-radius: 3px 3px 0 0;
+}
+.dark .outlook-tab-btn.active::after {
+    background-color: #2886DE;
+}
+
+.outlook-msg-card {
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.outlook-item-selected {
+    background-color: #EFF6FC !important;
+    border-left: 4px solid #0078D4 !important;
+}
+.dark .outlook-item-selected {
+    background-color: rgba(0, 120, 212, 0.15) !important;
+    border-left: 4px solid #2886DE !important;
+}
+
+.outlook-fullscreen-mode {
+    position: fixed !important;
+    inset: 1rem !important;
+    z-index: 60 !important;
+    max-height: calc(100vh - 2rem) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+@media (min-width: 768px) {
+    .outlook-fullscreen-mode {
+        inset: 2rem !important;
+        max-height: calc(100vh - 4rem) !important;
+    }
+}
