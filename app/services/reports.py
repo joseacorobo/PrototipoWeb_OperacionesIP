@@ -407,6 +407,7 @@ def generate_excel_report(area: str = "Todas", range_filter: str = "all") -> io.
     # Obtener todos los registros para auditoría completa
     conn = get_db()
     cur = conn.cursor()
+    range_sql = _get_range_condition(range_filter)
     if area == "Todas":
         area_sql = "1=1"
         params = []
