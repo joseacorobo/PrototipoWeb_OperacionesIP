@@ -136,7 +136,7 @@ function updateChartsTheme(isDark) {
 function changeArea(area) {
     currentArea = area;
     
-    let label = "Todas las Áreas";
+    let label = "";
     if (area === "Acceso" || area === "Redes de Acceso") {
         label = "División Redes de Acceso";
     } else if (area === "Soporte") {
@@ -146,7 +146,20 @@ function changeArea(area) {
     } else if (area === "Telefonía") {
         label = "Célula Telefonía VoIP";
     }
-    document.getElementById("breadcrumb-area").innerText = label;
+    
+    const bcArea = document.getElementById("breadcrumb-area");
+    const bcSep = document.getElementById("breadcrumb-area-separator");
+    if (bcArea && bcSep) {
+        if (label) {
+            bcArea.innerText = label;
+            bcArea.classList.remove("hidden");
+            bcSep.classList.remove("hidden");
+        } else {
+            bcArea.innerText = "";
+            bcArea.classList.add("hidden");
+            bcSep.classList.add("hidden");
+        }
+    }
     const mainTitle = document.getElementById("main-view-title");
     if (mainTitle) {
         if (area === "Todas") {
@@ -268,6 +281,7 @@ async function loadDashboardData() {
         const techRes = await fetch(`/api/charts/technicians?area=${currentArea}`);
         const techData = await techRes.json();
         renderTechniciansChart(techData);
+        renderTechRankingTable(techData);
         populateTechFilter(techData);
 
         const countEl = document.getElementById("kpi-tech-count");
@@ -482,6 +496,72 @@ function renderTechniciansChart(techData) {
     });
 }
 
+function renderTechRankingTable(techData) {
+    const tbody = document.getElementById("tech-ranking-tbody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    
+    if (!techData || techData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-center text-snow-muted">No hay especialistas registrados en esta célula.</td></tr>';
+        return;
+    }
+    
+    techData.forEach((t, idx) => {
+        const pos = idx + 1;
+        let posBadge = `<span class="font-mono text-gray-500 font-semibold text-xs">${pos}</span>`;
+        if (pos === 1) {
+            posBadge = `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 font-bold text-[11px] shadow-2xs">1</span>`;
+        } else if (pos === 2) {
+            posBadge = `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-bold text-[11px]">2</span>`;
+        } else if (pos === 3) {
+            posBadge = `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400 font-bold text-[11px]">3</span>`;
+        }
+        
+        const parts = (t.name || "").split(" ");
+        const initials = ((parts[0] ? parts[0][0] : "") + (parts[1] ? parts[1][0] : "")).toUpperCase() || "OP";
+        
+        const pct = Math.min(100, Math.round((t.points / 100) * 100));
+        let barColor = "bg-blue-600";
+        let statusBadge = '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">Óptimo</span>';
+        
+        if (t.points > 80) {
+            barColor = "bg-red-600";
+            statusBadge = '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400 animate-pulse">Sobrecarga</span>';
+        } else if (t.points > 60) {
+            barColor = "bg-amber-500";
+            statusBadge = '<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">Moderado</span>';
+        }
+        
+        const row = `
+            <tr class="hover:bg-gray-50/70 dark:hover:bg-slate-800/40 transition">
+                <td class="py-2.5 px-3 text-center">${posBadge}</td>
+                <td class="py-2.5 px-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-gray-900 dark:bg-slate-700 text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                            ${initials}
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-900 dark:text-white leading-tight">${t.name}</p>
+                            <p class="text-[10px] text-snow-muted">Especialista NOC</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-2.5 px-3 text-snow-muted font-medium">${t.area}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-gray-800 dark:text-gray-200">${t.tasks}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-extrabold text-snow-blue">${t.points} pts</td>
+                <td class="py-2.5 px-3">
+                    <div class="w-full bg-gray-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                    </div>
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono text-snow-muted">${t.avg_mttr}m</td>
+                <td class="py-2.5 px-3 text-center">${statusBadge}</td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", row);
+    });
+}
+
 function renderWeightsChart(weightsData) {
     const ctx = document.getElementById('chartWeights').getContext('2d');
     if (chartWeights) chartWeights.destroy();
@@ -497,25 +577,30 @@ function renderWeightsChart(weightsData) {
     // P1-P5 Inter NOC palette: Cyan, Inter Blue, Indigo, Amber, Coral
     const colors = ['#38BDF8', '#0056B3', '#6366F1', '#F59E0B', '#EF4444'];
 
-    // Center label plugin
+    // Center label plugin (centrado exacto en el donut calculando chartArea real)
     const centerLabelPlugin = {
         id: 'centerLabel',
         afterDraw(chart) {
-            const { width, height } = chart;
+            const chartArea = chart.chartArea;
+            if (!chartArea) return;
             const ctx2 = chart.ctx;
             ctx2.save();
             
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+            const diameter = Math.min(chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+            
             // Total number
-            ctx2.font = `700 ${Math.min(width, height) * 0.12}px Inter, sans-serif`;
+            ctx2.font = `700 ${Math.max(16, Math.round(diameter * 0.16))}px Inter, sans-serif`;
             ctx2.fillStyle = textColor;
             ctx2.textAlign = 'center';
             ctx2.textBaseline = 'middle';
-            ctx2.fillText(total.toString(), width / 2, height / 2 - 6);
+            ctx2.fillText(total.toString(), centerX, centerY - 7);
             
-            // Label
-            ctx2.font = `500 ${Math.min(width, height) * 0.055}px Inter, sans-serif`;
+            // Sub-label
+            ctx2.font = `600 ${Math.max(8, Math.round(diameter * 0.055))}px Inter, sans-serif`;
             ctx2.fillStyle = tickColor;
-            ctx2.fillText('TOTAL TAREAS', width / 2, height / 2 + 14);
+            ctx2.fillText('TOTAL TAREAS', centerX, centerY + 12);
             
             ctx2.restore();
         }
@@ -1650,6 +1735,12 @@ async function openMailConfigModal() {
 
         toggleImapFieldsVisibility();
 
+        const feedback = document.getElementById("imap-test-feedback");
+        if (feedback) {
+            feedback.className = "hidden";
+            feedback.innerHTML = "";
+        }
+
         const modal = document.getElementById("modalMailWorkerConfig");
         modal.classList.remove("hidden");
         modal.classList.add("flex");
@@ -1711,6 +1802,84 @@ async function saveMailWorkerConfig(e) {
         }
     } catch (err) {
         console.error("Error saving mail worker config:", err);
+    }
+}
+
+async function testMailConnection() {
+    const btn = document.getElementById("btn-test-imap");
+    const feedback = document.getElementById("imap-test-feedback");
+    const server = document.getElementById("cfg_imap_server").value.trim();
+    const port = parseInt(document.getElementById("cfg_imap_port").value, 10) || 993;
+    const user = document.getElementById("cfg_imap_user").value.trim();
+    const password = document.getElementById("cfg_imap_password").value;
+    const mailbox = document.getElementById("cfg_imap_mailbox").value.trim() || "INBOX";
+
+    if (!server || !user) {
+        alert("Por favor indique el servidor IMAP y el usuario de correo para probar.");
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Probando...</span>';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    if (feedback) {
+        feedback.className = "p-3 rounded-lg text-xs font-medium bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 flex items-center gap-2";
+        feedback.innerHTML = '<span class="animate-spin inline-block w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full"></span> Conectando con ' + server + ':' + port + ' via SSL/TLS...';
+        feedback.classList.remove("hidden");
+    }
+
+    try {
+        const res = await fetch("/api/mail-worker/test-connection", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                imap_server: server,
+                imap_port: port,
+                imap_user: user,
+                imap_password: password,
+                imap_mailbox: mailbox
+            })
+        });
+        const data = await res.json();
+
+        if (feedback) {
+            if (data.status === "ok") {
+                feedback.className = "p-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 space-y-1";
+                feedback.innerHTML = `
+                    <div class="flex items-center gap-1.5 font-bold">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                        <span>${data.message}</span>
+                    </div>
+                    <div class="text-[11px] text-emerald-700 dark:text-emerald-400 pl-5">
+                        Protocolo: <strong>${data.ssl_version}</strong> | Latencia: <strong>${data.latency_ms} ms</strong> | Buzón: <strong>${data.mailbox}</strong> (${data.unread_count} no leídos).
+                    </div>
+                `;
+            } else {
+                feedback.className = "p-3 rounded-lg text-xs font-medium bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300 border border-red-200 space-y-1";
+                feedback.innerHTML = `
+                    <div class="flex items-center gap-1.5 font-bold">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 shrink-0"></i>
+                        <span>${data.message}</span>
+                    </div>
+                    ${data.advice ? `<p class="text-[11px] text-red-700 dark:text-red-400 pl-5">${data.advice}</p>` : ''}
+                `;
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+    } catch (err) {
+        if (feedback) {
+            feedback.className = "p-3 rounded-lg text-xs font-medium bg-red-50 text-red-800 border border-red-200";
+            feedback.innerText = "Error en solicitud de prueba: " + err.message;
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="activity" class="w-4 h-4"></i><span>Probar Conexión</span>';
+            if (window.lucide) lucide.createIcons();
+        }
     }
 }
 

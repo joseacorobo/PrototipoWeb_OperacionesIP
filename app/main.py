@@ -705,3 +705,25 @@ def update_mail_worker_config(payload: MailWorkerConfigPayload):
         cfg["imap_password"] = payload.imap_password
     mail_worker_instance.save_config(cfg)
     return {"status": "ok", "config": mail_worker_instance.get_status()}
+
+class TestMailConnectionPayload(BaseModel):
+    imap_server: str
+    imap_port: Optional[int] = 993
+    imap_user: str
+    imap_password: str
+    imap_mailbox: Optional[str] = "INBOX"
+
+@app.post("/api/mail-worker/test-connection")
+def test_mail_connection_endpoint(payload: TestMailConnectionPayload):
+    """
+    Prueba en vivo la conectividad SSL/TLS IMAP con un buzón corporativo
+    (Outlook, Exchange, Inter) y retorna telemetría de diagnóstico.
+    """
+    return mail_worker_instance.test_connection(
+        server=payload.imap_server,
+        port=payload.imap_port or 993,
+        user=payload.imap_user,
+        password=payload.imap_password,
+        mailbox=payload.imap_mailbox or "INBOX"
+    )
+

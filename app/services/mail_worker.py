@@ -220,6 +220,93 @@ class MailWorker:
                     pass
             return {"status": "error", "message": str(e)}
 
+    def test_connection(self, server: str, port: int, user: str, password: str, mailbox: str = "INBOX") -> dict:
+        """
+        Prueba la conectividad SSL/TLS con el servidor IMAP (Outlook, Exchange, etc.)
+        y genera un reporte de diagnóstico con latencia y carpetas disponibles.
+        """
+        import ssl
+        start_time = time.time()
+        
+        if not server or not user or not password:
+            return {
+                "status": "error",
+                "stage": "VALIDACION",
+                "message": "Faltan parámetros de conexión: host, usuario o password requeridos."
+            }
+            
+        mail = None
+        try:
+            ssl_context = ssl.create_default_context()
+            mail = imaplib.IMAP4_SSL(host=server, port=int(port), ssl_context=ssl_context)
+            ssl_version = mail.sock.version() if hasattr(mail, "sock") and mail.sock else "TLS"
+            
+            mail.login(user, password)
+            
+            sel_status, sel_data = mail.select(mailbox, readonly=True)
+            unread_count = 0
+            if sel_status == "OK":
+                s_status, messages = mail.search(None, "UNREAD")
+                if s_status == "OK" and messages and messages[0]:
+                    unread_count = len(messages[0].split())
+            
+            list_status, list_data = mail.list()
+            folder_names = []
+            if list_status == "OK" and list_data:
+                for f in list_data:
+                    if isinstance(f, bytes):
+                        f_str = f.decode("utf-8", errors="replace")
+                        parts = f_str.split(' "/" ')
+                        if len(parts) > 1:
+                            folder_names.append(parts[-1].replace('"', '').strip())
+                        else:
+                            folder_names.append(f_str.strip())
+            
+            elapsed_ms = round((time.time() - start_time) * 1000)
+            try:
+                mail.close()
+                mail.logout()
+            except Exception:
+                pass
+            
+            return {
+                "status": "ok",
+                "stage": "EXITO",
+                "server": server,
+                "port": port,
+                "user": user,
+                "mailbox": mailbox,
+                "ssl_version": ssl_version,
+                "latency_ms": elapsed_ms,
+                "unread_count": unread_count,
+                "folders_detected": folder_names[:8],
+                "message": f"Conexión SSL/TLS exitosa con {server}. Latencia: {elapsed_ms} ms. Correos no leídos: {unread_count}."
+            }
+        except imaplib.IMAP4.error as e:
+            elapsed_ms = round((time.time() - start_time) * 1000)
+            err_msg = str(e)
+            advice = "Verifique sus credenciales."
+            if "BASIC AUTHENTICATION IS DISABLED" in err_msg.upper():
+                advice = "Microsoft ha deshabilitado la autenticación básica para esta cuenta. Debe generar una 'Contraseña de Aplicación' en su cuenta de Microsoft (myaccount.microsoft.com) o usar un buzón corporativo con IMAP habilitado."
+            elif "AUTHENTICATIONFAILED" in err_msg.upper():
+                advice = "Fallo de autenticación. Si la cuenta usa doble factor (2FA/MFA), debe generar una 'Contraseña de Aplicación' en su cuenta Microsoft/Google."
+            return {
+                "status": "error",
+                "stage": "AUTENTICACION",
+                "latency_ms": elapsed_ms,
+                "message": f"Error de autenticación IMAP: {err_msg}",
+                "advice": advice
+            }
+        except Exception as e:
+            elapsed_ms = round((time.time() - start_time) * 1000)
+            return {
+                "status": "error",
+                "stage": "CONEXION",
+                "latency_ms": elapsed_ms,
+                "message": f"Error de conexión al servidor {server}:{port}: {str(e)}",
+                "advice": "Verifique el nombre de host del servidor IMAP y que el puerto 993 no esté bloqueado por firewall."
+            }
+
     def _insert_ticket(self, message_id: str, sender_email: str, subject: str, body_text: str, source: str) -> str:
         """Inserta el ticket en SQLite evitando duplicados mediante message_id"""
         conn = get_db()

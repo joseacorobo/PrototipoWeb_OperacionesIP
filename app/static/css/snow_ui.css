@@ -297,9 +297,10 @@ body {
 /* Inter Logo styling in Header */
 .header-logo-inter {
     transition: filter 0.2s ease, opacity 0.2s ease;
+    filter: brightness(0) invert(1) !important;
 }
 .dark .header-logo-inter {
-    filter: brightness(1.22) drop-shadow(0 0 1px rgba(255, 255, 255, 0.12));
+    filter: brightness(0) invert(1) !important;
 }
 
 .dark kbd {
