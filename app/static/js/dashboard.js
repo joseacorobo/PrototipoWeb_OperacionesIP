@@ -72,9 +72,9 @@ function updateThemeIcon(isDark) {
 }
 
 function updateChartsTheme(isDark) {
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
-    const tickColor = isDark ? '#8E8E93' : '#717579';
-    const bgCard = isDark ? '#1C1C1E' : '#FFFFFF';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0';
+    const tickColor = isDark ? '#94A3B8' : '#475569';
+    const bgCard = isDark ? '#0D1527' : '#FFFFFF';
 
     if (chartHourly && chartHourly.options && chartHourly.options.scales) {
         if (chartHourly.options.scales.y && chartHourly.options.scales.y.grid) {
@@ -88,15 +88,30 @@ function updateChartsTheme(isDark) {
             if (!chartHourly.options.scales.y.ticks) chartHourly.options.scales.y.ticks = {};
             chartHourly.options.scales.y.ticks.color = tickColor;
         }
-        if (chartHourly.data && chartHourly.data.datasets && chartHourly.data.datasets[0]) {
+        // Update gradient fill for dark/light mode
+        const ctx = chartHourly.ctx;
+        if (ctx && chartHourly.data.datasets[0]) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+            if (isDark) {
+                gradient.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+                gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                chartHourly.data.datasets[0].borderColor = '#38BDF8';
+                chartHourly.data.datasets[0].pointBackgroundColor = '#38BDF8';
+            } else {
+                gradient.addColorStop(0, 'rgba(0, 86, 179, 0.15)');
+                gradient.addColorStop(1, 'rgba(0, 86, 179, 0)');
+                chartHourly.data.datasets[0].borderColor = '#0056B3';
+                chartHourly.data.datasets[0].pointBackgroundColor = '#0056B3';
+            }
+            chartHourly.data.datasets[0].backgroundColor = gradient;
             chartHourly.data.datasets[0].pointBorderColor = bgCard;
         }
         chartHourly.update();
     }
 
     if (chartTechnicians && chartTechnicians.options && chartTechnicians.options.scales) {
-        if (chartTechnicians.options.scales.y && chartTechnicians.options.scales.y.grid) {
-            chartTechnicians.options.scales.y.grid.color = gridColor;
+        if (chartTechnicians.options.scales.x && chartTechnicians.options.scales.x.grid) {
+            chartTechnicians.options.scales.x.grid.color = gridColor;
         }
         if (chartTechnicians.options.scales.x) {
             if (!chartTechnicians.options.scales.x.ticks) chartTechnicians.options.scales.x.ticks = {};
@@ -314,25 +329,38 @@ function renderHourlyChart(hourlyData) {
     if (chartHourly) chartHourly.destroy();
     
     const isDark = document.documentElement.classList.contains('dark');
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
-    const tickColor = isDark ? '#8E8E93' : '#717579';
-    const bgCard = isDark ? '#1C1C1E' : '#FFFFFF';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0';
+    const tickColor = isDark ? '#94A3B8' : '#475569';
+    const bgCard = isDark ? '#0D1527' : '#FFFFFF';
+    const lineColor = isDark ? '#38BDF8' : '#0056B3';
+
+    // Create gradient fill (Figma UI Kit style)
+    const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.parentElement.clientHeight || 256);
+    if (isDark) {
+        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+        gradient.addColorStop(0.6, 'rgba(56, 189, 248, 0.05)');
+        gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+    } else {
+        gradient.addColorStop(0, 'rgba(0, 86, 179, 0.15)');
+        gradient.addColorStop(0.6, 'rgba(0, 86, 179, 0.03)');
+        gradient.addColorStop(1, 'rgba(0, 86, 179, 0)');
+    }
 
     chartHourly = new Chart(ctx, {
         type: 'line',
         data: {
             labels: hourlyData.labels,
             datasets: [{
-                label: 'Puntos Acumulados',
+                label: 'Incidentes Ingresados',
                 data: hourlyData.data,
-                borderColor: '#437EF7',
-                backgroundColor: 'rgba(67, 126, 247, 0.12)',
-                borderWidth: 3,
+                borderColor: lineColor,
+                backgroundColor: gradient,
+                borderWidth: 2.5,
                 fill: true,
                 tension: 0.4,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#437EF7',
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: lineColor,
                 pointBorderColor: bgCard,
                 pointBorderWidth: 2
             }]
@@ -340,15 +368,34 @@ function renderHourlyChart(hourlyData) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                    titleColor: isDark ? '#F8FAFC' : '#0F172A',
+                    bodyColor: isDark ? '#94A3B8' : '#475569',
+                    borderColor: isDark ? '#334155' : '#E2E8F0',
+                    borderWidth: 1,
+                    cornerRadius: 6,
+                    padding: 10,
+                    titleFont: { weight: '600', size: 11 },
+                    bodyFont: { size: 11 }
+                }
+            },
             scales: {
                 x: { 
                     grid: { display: false },
-                    ticks: { color: tickColor }
+                    ticks: { color: tickColor, font: { size: 10 } },
+                    border: { display: false }
                 },
                 y: { 
-                    grid: { color: gridColor }, 
-                    ticks: { color: tickColor },
+                    grid: { 
+                        color: gridColor,
+                        drawBorder: false,
+                        borderDash: [3, 3]
+                    }, 
+                    ticks: { color: tickColor, font: { size: 10 } },
+                    border: { display: false },
                     beginAtZero: true 
                 }
             }
@@ -361,12 +408,18 @@ function renderTechniciansChart(techData) {
     if (chartTechnicians) chartTechnicians.destroy();
     
     const isDark = document.documentElement.classList.contains('dark');
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9';
-    const tickColor = isDark ? '#8E8E93' : '#717579';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : '#E2E8F0';
+    const tickColor = isDark ? '#94A3B8' : '#475569';
 
     const labels = techData.map(t => t.name.split(' ')[0] + ' ' + (t.name.split(' ')[1] || '')[0] + '.');
     const points = techData.map(t => t.points);
-    const colors = techData.map(t => t.color);
+    
+    // Semantic color by load threshold: <60 Inter Blue, 60-80 Amber, >80 Red
+    const colors = techData.map(t => {
+        if (t.points > 80) return isDark ? '#EF4444' : '#DC2626';
+        if (t.points > 60) return isDark ? '#F59E0B' : '#D97706';
+        return isDark ? '#0284C7' : '#0056B3';
+    });
     
     chartTechnicians = new Chart(ctx, {
         type: 'bar',
@@ -376,33 +429,53 @@ function renderTechniciansChart(techData) {
                 label: 'Puntos de Carga',
                 data: points,
                 backgroundColor: colors,
-                borderRadius: 8,
-                barThickness: techData.length <= 4 ? 36 : 22
+                borderRadius: 6,
+                barThickness: techData.length <= 4 ? 28 : 18,
+                indexAxis: 'y'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            indexAxis: 'y',
             plugins: {
                 legend: { display: false },
                 tooltip: {
+                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                    titleColor: isDark ? '#F8FAFC' : '#0F172A',
+                    bodyColor: isDark ? '#94A3B8' : '#475569',
+                    borderColor: isDark ? '#334155' : '#E2E8F0',
+                    borderWidth: 1,
+                    cornerRadius: 6,
+                    padding: 10,
+                    titleFont: { weight: '600', size: 11 },
+                    bodyFont: { size: 11 },
                     callbacks: {
                         afterLabel: (ctx) => {
                             const t = techData[ctx.dataIndex];
-                            return `Área: ${t.area}\nTareas: ${t.tasks}\nMTTR: ${t.avg_mttr}m\nEstado: ${t.status}`;
+                            return `Area: ${t.area}\nTareas: ${t.tasks}\nMTTR: ${t.avg_mttr}m\nEstado: ${t.status}`;
                         }
                     }
                 }
             },
             scales: {
                 x: { 
-                    grid: { display: false },
-                    ticks: { color: tickColor }
+                    grid: { 
+                        color: gridColor,
+                        drawBorder: false,
+                        borderDash: [3, 3]
+                    },
+                    ticks: { color: tickColor, font: { size: 10 } },
+                    border: { display: false },
+                    beginAtZero: true
                 },
                 y: { 
-                    grid: { color: gridColor }, 
-                    ticks: { color: tickColor },
-                    beginAtZero: true 
+                    grid: { display: false },
+                    ticks: { 
+                        color: tickColor, 
+                        font: { size: 10, weight: '500' }
+                    },
+                    border: { display: false }
                 }
             }
         }
@@ -414,12 +487,39 @@ function renderWeightsChart(weightsData) {
     if (chartWeights) chartWeights.destroy();
     
     const isDark = document.documentElement.classList.contains('dark');
-    const bgCard = isDark ? '#1C1C1E' : '#FFFFFF';
-    const tickColor = isDark ? '#8E8E93' : '#717579';
+    const bgCard = isDark ? '#0D1527' : '#FFFFFF';
+    const tickColor = isDark ? '#94A3B8' : '#475569';
+    const textColor = isDark ? '#F8FAFC' : '#0F172A';
 
     const labels = weightsData.map(w => w.category);
     const data = weightsData.map(w => w.count);
-    const colors = ['#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA'];
+    const total = data.reduce((a, b) => a + b, 0);
+    // P1-P5 Inter NOC palette: Cyan, Inter Blue, Indigo, Amber, Coral
+    const colors = ['#38BDF8', '#0056B3', '#6366F1', '#F59E0B', '#EF4444'];
+
+    // Center label plugin
+    const centerLabelPlugin = {
+        id: 'centerLabel',
+        afterDraw(chart) {
+            const { width, height } = chart;
+            const ctx2 = chart.ctx;
+            ctx2.save();
+            
+            // Total number
+            ctx2.font = `700 ${Math.min(width, height) * 0.12}px Inter, sans-serif`;
+            ctx2.fillStyle = textColor;
+            ctx2.textAlign = 'center';
+            ctx2.textBaseline = 'middle';
+            ctx2.fillText(total.toString(), width / 2, height / 2 - 6);
+            
+            // Label
+            ctx2.font = `500 ${Math.min(width, height) * 0.055}px Inter, sans-serif`;
+            ctx2.fillStyle = tickColor;
+            ctx2.fillText('TOTAL TAREAS', width / 2, height / 2 + 14);
+            
+            ctx2.restore();
+        }
+    };
     
     chartWeights = new Chart(ctx, {
         type: 'doughnut',
@@ -430,24 +530,40 @@ function renderWeightsChart(weightsData) {
                 backgroundColor: colors,
                 borderWidth: 2,
                 borderColor: bgCard,
-                hoverOffset: 4
+                hoverOffset: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '72%',
+            cutout: '75%',
             plugins: {
                 legend: {
                     position: 'bottom',
                     labels: { 
-                        boxWidth: 10, 
-                        font: { size: 10 },
-                        color: tickColor
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        font: { size: 10, weight: '500' },
+                        color: tickColor,
+                        padding: 12,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
                     }
+                },
+                tooltip: {
+                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                    titleColor: isDark ? '#F8FAFC' : '#0F172A',
+                    bodyColor: isDark ? '#94A3B8' : '#475569',
+                    borderColor: isDark ? '#334155' : '#E2E8F0',
+                    borderWidth: 1,
+                    cornerRadius: 6,
+                    padding: 10,
+                    titleFont: { weight: '600', size: 11 },
+                    bodyFont: { size: 11 }
                 }
             }
-        }
+        },
+        plugins: [centerLabelPlugin]
     });
 }
 
