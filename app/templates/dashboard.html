@@ -11,7 +11,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom Style inspired by SnowUI -->
-    <link rel="stylesheet" href="/static/css/snow_ui.css?v=2.7">
+    <link rel="stylesheet" href="/static/css/snow_ui.css?v=3.5">
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -45,6 +45,97 @@
                 }
             }
         }
+    </script>
+    <!-- Inline View Switcher Engine (Always Available Instantly) -->
+    <script>
+        function switchDashboardView(viewId) {
+            window.currentDashboardView = viewId;
+
+            const viewMetrics = document.getElementById('view-metrics');
+            const viewInbox = document.getElementById('view-inbox');
+            const viewAudit = document.getElementById('view-audit');
+
+            if (viewMetrics) {
+                if (viewId === 'metrics') {
+                    viewMetrics.classList.remove('hidden');
+                    viewMetrics.style.display = 'block';
+                } else {
+                    viewMetrics.classList.add('hidden');
+                    viewMetrics.style.display = 'none';
+                }
+            }
+            if (viewInbox) {
+                if (viewId === 'inbox') {
+                    viewInbox.classList.remove('hidden');
+                    viewInbox.style.display = 'block';
+                } else {
+                    viewInbox.classList.add('hidden');
+                    viewInbox.style.display = 'none';
+                }
+            }
+            if (viewAudit) {
+                if (viewId === 'audit') {
+                    viewAudit.classList.remove('hidden');
+                    viewAudit.style.display = 'block';
+                } else {
+                    viewAudit.classList.add('hidden');
+                    viewAudit.style.display = 'none';
+                }
+            }
+
+            // Resaltado de botones en el sidebar
+            ['metrics', 'inbox', 'audit'].forEach(function(v) {
+                const btn = document.getElementById('nav-view-' + v);
+                if (btn) {
+                    if (v === viewId) {
+                        btn.classList.add('sidebar-nav-active');
+                        btn.classList.remove('text-gray-700', 'dark:text-gray-300');
+                    } else {
+                        btn.classList.remove('sidebar-nav-active');
+                        btn.classList.add('text-gray-700', 'dark:text-gray-300');
+                    }
+                }
+            });
+
+            // Resaltado de botones en la cabecera
+            ['metrics', 'inbox', 'audit'].forEach(function(v) {
+                const hdrBtn = document.getElementById('hdr-btn-' + v);
+                if (hdrBtn) {
+                    if (v === viewId) {
+                        hdrBtn.classList.add('bg-blue-50', 'text-snow-blue', 'border-snow-blue', 'dark:bg-blue-950/50', 'dark:text-blue-400');
+                        hdrBtn.classList.remove('text-snow-muted');
+                    } else {
+                        hdrBtn.classList.remove('bg-blue-50', 'text-snow-blue', 'border-snow-blue', 'dark:bg-blue-950/50', 'dark:text-blue-400');
+                        hdrBtn.classList.add('text-snow-muted');
+                    }
+                }
+            });
+
+            // Actualizar breadcrumb
+            const bcView = document.getElementById('breadcrumb-view-name');
+            if (bcView) {
+                if (viewId === 'metrics') bcView.innerText = 'Métricas & KPIs';
+                else if (viewId === 'inbox') bcView.innerText = 'Bandeja de Correos';
+                else if (viewId === 'audit') bcView.innerText = 'Historial y Auditoría';
+            }
+
+            // Llamadas a controladores según la vista
+            if (viewId === 'audit' && typeof loadReportsData === 'function') {
+                loadReportsData();
+            } else if (viewId === 'inbox') {
+                if (typeof loadInbox === 'function') loadInbox();
+                if (typeof loadMailWorkerStatus === 'function') loadMailWorkerStatus();
+            } else if (viewId === 'metrics') {
+                if (window.chartHourly && typeof window.chartHourly.resize === 'function') window.chartHourly.resize();
+                if (window.chartTechnicians && typeof window.chartTechnicians.resize === 'function') window.chartTechnicians.resize();
+                if (window.chartWeights && typeof window.chartWeights.resize === 'function') window.chartWeights.resize();
+            }
+
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+        window.switchDashboardView = switchDashboardView;
     </script>
 </head>
 <body class="bg-snow-bg text-snow-text font-sans antialiased flex h-screen overflow-hidden">
@@ -222,21 +313,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Supervisión Operativa & Accesos Rápidos -->
-                <div class="pt-2 border-t border-snow-border">
-                    <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-2 mb-1.5">Acceso Rápido</p>
-                    <nav class="space-y-1">
-                        <button onclick="switchDashboardView('inbox')" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 dark:hover:bg-[#242426] transition text-left">
-                            <i data-lucide="mail-check" class="w-3.5 h-3.5 text-emerald-500"></i>
-                            <span>Ir a Bandeja FSM</span>
-                        </button>
-                        <button onclick="switchDashboardView('audit')" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-blue-50 hover:text-snow-blue dark:hover:bg-[#242426] transition text-left">
-                            <i data-lucide="download" class="w-3.5 h-3.5 text-blue-600"></i>
-                            <span>Exportar Excel (.xlsx)</span>
-                        </button>
-                    </nav>
                 </div>
 
             </div>
@@ -1200,6 +1276,6 @@
     </div>
 
     <!-- Dashboard Controller Script -->
-    <script src="/static/js/dashboard.js?v=2.7"></script>
+    <script src="/static/js/dashboard.js?v=3.5"></script>
 </body>
 </html>

@@ -1710,14 +1710,39 @@ let currentDashboardView = 'metrics'; // 'metrics' | 'inbox' | 'audit'
 
 function switchDashboardView(viewId) {
     currentDashboardView = viewId;
+    window.currentDashboardView = viewId;
     
     const viewMetrics = document.getElementById('view-metrics');
     const viewInbox = document.getElementById('view-inbox');
     const viewAudit = document.getElementById('view-audit');
 
-    if (viewMetrics) viewMetrics.classList.toggle('hidden', viewId !== 'metrics');
-    if (viewInbox) viewInbox.classList.toggle('hidden', viewId !== 'inbox');
-    if (viewAudit) viewAudit.classList.toggle('hidden', viewId !== 'audit');
+    if (viewMetrics) {
+        if (viewId === 'metrics') {
+            viewMetrics.classList.remove('hidden');
+            viewMetrics.style.display = 'block';
+        } else {
+            viewMetrics.classList.add('hidden');
+            viewMetrics.style.display = 'none';
+        }
+    }
+    if (viewInbox) {
+        if (viewId === 'inbox') {
+            viewInbox.classList.remove('hidden');
+            viewInbox.style.display = 'block';
+        } else {
+            viewInbox.classList.add('hidden');
+            viewInbox.style.display = 'none';
+        }
+    }
+    if (viewAudit) {
+        if (viewId === 'audit') {
+            viewAudit.classList.remove('hidden');
+            viewAudit.style.display = 'block';
+        } else {
+            viewAudit.classList.add('hidden');
+            viewAudit.style.display = 'none';
+        }
+    }
 
     // Resaltado de botones en el sidebar
     ['metrics', 'inbox', 'audit'].forEach(v => {
@@ -1751,3 +1776,5 @@ function switchDashboardView(viewId) {
 
     lucide.createIcons();
 }
+
+window.switchDashboardView = switchDashboardView;

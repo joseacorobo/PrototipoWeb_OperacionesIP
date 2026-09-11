@@ -480,9 +480,11 @@ body {
     background-color: rgba(67, 126, 247, 0.12) !important;
     color: #437EF7 !important;
     font-weight: 700 !important;
+    border: 1px solid rgba(67, 126, 247, 0.3) !important;
 }
 .dark .sidebar-nav-active {
-    background-color: rgba(67, 126, 247, 0.22) !important;
+    background-color: rgba(67, 126, 247, 0.25) !important;
     color: #60A5FA !important;
     font-weight: 700 !important;
+    border: 1px solid rgba(96, 165, 250, 0.4) !important;
 }
