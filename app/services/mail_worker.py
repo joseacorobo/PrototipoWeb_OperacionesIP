@@ -81,10 +81,12 @@ class MailWorker:
             "poll_interval": self.config.get("poll_interval", 30),
             "last_check": self.last_check,
             "emails_processed": self.emails_processed,
+            "total_processed": self.emails_processed,
             "last_error": self.last_error,
             "imap_server": self.config.get("imap_server", ""),
             "imap_user": self.config.get("imap_user", ""),
-            "has_password": bool(self.config.get("imap_password", ""))
+            "has_password": bool(self.config.get("imap_password", "")),
+            "config": self.config
         }
 
     def _run_loop(self):

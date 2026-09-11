@@ -86,14 +86,40 @@
             </div>
 
             <!-- Navegación con Acordeón Animado (Hover & Click) -->
-            <div class="flex-1 overflow-y-auto space-y-2 pr-1">
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1">
                 
-                <!-- Vista Global / General -->
-                <div class="mb-1">
-                    <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-snow-blue transition hover:bg-gray-200/70">
-                        <i data-lucide="layout-grid" class="w-4 h-4 text-snow-blue"></i>
-                        <span>Todas las Áreas</span>
+                <!-- Conmutador Principal de Vistas (3 Módulos Separados) -->
+                <div class="space-y-1 pb-2.5 border-b border-snow-border">
+                    <button onclick="switchDashboardView('metrics')" id="nav-view-metrics" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer sidebar-nav-active">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4 text-snow-blue"></i>
+                        <span>Métricas &amp; KPIs</span>
                     </button>
+                    <button onclick="switchDashboardView('inbox')" id="nav-view-inbox" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#242426] transition cursor-pointer">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="mail-check" class="w-4 h-4 text-emerald-500"></i>
+                            <span>Bandeja de Correos</span>
+                        </div>
+                        <span id="badge-inbox-count" class="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-100 dark:border-emerald-800">--</span>
+                    </button>
+                    <button onclick="switchDashboardView('audit')" id="nav-view-audit" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#242426] transition cursor-pointer">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="file-bar-chart-2" class="w-4 h-4 text-blue-600"></i>
+                            <span>Historial &amp; Auditoría</span>
+                        </div>
+                        <span class="text-[9px] bg-blue-100 text-snow-blue dark:bg-blue-900/40 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold">XLSX</span>
+                    </button>
+                </div>
+
+                <!-- División Operativa / Células Técnicas -->
+                <div>
+                    <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-2 mb-1.5">Filtro por Célula</p>
+                    <!-- Vista Global / General -->
+                    <div class="mb-1">
+                        <button onclick="changeArea('Todas')" id="nav-area-todas" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-snow-blue transition hover:bg-gray-200/70">
+                            <i data-lucide="layout-grid" class="w-4 h-4 text-snow-blue"></i>
+                            <span>Todas las Células</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Casilla 1: Redes de Acceso y Aprovisionamiento (Acordeón) -->
@@ -101,7 +127,7 @@
                     <button type="button" onclick="toggleSidebarMenu('acceso')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#242426] transition group">
                         <div class="flex items-center gap-2.5 overflow-hidden">
                             <i data-lucide="network" class="w-4 h-4 text-emerald-600 shrink-0 transition-transform group-hover:scale-110"></i>
-                            <span class="truncate">Redes de Acceso y Aprov.</span>
+                            <span class="truncate">FTTH</span>
                         </div>
                         <i data-lucide="chevron-down" id="chevron-acceso" class="w-3.5 h-3.5 text-snow-muted shrink-0 transition-transform duration-200 rotate-180"></i>
                     </button>
@@ -110,11 +136,11 @@
                         <div class="pl-3.5 ml-3 border-l-2 border-emerald-500/30 dark:border-emerald-500/20 space-y-1 my-1">
                             <button onclick="changeArea('Acceso')" id="nav-area-acceso" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-snow-muted hover:text-gray-900 hover:bg-gray-50 transition text-left">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                <span>División Acceso (General)</span>
+                                <span>GENERAL</span>
                             </button>
                             <button onclick="changeArea('Soporte')" id="nav-area-soporte" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-snow-muted hover:text-gray-900 hover:bg-gray-50 transition text-left">
                                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                                <span>Redes FTTH</span>
+                                <span>Aprovisionamiento</span>
                             </button>
                             <button onclick="changeArea('Cabecera')" id="nav-area-cabecera" class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-snow-muted hover:text-gray-900 hover:bg-gray-50 transition text-left">
                                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
@@ -198,19 +224,17 @@
                     </div>
                 </div>
 
-                <!-- Supervisión Operativa & Auditoría -->
+                <!-- Supervisión Operativa & Accesos Rápidos -->
                 <div class="pt-2 border-t border-snow-border">
-                    <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-2 mb-1.5">Supervisión</p>
+                    <p class="text-[10px] font-bold tracking-wider text-snow-muted uppercase px-2 mb-1.5">Acceso Rápido</p>
                     <nav class="space-y-1">
-                        <a href="#inbox-section" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 transition">
+                        <button onclick="switchDashboardView('inbox')" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-gray-50 hover:text-gray-900 dark:hover:bg-[#242426] transition text-left">
                             <i data-lucide="mail-check" class="w-3.5 h-3.5 text-emerald-500"></i>
-                            <span>Bandeja de Correos</span>
-                            <span id="badge-inbox-count" class="ml-auto text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold">--</span>
-                        </a>
-                        <button onclick="openReportsModal()" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-blue-50 hover:text-snow-blue transition text-left">
-                            <i data-lucide="file-bar-chart-2" class="w-3.5 h-3.5 text-blue-600"></i>
-                            <span>Reportes Excel</span>
-                            <span class="ml-auto text-[9px] bg-blue-100 text-snow-blue px-1.5 py-0.5 rounded font-bold">XLSX</span>
+                            <span>Ir a Bandeja FSM</span>
+                        </button>
+                        <button onclick="switchDashboardView('audit')" class="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium text-snow-muted hover:bg-blue-50 hover:text-snow-blue dark:hover:bg-[#242426] transition text-left">
+                            <i data-lucide="download" class="w-3.5 h-3.5 text-blue-600"></i>
+                            <span>Exportar Excel (.xlsx)</span>
                         </button>
                     </nav>
                 </div>
@@ -247,6 +271,8 @@
                 <div class="flex items-center gap-1.5 text-xs text-snow-muted ml-1">
                     <span class="font-medium text-gray-600">Operaciones IP</span>
                     <span class="text-gray-400">/</span>
+                    <span id="breadcrumb-view-name" class="font-semibold text-gray-700 dark:text-gray-300">Métricas &amp; KPIs</span>
+                    <span class="text-gray-400">/</span>
                     <span id="breadcrumb-area" class="text-gray-900 font-bold">Todas las Células</span>
                 </div>
             </div>
@@ -272,20 +298,20 @@
                     </span>
                 </button>
 
-                <!-- Historial de Tareas -->
-                <a href="#feed-section" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center" title="Historial Forense de Tareas">
-                    <i data-lucide="history" class="w-4 h-4"></i>
-                </a>
+                <!-- Botón Vista Métricas -->
+                <button onclick="switchDashboardView('metrics')" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center cursor-pointer" title="Vista de Métricas Principales">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                </button>
 
-                <!-- Notificaciones con Indicador Activo -->
-                <a href="#inbox-section" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center relative" title="Bandeja de Correos FSM">
-                    <i data-lucide="bell" class="w-4 h-4"></i>
+                <!-- Botón Vista Bandeja de Correos -->
+                <button onclick="switchDashboardView('inbox')" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center relative cursor-pointer" title="Vista de Bandeja de Correos FSM">
+                    <i data-lucide="mail" class="w-4 h-4"></i>
                     <span id="header-badge-count" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-snow-blue animate-pulse"></span>
-                </a>
+                </button>
 
-                <!-- Reportes Gerenciales -->
-                <button onclick="openReportsModal()" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center" title="Supervisión y Reportes">
-                    <i data-lucide="panel-right" class="w-4 h-4"></i>
+                <!-- Botón Vista Historial y Auditoría -->
+                <button onclick="switchDashboardView('audit')" class="p-2 rounded-xl border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center cursor-pointer" title="Vista de Historial y Auditoría">
+                    <i data-lucide="file-bar-chart-2" class="w-4 h-4"></i>
                 </button>
             </div>
         </header>
@@ -293,6 +319,10 @@
         <!-- Scrollable Content -->
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
 
+            <!-- ============================================================== -->
+            <!-- 1. VISTA DASHBOARD PRINCIPAL (MÉTRICAS & KPIS IMPORTANTES)     -->
+            <!-- ============================================================== -->
+            <section id="view-metrics" class="space-y-6">
             <!-- Barra Superior del Dashboard: Título de Vista y Filtro de Área -->
             <div class="flex flex-wrap items-center justify-between gap-4 pb-1">
                 <div>
@@ -487,7 +517,12 @@
 
             </div>
 
+            </section>
+
             <!-- ============================================================== -->
+            <!-- 2. VISTA BANDEJA DE CORREOS AUTOMATIZADOS (MICROSOFT 365)       -->
+            <!-- ============================================================== -->
+            <section id="view-inbox" class="space-y-4 hidden">
             <!-- BANDEJA DE CORREOS AUTOMATIZADOS (MICROSOFT 365 / OUTLOOK WEB) -->
             <!-- FIGMA SPEC NODE: 160-236405                                    -->
             <!-- ============================================================== -->
@@ -610,7 +645,179 @@
 
             </div>
 
-            <!-- ROW 5: RECENT ACTIVITY FEED (SnowUI Feed) -->
+            </section>
+
+            <!-- ============================================================== -->
+            <!-- 3. VISTA HISTORIAL Y AUDITORÍA FORENSE                         -->
+            <!-- ============================================================== -->
+            <section id="view-audit" class="space-y-6 hidden">
+                
+                <!-- Encabezado de la Vista de Auditoría con Filtros y Descarga Excel -->
+                <div class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0">
+                            <i data-lucide="file-bar-chart-2" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-gray-900 dark:text-white tracking-tight">Supervisión y Auditoría Gerencial</h2>
+                            <p class="text-xs text-snow-muted">Métricas consolidadas de productividad, balance por célula y trazabilidad técnica forense</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Filtro Temporal -->
+                        <div class="flex items-center bg-gray-100 dark:bg-[#242426] p-1 rounded-xl border border-snow-border text-xs">
+                            <button onclick="changeReportRange('all')" id="btn-rep-all" class="px-2.5 py-1 rounded-lg bg-gray-900 text-white font-semibold transition">Todo</button>
+                            <button onclick="changeReportRange('month')" id="btn-rep-month" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 dark:hover:text-white transition">Mes Actual</button>
+                            <button onclick="changeReportRange('7days')" id="btn-rep-7days" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 dark:hover:text-white transition">Últimos 7d</button>
+                            <button onclick="changeReportRange('today')" id="btn-rep-today" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 dark:hover:text-white transition">Hoy</button>
+                        </div>
+
+                        <!-- Filtro de Célula -->
+                        <select id="select-report-area" onchange="changeReportArea(this.value)" class="bg-white dark:bg-[#242426] border border-snow-border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-900 dark:text-white outline-none">
+                            <option value="Todas">Todas las Células</option>
+                            <option value="Acceso">Redes de Acceso (Soporte + Cabecera)</option>
+                            <option value="Soporte">Soporte FTTH</option>
+                            <option value="Cabecera">Cabecera OLT</option>
+                            <option value="Telefonía">Telefonía VoIP</option>
+                        </select>
+
+                        <!-- Botón Descargar Excel (.xlsx) -->
+                        <button onclick="downloadExcelReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition cursor-pointer">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Descargar Excel (.xlsx)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 Tarjetas de Métricas Ejecutivas con Alto Contraste (Modo Claro & Modo Oscuro) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    
+                    <!-- Card 1: Puntos Totales Acumulados -->
+                    <div class="card-audit-kpi-blue p-5 rounded-snow-card shadow-xs flex flex-col justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold tracking-wider uppercase text-blue-900 dark:text-blue-300 block mb-1">
+                                Puntos Totales Acumulados
+                            </span>
+                            <span id="rep-kpi-points" class="text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono tracking-tight">
+                                -- pts
+                            </span>
+                        </div>
+                        <span class="text-xs text-blue-800/80 dark:text-blue-300/80 font-medium block mt-2">
+                            Carga total ponderada DERS
+                        </span>
+                    </div>
+
+                    <!-- Card 2: Tickets Resueltos -->
+                    <div class="card-audit-kpi-purple p-5 rounded-snow-card shadow-xs flex flex-col justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold tracking-wider uppercase text-purple-900 dark:text-purple-300 block mb-1">
+                                Tickets Resueltos
+                            </span>
+                            <span id="rep-kpi-tasks" class="text-3xl font-extrabold text-purple-600 dark:text-purple-400 font-mono tracking-tight">
+                                --
+                            </span>
+                        </div>
+                        <span class="text-xs text-purple-800/80 dark:text-purple-300/80 font-medium block mt-2">
+                            100% automatizados sin registro manual
+                        </span>
+                    </div>
+
+                    <!-- Card 3: MTTR Promedio Neto -->
+                    <div class="card-audit-kpi-emerald p-5 rounded-snow-card shadow-xs flex flex-col justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-900 dark:text-emerald-300 block mb-1">
+                                MTTR Promedio Neto
+                            </span>
+                            <span id="rep-kpi-mttr" class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                                -- min
+                            </span>
+                        </div>
+                        <span class="text-xs text-emerald-800/80 dark:text-emerald-300/80 font-medium block mt-2">
+                            Sin penalización por esperas de terreno
+                        </span>
+                    </div>
+
+                    <!-- Card 4: Cumplimiento de SLA -->
+                    <div class="card-audit-kpi-amber p-5 rounded-snow-card shadow-xs flex flex-col justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold tracking-wider uppercase text-amber-900 dark:text-amber-300 block mb-1">
+                                Cumplimiento de SLA
+                            </span>
+                            <span id="rep-kpi-sla" class="text-3xl font-extrabold text-amber-600 dark:text-amber-400 font-mono tracking-tight">
+                                --%
+                            </span>
+                        </div>
+                        <span class="text-xs text-amber-800/80 dark:text-amber-300/80 font-medium block mt-2">
+                            Casos resueltos dentro del tiempo meta
+                        </span>
+                    </div>
+
+                </div>
+
+                <!-- Tabla 1: Balance Comparativo por Célula -->
+                <div class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="scale" class="w-4 h-4 text-snow-blue"></i>
+                            Balance Operativo por Célula (Redes de Acceso y Telefonía)
+                        </h3>
+                        <span class="text-[11px] text-snow-muted font-medium">Equidad de carga entre frentes</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-50 dark:bg-[#242426] text-snow-muted uppercase text-[10px] border-b border-snow-border">
+                                <tr>
+                                    <th class="py-2.5 px-3">Célula / Área</th>
+                                    <th class="py-2.5 px-3 text-center">Especialistas</th>
+                                    <th class="py-2.5 px-3 text-right">Tickets</th>
+                                    <th class="py-2.5 px-3 text-right">Puntos Totales</th>
+                                    <th class="py-2.5 px-3 text-center">% Esfuerzo</th>
+                                    <th class="py-2.5 px-3 text-right">MTTR Neto</th>
+                                    <th class="py-2.5 px-3 text-center">Estado de Carga</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rep-table-areas" class="divide-y divide-snow-border font-medium">
+                                <tr><td colspan="7" class="py-4 text-center text-snow-muted">Cargando métricas de células...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tabla 2: Ranking de Productividad de Especialistas -->
+                <div class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
+                            Rendimiento Individual y Distribución de Puntos por Dificultad (P1 - P5)
+                        </h3>
+                        <span class="text-[11px] text-snow-muted font-medium">12 Especialistas activos en base de datos</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-50 dark:bg-[#242426] text-snow-muted uppercase text-[10px] border-b border-snow-border sticky top-0">
+                                <tr>
+                                    <th class="py-2.5 px-3">Especialista</th>
+                                    <th class="py-2.5 px-3">Célula</th>
+                                    <th class="py-2.5 px-3 text-right">Tickets</th>
+                                    <th class="py-2.5 px-3 text-right">Puntos</th>
+                                    <th class="py-2.5 px-3 text-center">P1 (1p)</th>
+                                    <th class="py-2.5 px-3 text-center">P2 (2p)</th>
+                                    <th class="py-2.5 px-3 text-center">P3 (3p)</th>
+                                    <th class="py-2.5 px-3 text-center">P4 (5p)</th>
+                                    <th class="py-2.5 px-3 text-center">P5 (8p)</th>
+                                    <th class="py-2.5 px-3 text-right">MTTR</th>
+                                    <th class="py-2.5 px-3 text-center">Semáforo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rep-table-techs" class="divide-y divide-snow-border">
+                                <tr><td colspan="11" class="py-4 text-center text-snow-muted">Cargando productividad de analistas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tabla 3: Historial de Tareas Automatizadas (Log Forense) -->
             <div id="feed-section" class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs">
                 <div class="flex items-center justify-between mb-4">
                     <div>
@@ -642,6 +849,7 @@
                 </div>
             </div>
 
+            </section>
         </div>
 
     </main>
@@ -895,163 +1103,6 @@
     </div>
 
     
-    <!-- ============================================================== -->
-    <!-- MODAL: REPORTES GERENCIALES Y AUDITORÍA FORENSE -->
-    <!-- ============================================================== -->
-    <div id="modalReportsAudit" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-5xl max-h-[92vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            <!-- Cabecera del Modal -->
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20">
-                        <i data-lucide="file-bar-chart-2" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900 text-sm">Supervisión y Auditoría Gerencial</h3>
-                        <p class="text-[11px] text-snow-muted">Métricas consolidadas de productividad y trazabilidad técnica forense</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                    <button onclick="downloadExcelReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                        <span>Descargar Excel (.xlsx)</span>
-                    </button>
-                    <button onclick="closeReportsModal()" class="text-snow-muted hover:text-gray-900 p-1">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Cuerpo del Modal -->
-            <div class="flex-1 overflow-y-auto p-6 space-y-6">
-                
-                <!-- Barra de Filtros Rápidos -->
-                <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-50 p-3 rounded-2xl border border-snow-border text-xs">
-                    
-                    <!-- Filtro de Rango Temporal -->
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-snow-muted font-semibold">Período:</span>
-                        <div class="flex items-center bg-white p-1 rounded-xl border border-snow-border">
-                            <button onclick="changeReportRange('all')" id="btn-rep-all" class="px-2.5 py-1 rounded-lg bg-gray-900 text-white font-semibold transition">Todo</button>
-                            <button onclick="changeReportRange('month')" id="btn-rep-month" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 transition">Mes Actual</button>
-                            <button onclick="changeReportRange('7days')" id="btn-rep-7days" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 transition">Últimos 7d</button>
-                            <button onclick="changeReportRange('today')" id="btn-rep-today" class="px-2.5 py-1 rounded-lg text-snow-muted hover:text-gray-900 transition">Hoy</button>
-                        </div>
-                    </div>
-
-                    <!-- Filtro de Célula / Área -->
-                    <div class="flex items-center gap-1.5">
-                        <span class="text-snow-muted font-semibold">Célula:</span>
-                        <select id="select-report-area" onchange="changeReportArea(this.value)" class="bg-white border border-snow-border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
-                            <option value="Todas">Todas las Áreas</option>
-                            <option value="Acceso">Redes de Acceso (Soporte + Cabecera)</option>
-                            <option value="Soporte">Soporte FTTH</option>
-                            <option value="Cabecera">Cabecera OLT</option>
-                            <option value="Telefonía">Telefonía VoIP</option>
-                        </select>
-                    </div>
-
-                </div>
-
-                <!-- 4 Tarjetas de Métricas Ejecutivas -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-                        <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">Puntos Totales Acumulados</span>
-                        <span id="rep-kpi-points" class="text-2xl font-bold text-snow-blue">-- pts</span>
-                        <span class="text-[10px] text-snow-muted block mt-1">Carga total ponderada</span>
-                    </div>
-                    <div class="bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
-                        <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">Tickets Resueltos</span>
-                        <span id="rep-kpi-tasks" class="text-2xl font-bold text-purple-700">--</span>
-                        <span class="text-[10px] text-snow-muted block mt-1">100% automatizados</span>
-                    </div>
-                    <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                        <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">MTTR Promedio Neto</span>
-                        <span id="rep-kpi-mttr" class="text-2xl font-bold text-emerald-700">-- min</span>
-                        <span class="text-[10px] text-snow-muted block mt-1">Sin esperas de terreno</span>
-                    </div>
-                    <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-100">
-                        <span class="text-[10px] text-snow-muted uppercase font-bold block mb-1">Cumplimiento de SLA</span>
-                        <span id="rep-kpi-sla" class="text-2xl font-bold text-amber-700">--%</span>
-                        <span class="text-[10px] text-snow-muted block mt-1">Dentro del tiempo meta</span>
-                    </div>
-                </div>
-
-                <!-- Tabla 1: Balance Comparativo por Célula -->
-                <div class="border border-snow-border rounded-2xl p-4 bg-white space-y-3">
-                    <p class="text-xs font-bold text-gray-900 flex items-center gap-2">
-                        <i data-lucide="scale" class="w-4 h-4 text-snow-blue"></i>
-                        Balance Operativo por Célula (Redes de Acceso y Aprovisionamiento)
-                    </p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-50 text-snow-muted uppercase text-[10px] border-b border-snow-border">
-                                <tr>
-                                    <th class="py-2.5 px-3">Célula / Área</th>
-                                    <th class="py-2.5 px-3 text-center">Especialistas</th>
-                                    <th class="py-2.5 px-3 text-right">Tickets</th>
-                                    <th class="py-2.5 px-3 text-right">Puntos Totales</th>
-                                    <th class="py-2.5 px-3 text-center">% Esfuerzo</th>
-                                    <th class="py-2.5 px-3 text-right">MTTR Neto</th>
-                                    <th class="py-2.5 px-3 text-center">Estado de Carga</th>
-                                </tr>
-                            </thead>
-                            <tbody id="rep-table-areas" class="divide-y divide-gray-100 font-medium">
-                                <tr><td colspan="7" class="py-4 text-center text-snow-muted">Cargando métricas...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Tabla 2: Ranking de Productividad de Especialistas -->
-                <div class="border border-snow-border rounded-2xl p-4 bg-white space-y-3">
-                    <p class="text-xs font-bold text-gray-900 flex items-center gap-2">
-                        <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
-                        Rendimiento Individual y Distribución de Puntos por Dificultad (P1 - P5)
-                    </p>
-                    <div class="overflow-x-auto max-h-72 overflow-y-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-50 text-snow-muted uppercase text-[10px] border-b border-snow-border sticky top-0">
-                                <tr>
-                                    <th class="py-2.5 px-3">Especialista</th>
-                                    <th class="py-2.5 px-3">Célula</th>
-                                    <th class="py-2.5 px-3 text-right">Tickets</th>
-                                    <th class="py-2.5 px-3 text-right">Puntos</th>
-                                    <th class="py-2.5 px-3 text-center">P1 (1p)</th>
-                                    <th class="py-2.5 px-3 text-center">P2 (2p)</th>
-                                    <th class="py-2.5 px-3 text-center">P3 (3p)</th>
-                                    <th class="py-2.5 px-3 text-center">P4 (5p)</th>
-                                    <th class="py-2.5 px-3 text-center">P5 (8p)</th>
-                                    <th class="py-2.5 px-3 text-right">MTTR</th>
-                                    <th class="py-2.5 px-3 text-center">Saturación</th>
-                                </tr>
-                            </thead>
-                            <tbody id="rep-table-techs" class="divide-y divide-gray-100">
-                                <tr><td colspan="11" class="py-4 text-center text-snow-muted">Cargando especialistas...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Footer con Botón de Exportación -->
-            <div class="px-6 py-3 bg-gray-50 border-t border-snow-border flex items-center justify-between text-xs">
-                <span class="text-snow-muted flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
-                    El archivo Excel incluye 3 hojas completas con el log forense de todos los tickets.
-                </span>
-                <button onclick="downloadExcelReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition">
-                    <i data-lucide="download" class="w-4 h-4"></i>
-                    <span>Descargar Reporte Excel (.xlsx)</span>
-                </button>
-            </div>
-
-        </div>
-    </div>
-
     <!-- ============================================================== -->
     <!-- MODAL: CONFIGURACIÓN DEL WORKER DE CORREO (IMAP / SIMULADOR) -->
     <!-- ============================================================== -->

@@ -427,3 +427,62 @@ body {
         max-height: calc(100vh - 4rem) !important;
     }
 }
+
+/* ============================================================== */
+/* AUDIT & KPI SCORECARDS HIGH CONTRAST TOKENS                   */
+/* ============================================================== */
+
+.card-audit-kpi-blue {
+    background: #EFF6FF !important;
+    border: 1px solid #BFDBFE !important;
+}
+.dark .card-audit-kpi-blue {
+    background: rgba(30, 58, 138, 0.25) !important;
+    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+
+.card-audit-kpi-purple {
+    background: #FAF5FF !important;
+    border: 1px solid #E9D5FF !important;
+}
+.dark .card-audit-kpi-purple {
+    background: rgba(88, 28, 135, 0.25) !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+}
+
+.card-audit-kpi-emerald {
+    background: #ECFDF5 !important;
+    border: 1px solid #A7F3D0 !important;
+}
+.dark .card-audit-kpi-emerald {
+    background: rgba(6, 78, 59, 0.25) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+.card-audit-kpi-amber {
+    background: #FFFBEB !important;
+    border: 1px solid #FDE68A !important;
+}
+.dark .card-audit-kpi-amber {
+    background: rgba(120, 53, 15, 0.25) !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+.dark .text-kpi-title {
+    color: #E2E8F0 !important;
+}
+.dark .text-kpi-sub {
+    color: #94A3B8 !important;
+}
+
+/* Nav Item Selected in Sidebar */
+.sidebar-nav-active {
+    background-color: rgba(67, 126, 247, 0.12) !important;
+    color: #437EF7 !important;
+    font-weight: 700 !important;
+}
+.dark .sidebar-nav-active {
+    background-color: rgba(67, 126, 247, 0.22) !important;
+    color: #60A5FA !important;
+    font-weight: 700 !important;
+}

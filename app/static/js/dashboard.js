@@ -14,6 +14,16 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCurrentUserProfile();
     loadDashboardData();
     setInterval(loadMailWorkerStatus, 20000);
+
+    // Seleccionar vista inicial según hash o default a 'metrics'
+    const hash = window.location.hash.toLowerCase();
+    if (hash.includes('inbox') || hash.includes('correo')) {
+        switchDashboardView('inbox');
+    } else if (hash.includes('audit') || hash.includes('report') || hash.includes('historial')) {
+        switchDashboardView('audit');
+    } else {
+        switchDashboardView('metrics');
+    }
 });
 
 // =============================================================
@@ -133,6 +143,13 @@ function changeArea(area) {
         }
     }
     
+    reportCurrentArea = area;
+    if (currentDashboardView === 'audit') {
+        const sel = document.getElementById("select-report-area");
+        if (sel) sel.value = area;
+        loadReportsData();
+    }
+
     // Auto-expandir el grupo acordeón correspondiente al área seleccionada
     if (area === "Acceso" || area === "Redes de Acceso" || area === "Soporte" || area === "Cabecera") {
         toggleSidebarMenu("acceso", true);
@@ -1123,19 +1140,19 @@ async function loadFeed() {
     
     feed.forEach(f => {
         const row = `
-            <tr class="hover:bg-gray-50/60 transition">
-                <td class="py-2.5 px-3 font-mono font-semibold text-snow-blue">${f.ticket}</td>
+            <tr class="hover:bg-gray-50/60 dark:hover:bg-white/5 transition">
+                <td class="py-2.5 px-3 font-mono font-semibold text-blue-600 dark:text-blue-400">${f.ticket}</td>
                 <td class="py-2.5 px-3 flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-gray-100 text-[10px] font-bold text-gray-700 flex items-center justify-center">${f.avatar}</span>
-                    <span class="font-medium text-gray-900">${f.user}</span>
+                    <span class="w-6 h-6 rounded-full bg-gray-100 dark:bg-[#242426] text-[10px] font-bold text-gray-700 dark:text-gray-200 flex items-center justify-center">${f.avatar}</span>
+                    <span class="font-medium text-gray-900 dark:text-white">${f.user}</span>
                 </td>
-                <td class="py-2.5 px-3 text-snow-muted">${f.area}</td>
-                <td class="py-2.5 px-3 text-gray-700">${f.task}</td>
+                <td class="py-2.5 px-3 text-snow-muted font-medium">${f.area}</td>
+                <td class="py-2.5 px-3 text-gray-700 dark:text-gray-300">${f.task}</td>
                 <td class="py-2.5 px-3 text-center">
-                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-snow-blue">+${f.points} pts</span>
+                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800/60 font-mono">+${f.points} pts</span>
                 </td>
-                <td class="py-2.5 px-3 text-center font-mono text-snow-muted">${f.duration}m</td>
-                <td class="py-2.5 px-3 text-right text-snow-muted">${f.time.split(' ')[1] || ''}</td>
+                <td class="py-2.5 px-3 text-center font-mono text-gray-800 dark:text-gray-200">${f.duration}m</td>
+                <td class="py-2.5 px-3 text-right text-snow-muted font-mono">${f.time.split(' ')[1] || ''}</td>
             </tr>
         `;
         tbody.insertAdjacentHTML('beforeend', row);
@@ -1256,10 +1273,7 @@ let reportCurrentArea = "Todas";
 let reportCurrentRange = "all";
 
 function openReportsModal() {
-    document.getElementById("modalReportsAudit").classList.remove("hidden");
-    document.getElementById("modalReportsAudit").classList.add("flex");
-    loadReportsData();
-    lucide.createIcons();
+    switchDashboardView('audit');
 }
 
 function closeReportsModal() {
@@ -1293,65 +1307,79 @@ async function loadReportsData() {
         const data = await res.json();
         
         // 1. Llenar Tarjetas KPI
-        document.getElementById("rep-kpi-points").innerText = `${data.kpis.total_points} pts`;
-        document.getElementById("rep-kpi-tasks").innerText = `${data.kpis.total_tasks}`;
-        document.getElementById("rep-kpi-mttr").innerText = `${data.kpis.avg_mttr} min`;
-        document.getElementById("rep-kpi-sla").innerText = `${data.kpis.sla_compliance}%`;
+        const elPoints = document.getElementById("rep-kpi-points");
+        const elTasks = document.getElementById("rep-kpi-tasks");
+        const elMttr = document.getElementById("rep-kpi-mttr");
+        const elSla = document.getElementById("rep-kpi-sla");
+        if (elPoints) elPoints.innerText = `${data.kpis.total_points} pts`;
+        if (elTasks) elTasks.innerText = `${data.kpis.total_tasks}`;
+        if (elMttr) elMttr.innerText = `${data.kpis.avg_mttr} min`;
+        if (elSla) elSla.innerText = `${data.kpis.sla_compliance}%`;
 
         // 2. Llenar Tabla de Células
         const tbodyAreas = document.getElementById("rep-table-areas");
-        tbodyAreas.innerHTML = "";
-        data.area_breakdown.forEach(a => {
-            const badgeClass = a.status === 'Equilibrada' ? 'bg-emerald-50 text-emerald-700' :
-                              (a.status === 'Moderada' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700');
-            const tr = `
-                <tr class="hover:bg-gray-50/60 transition">
-                    <td class="py-2 px-3 font-semibold text-gray-900">${a.area}</td>
-                    <td class="py-2 px-3 text-center text-snow-muted">${a.techs_count}</td>
-                    <td class="py-2 px-3 text-right font-mono">${a.total_tasks}</td>
-                    <td class="py-2 px-3 text-right font-bold text-snow-blue">${a.total_points} pts</td>
-                    <td class="py-2 px-3 text-center font-medium">${a.share_percent}%</td>
-                    <td class="py-2 px-3 text-right font-mono">${a.avg_mttr} min</td>
-                    <td class="py-2 px-3 text-center">
-                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">
-                            ${a.status}
-                        </span>
-                    </td>
-                </tr>
-            `;
-            tbodyAreas.insertAdjacentHTML('beforeend', tr);
-        });
+        if (tbodyAreas) {
+            tbodyAreas.innerHTML = "";
+            data.area_breakdown.forEach(a => {
+                const badgeClass = a.status === 'Equilibrada' 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700/60' 
+                    : (a.status === 'Moderada' 
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700/60' 
+                        : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-700/60');
+                const tr = `
+                    <tr class="hover:bg-gray-50/60 dark:hover:bg-white/5 transition">
+                        <td class="py-2.5 px-3 font-semibold text-gray-900 dark:text-white">${a.area}</td>
+                        <td class="py-2.5 px-3 text-center text-snow-muted font-medium">${a.techs_count}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-gray-800 dark:text-gray-200">${a.total_tasks}</td>
+                        <td class="py-2.5 px-3 text-right font-bold text-blue-600 dark:text-blue-400 font-mono">${a.total_points} pts</td>
+                        <td class="py-2.5 px-3 text-center font-semibold text-gray-700 dark:text-gray-300">${a.share_percent}%</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-gray-800 dark:text-gray-200">${a.avg_mttr} min</td>
+                        <td class="py-2.5 px-3 text-center">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-2xs ${badgeClass}">
+                                ${a.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+                tbodyAreas.insertAdjacentHTML('beforeend', tr);
+            });
+        }
 
         // 3. Llenar Tabla de Especialistas
         const tbodyTechs = document.getElementById("rep-table-techs");
-        tbodyTechs.innerHTML = "";
-        data.tech_rankings.forEach(t => {
-            const stBadge = t.status === 'Equilibrada' ? 'bg-emerald-50 text-emerald-700' :
-                           (t.status === 'Moderada' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700');
-            const tr = `
-                <tr class="hover:bg-gray-50/60 transition text-xs">
-                    <td class="py-2 px-3 flex items-center gap-2">
-                        <span class="w-5 h-5 rounded-full bg-gray-100 text-[9px] font-bold text-gray-700 flex items-center justify-center">${t.avatar}</span>
-                        <span class="font-semibold text-gray-900">${t.name}</span>
-                    </td>
-                    <td class="py-2 px-3 text-snow-muted font-medium">${t.area}</td>
-                    <td class="py-2 px-3 text-right font-mono">${t.tasks_count}</td>
-                    <td class="py-2 px-3 text-right font-bold text-snow-blue">${t.total_points} pts</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p1}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p2}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p3}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p4}</td>
-                    <td class="py-2 px-3 text-center text-gray-600">${t.p5}</td>
-                    <td class="py-2 px-3 text-right font-mono">${t.avg_mttr}m</td>
-                    <td class="py-2 px-3 text-center">
-                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${stBadge}">
-                            ${t.status}
-                        </span>
-                    </td>
-                </tr>
-            `;
-            tbodyTechs.insertAdjacentHTML('beforeend', tr);
-        });
+        if (tbodyTechs) {
+            tbodyTechs.innerHTML = "";
+            data.tech_rankings.forEach(t => {
+                const stBadge = t.status === 'Equilibrada' 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700/60' 
+                    : (t.status === 'Moderada' 
+                        ? 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700/60' 
+                        : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-700/60');
+                const tr = `
+                    <tr class="hover:bg-gray-50/60 dark:hover:bg-white/5 transition text-xs">
+                        <td class="py-2.5 px-3 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-[10px] font-bold flex items-center justify-center shrink-0 shadow-2xs">${t.avatar}</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">${t.name}</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-snow-muted font-medium">${t.area}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-gray-800 dark:text-gray-200">${t.tasks_count}</td>
+                        <td class="py-2.5 px-3 text-right font-bold text-blue-600 dark:text-blue-400 font-mono">${t.total_points} pts</td>
+                        <td class="py-2.5 px-3 text-center text-gray-700 dark:text-gray-300">${t.p1}</td>
+                        <td class="py-2.5 px-3 text-center text-gray-700 dark:text-gray-300">${t.p2}</td>
+                        <td class="py-2.5 px-3 text-center text-gray-700 dark:text-gray-300">${t.p3}</td>
+                        <td class="py-2.5 px-3 text-center text-gray-700 dark:text-gray-300">${t.p4}</td>
+                        <td class="py-2.5 px-3 text-center text-gray-700 dark:text-gray-300">${t.p5}</td>
+                        <td class="py-2.5 px-3 text-right font-mono text-gray-800 dark:text-gray-200">${t.avg_mttr}m</td>
+                        <td class="py-2.5 px-3 text-center">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-2xs ${stBadge}">
+                                ${t.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+                tbodyTechs.insertAdjacentHTML('beforeend', tr);
+            });
+        }
 
         lucide.createIcons();
     } catch (err) {
@@ -1376,11 +1404,16 @@ async function loadMailWorkerStatus() {
         const status = await res.json();
         currentWorkerStatus = status;
 
+        const cfg = status.config || status;
+        const mode = cfg.mode || status.mode || 'SIMULATOR';
+        const isEnabled = (cfg.enabled !== undefined) ? cfg.enabled : (status.enabled !== undefined ? status.enabled : true);
+        const pollInterval = cfg.poll_interval || status.poll_interval || 30;
+
         // 1. Badge de Modo
         const modeBadge = document.getElementById("worker-mode-badge");
         const modeText = document.getElementById("worker-mode-text");
         if (modeBadge && modeText) {
-            if (status.config.mode === 'REAL_IMAP') {
+            if (mode === 'REAL_IMAP') {
                 modeBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1.5";
                 modeText.innerText = "Modo: IMAP Real";
             } else {
@@ -1395,12 +1428,12 @@ async function loadMailWorkerStatus() {
         const btnToggleText = document.getElementById("btn-worker-toggle-text");
         const iconToggle = document.getElementById("icon-worker-toggle");
 
-        const isRunning = status.is_running && status.config.enabled;
+        const isRunning = status.is_running && isEnabled;
 
         if (stateBadge && stateText) {
             if (isRunning) {
                 stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5";
-                stateBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="worker-state-text">Activo (Cada ${status.config.poll_interval}s)</span>`;
+                stateBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="worker-state-text">Activo (Cada ${pollInterval}s)</span>`;
             } else {
                 stateBadge.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100 flex items-center gap-1.5";
                 stateBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span id="worker-state-text">Pausado</span>`;
@@ -1431,7 +1464,7 @@ async function loadMailWorkerStatus() {
 
         const totalCountEl = document.getElementById("worker-total-count");
         if (totalCountEl) {
-            totalCountEl.innerText = status.total_processed;
+            totalCountEl.innerText = status.total_processed ?? status.emails_processed ?? 0;
         }
 
         lucide.createIcons();
@@ -1442,7 +1475,10 @@ async function loadMailWorkerStatus() {
 
 async function toggleMailWorker() {
     if (!currentWorkerStatus) return;
-    const nextState = !currentWorkerStatus.config.enabled;
+    const isCurrentlyEnabled = (currentWorkerStatus.config && currentWorkerStatus.config.enabled !== undefined)
+        ? currentWorkerStatus.config.enabled
+        : (currentWorkerStatus.enabled !== undefined ? currentWorkerStatus.enabled : true);
+    const nextState = !isCurrentlyEnabled;
     try {
         const res = await fetch('/api/mail-worker/toggle', {
             method: 'POST',
@@ -1644,6 +1680,7 @@ async function loadCurrentUserProfile() {
     try {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
+            const user = await res.json();
             const nameEl = document.getElementById("sidebar-user-name");
             const roleEl = document.getElementById("sidebar-user-role");
             const avatarEl = document.getElementById("sidebar-user-avatar");
@@ -1663,4 +1700,54 @@ async function logoutSession() {
     } catch (e) {
         window.location.href = '/login';
     }
+}
+
+// =============================================================
+// CONMUTADOR DE VISTAS MODULARES (MÉTRICAS / BANDEJA / AUDITORÍA)
+// =============================================================
+
+let currentDashboardView = 'metrics'; // 'metrics' | 'inbox' | 'audit'
+
+function switchDashboardView(viewId) {
+    currentDashboardView = viewId;
+    
+    const viewMetrics = document.getElementById('view-metrics');
+    const viewInbox = document.getElementById('view-inbox');
+    const viewAudit = document.getElementById('view-audit');
+
+    if (viewMetrics) viewMetrics.classList.toggle('hidden', viewId !== 'metrics');
+    if (viewInbox) viewInbox.classList.toggle('hidden', viewId !== 'inbox');
+    if (viewAudit) viewAudit.classList.toggle('hidden', viewId !== 'audit');
+
+    // Resaltado de botones en el sidebar
+    ['metrics', 'inbox', 'audit'].forEach(v => {
+        const btn = document.getElementById(`nav-view-${v}`);
+        if (btn) {
+            if (v === viewId) {
+                btn.classList.add('sidebar-nav-active');
+                btn.classList.remove('text-gray-700', 'dark:text-gray-300');
+            } else {
+                btn.classList.remove('sidebar-nav-active');
+                btn.classList.add('text-gray-700', 'dark:text-gray-300');
+            }
+        }
+    });
+
+    // Actualizar breadcrumb
+    const bcView = document.getElementById('breadcrumb-view-name');
+    if (bcView) {
+        if (viewId === 'metrics') bcView.innerText = 'Métricas & KPIs';
+        else if (viewId === 'inbox') bcView.innerText = 'Bandeja de Correos';
+        else if (viewId === 'audit') bcView.innerText = 'Historial y Auditoría';
+    }
+
+    // Si ingresa a auditoría, refrescar datos
+    if (viewId === 'audit') {
+        loadReportsData();
+    } else if (viewId === 'inbox') {
+        loadInbox();
+        loadMailWorkerStatus();
+    }
+
+    lucide.createIcons();
 }
