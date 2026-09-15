@@ -369,11 +369,53 @@
                 </div>
 
                 <!-- Theme Toggle -->
-                <button id="theme-toggle-btn" onclick="toggleDarkMode()" class="p-1.5 rounded-lg border border-snow-border hover:bg-gray-100 text-snow-muted hover:text-gray-900 transition flex items-center justify-center cursor-pointer" title="Alternar Modo Oscuro / Claro">
+                <button id="theme-toggle-btn" onclick="toggleDarkMode()" class="p-1.5 rounded-lg border border-snow-border hover:bg-gray-100 dark:hover:bg-[#1E293B] text-snow-muted hover:text-gray-900 dark:hover:text-white transition flex items-center justify-center cursor-pointer" title="Alternar Modo Oscuro / Claro">
                     <span id="theme-icon-container" class="flex items-center justify-center pointer-events-none">
                         <i data-lucide="moon" class="w-3.5 h-3.5"></i>
                     </span>
                 </button>
+
+                <!-- User Profile Pill & Interactive Dropdown Menu -->
+                <div class="relative">
+                    <button onclick="toggleUserDropdown()" id="user-menu-btn" class="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-lg border border-snow-border hover:bg-gray-100 dark:hover:bg-[#1E293B] transition cursor-pointer" title="Menú de Usuario y Conmutación de Perfil">
+                        <div id="header-user-avatar" class="w-6 h-6 rounded-full bg-[#0056B3] text-white flex items-center justify-center font-bold text-[10px]">
+                            JC
+                        </div>
+                        <div class="hidden sm:flex flex-col text-left">
+                            <span id="header-user-name" class="text-xs font-bold text-gray-900 dark:text-white leading-tight">José Corobo</span>
+                            <span id="header-user-role" class="text-[9px] text-[#0056B3] dark:text-[#38BDF8] font-semibold leading-tight">Especialista (Soporte)</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3 h-3 text-snow-muted ml-0.5"></i>
+                    </button>
+
+                    <!-- Dropdown Menu de Usuario -->
+                    <div id="user-profile-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white dark:bg-[#18181B] rounded-xl shadow-2xl border border-snow-border p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                        <div class="px-3 py-2 border-b border-snow-border mb-2">
+                            <p class="text-xs font-bold text-gray-900 dark:text-white" id="dropdown-user-fullname">José Corobo</p>
+                            <p class="text-[10px] text-snow-muted font-mono" id="dropdown-user-email">joseacorobo@gmail.com</p>
+                            <span id="dropdown-user-badge" class="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#0056B3] dark:bg-blue-950/60 dark:text-blue-300">
+                                Especialista - Soporte FTTH
+                            </span>
+                        </div>
+
+                        <!-- Conmutador Rápido de Perfiles para Validación -->
+                        <div class="py-1">
+                            <span class="px-3 text-[9px] font-bold uppercase tracking-wider text-snow-muted block mb-1.5">
+                                Conmutar Perfil de Operaciones
+                            </span>
+                            <div id="dropdown-users-list" class="max-h-48 overflow-y-auto space-y-1">
+                                <!-- Poblado dinámicamente con especialistas y coordinadores -->
+                            </div>
+                        </div>
+
+                        <div class="border-t border-snow-border pt-2 mt-2">
+                            <button onclick="logoutSession()" class="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition font-medium cursor-pointer">
+                                <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                                <span>Cerrar sesión</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -692,17 +734,25 @@
                         <!-- Top Bar: Tabs Prioritarios / Otros / Todos -->
                         <div class="p-2.5 border-b border-snow-border bg-gray-50/70 dark:bg-[#1E1E20] space-y-2">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-1">
-                                    <button onclick="switchInboxTab('prioritarios')" id="tab-inbox-prioritarios" class="outlook-tab-btn active cursor-pointer">
-                                        Prioritarios
-                                        <span id="badge-tab-prioritarios" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0078D4] dark:bg-blue-900/40 dark:text-blue-300 font-bold">0</span>
-                                    </button>
-                                    <button onclick="switchInboxTab('otros')" id="tab-inbox-otros" class="outlook-tab-btn cursor-pointer">
-                                        Otros
-                                        <span id="badge-tab-otros" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-bold">0</span>
-                                    </button>
-                                    <button onclick="switchInboxTab('todos')" id="tab-inbox-todos" class="outlook-tab-btn cursor-pointer">
+                                <div class="flex items-center gap-1 overflow-x-auto pb-0.5 max-w-[280px]">
+                                    <button onclick="switchInboxTab('todos')" id="tab-inbox-todos" class="outlook-tab-btn active cursor-pointer whitespace-nowrap">
                                         Todos
+                                    </button>
+                                    <button onclick="switchInboxTab('directos')" id="tab-inbox-directos" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Correos recibidos directamente en mi buzón">
+                                        Directos a Mí
+                                        <span id="badge-tab-directos" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold">0</span>
+                                    </button>
+                                    <button onclick="switchInboxTab('mis_asignados')" id="tab-inbox-mis_asignados" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Tickets asignados a mi perfil">
+                                        Mis Asignados
+                                        <span id="badge-tab-mis-asignados" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">0</span>
+                                    </button>
+                                    <button onclick="switchInboxTab('pendientes')" id="tab-inbox-pendientes" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Tickets pendientes sin asignar">
+                                        Pendientes
+                                        <span id="badge-tab-pendientes" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0078D4] dark:bg-blue-900/40 dark:text-blue-300 font-bold">0</span>
+                                    </button>
+                                    <button onclick="switchInboxTab('prioritarios')" id="tab-inbox-prioritarios" class="outlook-tab-btn cursor-pointer whitespace-nowrap">
+                                        Prioritarios
+                                        <span id="badge-tab-prioritarios" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-bold">0</span>
                                     </button>
                                 </div>
                                 <span class="text-[11px] text-snow-muted font-medium">
@@ -948,6 +998,55 @@
                         </thead>
                         <tbody id="feed-tbody" class="divide-y divide-snow-border">
                             <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabla 4: Bitácora Forense de Auditoría y Trazabilidad en Tiempo Real -->
+            <div id="audit-trail-section" class="bg-snow-card rounded-snow-card p-6 border border-snow-border shadow-xs space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-[#0056B3]"></i>
+                            Bitácora Forense de Auditoría y Trazabilidad Operativa
+                        </h2>
+                        <p class="text-xs text-snow-muted">Registro inmutable de inicio de sesión, tomas de tickets, pausas y resoluciones por especialista</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <select id="filter-audit-action" onchange="changeAuditActionFilter(this.value)" class="bg-gray-50 dark:bg-[#252528] border border-snow-border rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none">
+                            <option value="TODAS">Todas las Acciones</option>
+                            <option value="INICIO_SESION">Inicios de Sesión</option>
+                            <option value="CAMBIO_PERFIL">Conmutación Perfil</option>
+                            <option value="TOMA_TICKET">Tomas de Ticket</option>
+                            <option value="PAUSA_TICKET">Pausas de Terreno</option>
+                            <option value="CIERRE_TICKET">Resoluciones de Cierre</option>
+                            <option value="INGESTA_CORREO">Ingesta IMAP Real</option>
+                        </select>
+
+                        <button onclick="loadAuditLogs()" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer" title="Actualizar Bitácora">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            <span>Refrescar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-gray-50 dark:bg-[#242426] text-snow-muted uppercase text-[10px] border-b border-snow-border sticky top-0">
+                            <tr>
+                                <th class="py-2.5 px-3">Fecha y Hora</th>
+                                <th class="py-2.5 px-3">Especialista</th>
+                                <th class="py-2.5 px-3">Rol / Célula</th>
+                                <th class="py-2.5 px-3">Acción Registrada</th>
+                                <th class="py-2.5 px-3">Entidad / Ticket</th>
+                                <th class="py-2.5 px-3">Detalle Técnico & Evidencia</th>
+                                <th class="py-2.5 px-3 text-right">IP Origen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-tbody" class="divide-y divide-snow-border">
+                            <tr><td colspan="7" class="py-6 text-center text-snow-muted">Cargando eventos de auditoría...</td></tr>
                         </tbody>
                     </table>
                 </div>

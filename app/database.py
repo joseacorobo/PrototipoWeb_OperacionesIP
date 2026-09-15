@@ -98,7 +98,44 @@ def init_db():
     """)
     
     
-    # Migración de columnas para el Worker de Correo
+    # Registro de Auditoría Forense y Trazabilidad en Tiempo Real
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        user_name TEXT NOT NULL,
+        user_role TEXT NOT NULL,
+        area TEXT NOT NULL,
+        action TEXT NOT NULL, -- INICIO_SESION, CIERRE_SESION, CAMBIO_PERFIL, TOMA_TICKET, PAUSA_TICKET, REANUDACION_TICKET, CIERRE_TICKET, INGESTA_CORREO, CONFIG_IMAP
+        entity_type TEXT NOT NULL, -- AUTH, TICKET, MAIL_WORKER, SISTEMA
+        entity_id TEXT,
+        details TEXT,
+        ip_address TEXT DEFAULT '127.0.0.1',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action)")
+    
+    # Migración de columnas para audit_logs
+    cursor.execute("PRAGMA table_info(audit_logs)")
+    audit_cols = [col[1] for col in cursor.fetchall()]
+    if "user_area" not in audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN user_area TEXT")
+    if "area" not in audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN area TEXT")
+    if "target_type" not in audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN target_type TEXT")
+    if "entity_type" not in audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN entity_type TEXT")
+    if "target_id" not in audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN target_id TEXT")
+    if "entity_id" not in audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN entity_id TEXT")
+    
+    # Migración de columnas para el Worker de Correo y Correos Directos
     cursor.execute("PRAGMA table_info(email_tickets)")
     columns = [col[1] for col in cursor.fetchall()]
     if "message_id" not in columns:
@@ -106,6 +143,19 @@ def init_db():
         cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_email_tickets_msgid ON email_tickets(message_id)")
     if "source" not in columns:
         cursor.execute("ALTER TABLE email_tickets ADD COLUMN source TEXT DEFAULT 'MANUAL'")
+    if "recipient_email" not in columns:
+        cursor.execute("ALTER TABLE email_tickets ADD COLUMN recipient_email TEXT")
+
+    # Asegurar existencia de usuario José Corobo como especialista para validación real
+    cursor.execute("SELECT id FROM users WHERE email = 'joseacorobo@gmail.com'")
+    jc = cursor.fetchone()
+    if not jc:
+        import hashlib
+        pass_hash = hashlib.sha256("admin".encode("utf-8")).hexdigest()
+        cursor.execute("""
+        INSERT INTO users (name, email, password_hash, area, role, avatar, shift, status)
+        VALUES ('José Corobo', 'joseacorobo@gmail.com', ?, 'Soporte', 'ESPECIALISTA', 'JC', 'Mañana', 'Activo')
+        """, (pass_hash,))
 
     conn.commit()
     conn.close()

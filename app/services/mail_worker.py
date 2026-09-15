@@ -11,9 +11,11 @@ from datetime import datetime
 try:
     from database import get_db
     from services.email_parser import TelcoEmailParser
+    from services.audit import log_audit_event
 except ImportError:
     from app.database import get_db
     from app.services.email_parser import TelcoEmailParser
+    from app.services.audit import log_audit_event
 
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config_mail.json")
 
@@ -191,9 +193,10 @@ class MailWorker:
                 # 1. Message-ID para deduplicación
                 message_id = msg.get("Message-ID") or f"<no-id-{int(time.time())}-{msg_id_bytes.decode()}@imap>"
                 
-                # 2. Decodificar Asunto
+                # 2. Decodificar Asunto, Remitente y Destinatario
                 subject = self._decode_header_str(msg.get("Subject", "Sin Asunto"))
                 sender = self._decode_header_str(msg.get("From", "remitente@desconocido.com"))
+                recipient = self._decode_header_str(msg.get("To", user or ""))
 
                 # 3. Extraer Cuerpo
                 body = self._extract_body(msg)
@@ -204,13 +207,21 @@ class MailWorker:
                     sender_email=sender,
                     subject=subject,
                     body_text=body,
-                    source="IMAP"
+                    source="IMAP",
+                    recipient_email=recipient
                 )
                 if t_code:
                     new_tickets.append(t_code)
                     self.emails_processed += 1
                     # Marcar como visto en el servidor IMAP
                     mail.store(msg_id_bytes, "+FLAGS", "\\Seen")
+                    log_audit_event(
+                        action="INGESTA_CORREO",
+                        entity_type="TICKET",
+                        entity_id=t_code,
+                        details=f"Correo IMAP '{subject[:45]}' de {sender} hacia {recipient}",
+                        ip_address="IMAP_WORKER"
+                    )
 
             mail.close()
             mail.logout()
@@ -322,7 +333,7 @@ class MailWorker:
                 "advice": "Verifique el nombre de host del servidor IMAP y que el puerto 993 no esté bloqueado por firewall."
             }
 
-    def _insert_ticket(self, message_id: str, sender_email: str, subject: str, body_text: str, source: str) -> str:
+    def _insert_ticket(self, message_id: str, sender_email: str, subject: str, body_text: str, source: str, recipient_email: str = "") -> str:
         """Inserta el ticket en SQLite evitando duplicados mediante message_id"""
         conn = get_db()
         cur = conn.cursor()
@@ -348,12 +359,12 @@ class MailWorker:
         INSERT INTO email_tickets (
             ticket_code, sender_email, subject, full_body, area,
             subscriber_code, serial_pon, node_name, slot_pon, mac_address,
-            suggested_task_type_id, status, message_id, source
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?, ?)
+            suggested_task_type_id, status, message_id, source, recipient_email
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?, ?, ?)
         """, (
             code, sender_email, subject, body_text, p["detected_area"],
             p["subscriber_code"] or "N/A", p["serial_pon"] or "N/A", p["node_name"] or "N/A",
-            p["slot_pon"] or "N/A", p["mac_address"] or "N/A", task_type_id, message_id, source
+            p["slot_pon"] or "N/A", p["mac_address"] or "N/A", task_type_id, message_id, source, recipient_email or ""
         ))
         conn.commit()
         conn.close()

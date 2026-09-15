@@ -187,19 +187,40 @@
 
                 </form>
 
-                <!-- Acceso Directo Administrador General (1 Clic) -->
-                <button type="button" onclick="quickFillAndLogin('admin@inter.com.ve', 'admin')" class="w-full p-2.5 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-between transition cursor-pointer text-left">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-7 h-7 rounded-[4px] bg-[#0056B3] text-white flex items-center justify-center font-bold text-[10px]">
-                            AD
+                <!-- Perfiles de Validación Rápida en 1 Clic -->
+                <div class="space-y-2">
+                    <span class="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider block mb-1">
+                        Acceso Rápido por Perfil de Operaciones
+                    </span>
+                    
+                    <!-- 1. José Corobo (Especialista Soporte IP / Correo Real) -->
+                    <button type="button" onclick="quickFillAndLogin('joseacorobo@gmail.com', 'admin')" class="w-full p-2.5 rounded-[6px] bg-[#EFF6FF] hover:bg-[#DBEAFE] border border-[#BFDBFE] flex items-center justify-between transition cursor-pointer text-left">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-[4px] bg-[#0056B3] text-white flex items-center justify-center font-bold text-[10px]">
+                                JC
+                            </div>
+                            <div>
+                                <span class="block text-xs font-bold text-[#0F172A] leading-tight">José Corobo</span>
+                                <span class="block text-[10px] text-[#2563EB] font-mono leading-tight">joseacorobo@gmail.com (Especialista Soporte)</span>
+                            </div>
                         </div>
-                        <div>
-                            <span class="block text-xs font-bold text-[#0F172A] leading-tight">Administrador General</span>
-                            <span class="block text-[10px] text-[#94A3B8] font-mono leading-tight">admin@inter.com.ve</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-white text-[#0056B3] border border-[#BFDBFE] shadow-2xs">Mi Perfil</span>
+                    </button>
+
+                    <!-- 2. Administrador General -->
+                    <button type="button" onclick="quickFillAndLogin('admin@inter.com.ve', 'admin')" class="w-full p-2.5 rounded-[6px] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-between transition cursor-pointer text-left">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-[4px] bg-[#475569] text-white flex items-center justify-center font-bold text-[10px]">
+                                AD
+                            </div>
+                            <div>
+                                <span class="block text-xs font-bold text-[#0F172A] leading-tight">David Rodríguez / Admin General</span>
+                                <span class="block text-[10px] text-[#94A3B8] font-mono leading-tight">admin@inter.com.ve (Administrador NOC)</span>
+                            </div>
                         </div>
-                    </div>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[#E6F0FA] text-[#0056B3] border border-[#BFDBFE]">Acceso Rápido</span>
-                </button>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-white text-gray-700 border border-gray-200 shadow-2xs">Admin</span>
+                    </button>
+                </div>
 
             </div>
 

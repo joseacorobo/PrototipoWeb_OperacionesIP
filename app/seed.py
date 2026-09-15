@@ -93,7 +93,7 @@ def seed():
     # 4. Bandeja de Correos con Datos Técnicos Completos para el Soporte
     sample_emails = [
         (
-            "INC-40112", "soporte.terreno@inter.com.ve", 
+            "INC-40112", "joseacorobo@gmail.com", 
             "Cliente con ONT en Discovery permanente - Nodo Chacao", 
             "Buenas tardes equipo. El cliente reporta que tras reemplazo de cable drop la ONT emite y recibe potencia óptica normal (-19.2 dBm), pero no avanza a Whitelist. Se solicita desatascar demonio OLT y verificar homologación.",
             "Soporte", "CLI-902188", "FHTT09182312", "OLT-CHAC-01", "Slot 3 / PON 4 / Ct.Onu 18", "E0:67:B3:21:44:02", 5,

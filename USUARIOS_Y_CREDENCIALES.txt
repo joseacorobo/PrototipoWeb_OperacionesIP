@@ -1,0 +1,108 @@
+===============================================================================
+       SISTEMA DE GESTION OPERATIVA NOC - INTER OPERACIONES IP
+               GUIA DE ACCESO, USUARIOS Y CREDENCIALES
+===============================================================================
+
+ESTADO DEL SERVIDOR LOCAL:
+  - URL Principal:        http://127.0.0.1:8000/
+  - URL de Inicio Sesion: http://127.0.0.1:8000/login
+  - Servidor:             FastAPI + Uvicorn (Puerto 8000 Activo)
+  - Base de Datos:        SQLite3 (app/ip_ops.db)
+
+-------------------------------------------------------------------------------
+1. PERFIL PRINCIPAL DE PRUEBAS REALES Y CORREO PERSONAL
+-------------------------------------------------------------------------------
+  Nombre Completo:       Jose Corobo
+  Correo Electronico:    joseacorobo@gmail.com
+  Contrasena de Acceso:  admin  (o: admin2026, inter2026, 123456)
+  Rol Operativo:         ESPECIALISTA
+  Celula / Area:         Soporte
+  Turno:                 Manana
+  Iniciales Avatar:      JC
+  ID de Base de Datos:   27
+
+  CARACTERISTICA ESPECIAL - BANDEJA DIRECTA:
+  * Todos los correos sincronizados via IMAP que tengan como destinatario
+    'joseacorobo@gmail.com' se identifican con la etiqueta [Directo a mi].
+  * En la Bandeja de Entrada se contabilizan automaticamente en la pestana
+    'Directos a Mi'.
+  * Al tomar el caso con este perfil, se inicia el cronometro tecnico y se
+    asignan los puntos al perfil de Jose Corobo.
+  * Todas las acciones quedan registradas de manera inmutable en la Bitacora
+    de Auditoria Forense.
+
+-------------------------------------------------------------------------------
+2. PERFILES ADMINISTRATIVOS Y DE COORDINACION
+-------------------------------------------------------------------------------
+  [Administrador General NOC]
+  - Nombre:              Administrador General
+  - Correo:              admin@inter.com.ve
+  - Contrasena:          admin
+  - Rol:                 ADMINISTRADOR
+  - Celula:              Todas
+  - ID:                  26
+
+  [Ingeniero de Operaciones IP]
+  - Nombre:              David Rodriguez
+  - Correo:              david.rodriguez@inter.com.ve
+  - Contrasena:          admin
+  - Rol:                 ADMINISTRADOR
+  - Celula:              Acceso
+  - ID:                  25
+
+  [Coordinador de Soporte]
+  - Nombre:              Carlos Mendez
+  - Correo:              carlos.mendez@inter.com.ve
+  - Contrasena:          admin
+  - Rol:                 COORDINADOR
+  - Celula:              Soporte
+  - ID:                  13
+
+-------------------------------------------------------------------------------
+3. LISTADO COMPLETO DE ESPECIALISTAS ACTIVOS EN SISTEMA
+-------------------------------------------------------------------------------
+ID | NOMBRE COMPLETO       | CORREO ELECTRONICO             | ROL          | AREA       | TURNO
+---+-----------------------+--------------------------------+--------------+------------+--------
+13 | Carlos Mendez         | carlos.mendez@inter.com.ve     | COORDINADOR  | Soporte    | Manana
+14 | Anais Rodriguez       | anais.rodriguez@inter.com.ve   | ESPECIALISTA | Soporte    | Manana
+15 | Jose Gregorio Perez   | jose.perez@inter.com.ve        | ESPECIALISTA | Soporte    | Tarde
+16 | Mariana Salazar       | mariana.salazar@inter.com.ve   | ESPECIALISTA | Soporte    | Noche
+17 | Luis Eduardo Gomez    | luis.gomez@inter.com.ve        | COORDINADOR  | Cabecera   | Manana
+18 | Ricardo Morales       | ricardo.morales@inter.com.ve   | ESPECIALISTA | Cabecera   | Manana
+19 | Gabriel Torres        | gabriel.torres@inter.com.ve    | ESPECIALISTA | Cabecera   | Tarde
+20 | Alejandro Silva       | alejandro.silva@inter.com.ve   | ESPECIALISTA | Cabecera   | Noche
+21 | Daniela Castillo      | daniela.castillo@inter.com.ve  | COORDINADOR  | Telefonia  | Manana
+22 | Jesus Alberto Vargas  | jesus.vargas@inter.com.ve      | ESPECIALISTA | Telefonia  | Manana
+23 | Paola Mendoza         | paola.mendoza@inter.com.ve     | ESPECIALISTA | Telefonia  | Tarde
+24 | Victor Hernandez      | victor.hernandez@inter.com.ve  | ESPECIALISTA | Telefonia  | Noche
+25 | David Rodriguez       | david.rodriguez@inter.com.ve   | ADMINISTRADOR| Acceso     | General
+26 | Administrador General | admin@inter.com.ve             | ADMINISTRADOR| Todas      | General
+27 | Jose Corobo           | joseacorobo@gmail.com          | ESPECIALISTA | Soporte    | Manana
+
+NOTA: Para cualquier usuario de la lista, la contrasena valida por defecto es 'admin'.
+
+-------------------------------------------------------------------------------
+4. CONMUTADOR RAPIDO DE PERFILES (HOT-SWITCHING EN 1 CLIC)
+-------------------------------------------------------------------------------
+No es necesario cerrar sesion para probar con otro perfil:
+1. En la esquina superior derecha del Dashboard, haz clic sobre el boton del
+   usuario activo (Pill de Perfil con foto/iniciales).
+2. Se desplegara la lista de todos los especialistas.
+3. Haz clic sobre cualquier trabajador (ej. Jose Corobo, Carlos Mendez, Anais Rodriguez).
+4. El sistema actualizara inmediatamente la sesion activa, recargara la bandeja
+   con los filtros directos para ese especialista y registrara el evento
+   'CAMBIO_PERFIL' en la Bitacora Forense de Auditoria.
+
+-------------------------------------------------------------------------------
+5. TRAZABILIDAD Y REGISTRO DE AUDITORIA FORENSE
+-------------------------------------------------------------------------------
+Cada vez que operes el sistema con un usuario, se generan registros inmutables
+visibles en la seccion 'Historial y Auditoria':
+  - INICIO_SESION:       Acceso al sistema con credenciales
+  - CAMBIO_PERFIL:       Conmutacion de especialista desde la barra superior
+  - TOMA_TICKET:         Asignacion voluntaria del ticket a tu perfil
+  - PAUSA_TICKET:        Pausa del cronometro por espera en terreno
+  - REANUDACION_TICKET:  Reanudacion del tiempo de atencion
+  - CIERRE_TICKET:       Cierre tecnico, computo de puntos y MTTR registrado
+  - INGESTA_CORREO:      Ingesta de nuevos correos via protocolo IMAP SSL
+===============================================================================

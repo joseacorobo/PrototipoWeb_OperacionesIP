@@ -687,7 +687,7 @@ async function loadInbox() {
 // MICROSOFT 365 / OUTLOOK WEB INBOX ENGINE (NODE 160-236405)
 // =============================================================
 
-let currentInboxTab = 'prioritarios'; // 'prioritarios' | 'otros' | 'todos'
+let currentInboxTab = 'todos'; // 'todos' | 'directos' | 'mis_asignados' | 'pendientes' | 'prioritarios' | 'otros'
 let isOutlookFullscreen = false;
 let selectedTicketId = null;
 
@@ -711,9 +711,30 @@ function toggleOutlookFullscreen() {
     lucide.createIcons();
 }
 
+function isDirectToMe(t) {
+    if (!window.currentUser) return false;
+    const myEmail = (window.currentUser.email || '').toLowerCase().trim();
+    const myName = (window.currentUser.name || '').toLowerCase().trim();
+    if (!myEmail && !myName) return false;
+
+    const recip = (t.recipient_email || '').toLowerCase();
+    if (recip && myEmail && (recip.includes(myEmail) || myEmail.includes(recip))) return true;
+
+    const fullText = `${t.subject || ''} ${t.full_body || ''}`.toLowerCase();
+    if (myEmail && fullText.includes(myEmail)) return true;
+    if (myName && fullText.includes(myName)) return true;
+
+    return false;
+}
+
+function isClaimedByMe(t) {
+    if (!window.currentUser) return false;
+    return t.claimed_by_user_id === window.currentUser.id;
+}
+
 function switchInboxTab(tab) {
     currentInboxTab = tab;
-    ['prioritarios', 'otros', 'todos'].forEach(t => {
+    ['todos', 'directos', 'mis_asignados', 'pendientes', 'prioritarios', 'otros'].forEach(t => {
         const btn = document.getElementById(`tab-inbox-${t}`);
         if (btn) {
             if (t === tab) {
@@ -771,9 +792,12 @@ function applyInboxFilters() {
     const globalSearchEl = document.getElementById("global-search-input");
     const searchQuery = (outlookSearchEl ? outlookSearchEl.value : (globalSearchEl ? globalSearchEl.value : "")).trim().toLowerCase();
 
-    // Contadores para pestañas Prioritarios vs Otros
+    // Contadores para pestañas
     let countPrioritarios = 0;
     let countOtros = 0;
+    let countDirectos = 0;
+    let countMisAsignados = 0;
+    let countPendientes = 0;
 
     activeTickets.forEach(t => {
         const isCrit = (t.suggested_points >= 4) || 
@@ -784,12 +808,22 @@ function applyInboxFilters() {
         } else {
             countOtros++;
         }
+
+        if (isDirectToMe(t)) countDirectos++;
+        if (isClaimedByMe(t)) countMisAsignados++;
+        if (t.status === 'PENDIENTE') countPendientes++;
     });
 
     const badgePrio = document.getElementById("badge-tab-prioritarios");
     if (badgePrio) badgePrio.innerText = countPrioritarios;
     const badgeOtr = document.getElementById("badge-tab-otros");
     if (badgeOtr) badgeOtr.innerText = countOtros;
+    const badgeDir = document.getElementById("badge-tab-directos");
+    if (badgeDir) badgeDir.innerText = countDirectos;
+    const badgeMis = document.getElementById("badge-tab-mis-asignados");
+    if (badgeMis) badgeMis.innerText = countMisAsignados;
+    const badgePend = document.getElementById("badge-tab-pendientes");
+    if (badgePend) badgePend.innerText = countPendientes;
 
     let filtered = activeTickets.filter(t => {
         // 1. Filtro por Pestaña
@@ -797,6 +831,9 @@ function applyInboxFilters() {
                        (t.sla_minutes && t.sla_minutes <= 20) || 
                        (t.subject && (t.subject.includes('Bridge') || t.subject.includes('OLT') || t.subject.includes('Troncal') || t.subject.includes('Caída') || t.subject.includes('Alerta')));
         
+        if (currentInboxTab === 'directos' && !isDirectToMe(t)) return false;
+        if (currentInboxTab === 'mis_asignados' && !isClaimedByMe(t)) return false;
+        if (currentInboxTab === 'pendientes' && t.status !== 'PENDIENTE') return false;
         if (currentInboxTab === 'prioritarios' && !isCrit) return false;
         if (currentInboxTab === 'otros' && isCrit) return false;
 
@@ -958,7 +995,9 @@ function renderOutlookMessageList(tickets) {
                         <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">${t.area}</span>
                         <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#0078D4] dark:bg-blue-900/40 dark:text-blue-300">+${t.suggested_points || 2} pts</span>
                         ${slaPill}
-                        ${t.claimed_by_name ? `<span class="text-[9px] text-snow-muted ml-auto truncate max-w-[90px] font-medium">${t.claimed_by_name}</span>` : ''}
+                        ${isDirectToMe(t) ? `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300">Directo a mí</span>` : ''}
+                        ${isClaimedByMe(t) ? `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300">Asignado a mí</span>` : ''}
+                        ${t.claimed_by_name && !isClaimedByMe(t) ? `<span class="text-[9px] text-snow-muted ml-auto truncate max-w-[90px] font-medium">Por: ${t.claimed_by_name}</span>` : ''}
                     </div>
                 </div>
 
@@ -1012,23 +1051,34 @@ async function selectOutlookMessage(ticketId) {
         const res = await fetch(`/api/tickets/${ticketId}`);
         const t = await res.json();
         currentOpenTicket = t;
-
-        // Si está PENDIENTE, reclamarlo automáticamente en el backend y comenzar cronómetro
-        if (t.status === 'PENDIENTE') {
-            await fetch(`/api/tickets/${ticketId}/claim`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: 1 }) // Carlos Méndez (Soporte)
-            });
-            t.status = 'EN PROGRESO';
-            t.claimed_at = new Date().toISOString().replace('T', ' ').substring(0, 19);
-            t.claimed_by_name = "Carlos Méndez";
-        }
-
         loadTicketIntoReadingPane(t);
-
     } catch (e) {
         console.error("Error fetching ticket details:", e);
+    }
+}
+
+async function claimCurrentTicket() {
+    if (!currentOpenTicket) return;
+    const uid = window.currentUser ? window.currentUser.id : 27;
+    try {
+        const res = await fetch(`/api/tickets/${currentOpenTicket.id}/claim`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: uid })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            currentOpenTicket.status = 'EN PROGRESO';
+            currentOpenTicket.claimed_at = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            currentOpenTicket.claimed_by_id = uid;
+            currentOpenTicket.claimed_by_user_id = uid;
+            currentOpenTicket.claimed_by_name = window.currentUser ? window.currentUser.name : 'José Corobo';
+            loadTicketIntoReadingPane(currentOpenTicket);
+            loadInbox();
+            if (window.currentDashboardView === 'audit') loadAuditLogs();
+        }
+    } catch (e) {
+        console.error("Error claiming ticket:", e);
     }
 }
 
@@ -1059,7 +1109,10 @@ function loadTicketIntoReadingPane(t) {
     // Status badge
     let statusText = "En Atención";
     let statusClass = "bg-blue-50 text-[#0078D4] border border-blue-100 dark:bg-blue-950/30 dark:text-blue-300";
-    if (t.status === 'EN ESPERA') {
+    if (t.status === 'PENDIENTE') {
+        statusText = "Pendiente en Cola";
+        statusClass = "bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300";
+    } else if (t.status === 'EN ESPERA') {
         statusText = "En Espera";
         statusClass = "bg-amber-50 text-amber-700 border border-amber-100 dark:bg-amber-950/30 dark:text-amber-300";
     } else if (t.status === 'COMPLETADO') {
@@ -1068,6 +1121,10 @@ function loadTicketIntoReadingPane(t) {
     }
 
     const fullTimestamp = t.created_at || "Hoy, 10:42 AM";
+    const isDirect = isDirectToMe(t);
+    const isPending = t.status === 'PENDIENTE';
+    const isCompleted = t.status === 'COMPLETADO';
+    const isClaimedByCurrentUser = isClaimedByMe(t);
 
     pane.innerHTML = `
         <div class="flex-1 flex flex-col h-full overflow-hidden">
@@ -1088,19 +1145,58 @@ function loadTicketIntoReadingPane(t) {
                     <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-[#2C2C2E] border border-snow-border shadow-2xs">
                         <i data-lucide="timer" class="w-3.5 h-3.5 text-[#0078D4]"></i>
                         <span class="text-[11px] text-snow-muted font-medium">Tiempo:</span>
-                        <span id="ws-live-timer" class="font-mono font-bold text-xs text-gray-900 dark:text-white">00:00:00</span>
+                        <span id="ws-live-timer" class="font-mono font-bold text-xs text-gray-900 dark:text-white">${isPending ? '00:00:00' : (isCompleted ? (t.net_duration || 15) + ':00' : '00:00:00')}</span>
                     </div>
 
+                    ${isPending ? `
+                    <button onclick="claimCurrentTicket()" class="px-3 py-1 rounded-lg bg-[#0078D4] hover:bg-[#106EBE] text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                        <span>Tomar Caso</span>
+                    </button>
+                    ` : (isCompleted ? `
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-1">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        <span>Cerrado</span>
+                    </span>
+                    ` : `
                     <button id="btn-pause-ticket" onclick="togglePauseTicket()" class="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-xs font-semibold flex items-center gap-1 transition cursor-pointer">
                         <i data-lucide="pause-circle" class="w-3.5 h-3.5"></i>
                         <span id="btn-pause-text">${t.status === 'EN ESPERA' ? 'Reanudar' : 'Pausar'}</span>
                     </button>
+                    `)}
                 </div>
             </div>
 
             <!-- 2. Email Body & Technical Content (Scrollable) -->
             <div class="flex-1 overflow-y-auto p-5 space-y-4">
                 
+                ${isPending ? `
+                <!-- Banner: Ticket Pendiente en Cola -->
+                <div class="p-3 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="inbox" class="w-4 h-4 text-[#0078D4]"></i>
+                        <span class="text-blue-900 dark:text-blue-200 font-medium">
+                            Este ticket está en espera en la cola general. ¿Deseas atenderlo con tu perfil?
+                        </span>
+                    </div>
+                    <button onclick="claimCurrentTicket()" class="px-3.5 py-1.5 rounded-lg bg-[#0078D4] hover:bg-[#106EBE] text-white font-semibold transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                        <span>Tomar Caso y Asignar a mi Perfil</span>
+                    </button>
+                </div>` : ''}
+
+                ${!isPending && !isCompleted ? `
+                <!-- Banner: Asignación Actual -->
+                <div class="p-2.5 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 rounded-xl flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span class="text-emerald-900 dark:text-emerald-200 font-medium">
+                            Caso en atención técnica por: <strong>${t.claimed_by_name || (window.currentUser ? window.currentUser.name : 'Especialista')}</strong>
+                        </span>
+                    </div>
+                    <span class="text-[10px] text-snow-muted font-mono">Iniciado: ${t.claimed_at ? t.claimed_at.substring(11, 19) : 'Reciente'}</span>
+                </div>` : ''}
+
                 <!-- Subject & Badges -->
                 <div>
                     <h2 id="ws-ticket-subject" class="text-base font-bold text-gray-900 dark:text-white tracking-tight">${t.subject}</h2>
@@ -1109,6 +1205,7 @@ function loadTicketIntoReadingPane(t) {
                         <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-950/40 dark:text-purple-300">${t.suggested_task_name || 'Operación'}</span>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300">+${t.suggested_points || 2} pts (P${t.suggested_points || 2})</span>
                         <span class="text-[10px] font-mono text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">SLA: ${t.sla_minutes || 30}m</span>
+                        ${isDirect ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300">Directo a mi Buzón</span>` : ''}
                     </div>
                 </div>
 
@@ -1123,7 +1220,7 @@ function loadTicketIntoReadingPane(t) {
                                 <span>${cleanSender}</span>
                                 <span class="text-[10px] font-normal text-snow-muted font-mono">&lt;${t.sender_email}&gt;</span>
                             </p>
-                            <p class="text-[11px] text-snow-muted">Para: <span class="font-medium text-gray-700 dark:text-gray-300">Operaciones IP &lt;operaciones@inter.com.ve&gt;</span></p>
+                            <p class="text-[11px] text-snow-muted">Para: <span class="font-medium text-gray-700 dark:text-gray-300">${t.recipient_email ? t.recipient_email : 'Operaciones IP <operaciones@inter.com.ve>'}</span></p>
                         </div>
                     </div>
                     <span class="text-[10px] text-snow-muted font-medium">${fullTimestamp}</span>
@@ -1196,6 +1293,20 @@ function loadTicketIntoReadingPane(t) {
                 </div>
 
                 <!-- Formulario de Respuesta y Resolución Inline (Outlook Reply Style) -->
+                ${isPending ? `
+                <div class="p-4 bg-gray-50 dark:bg-[#222225] border border-snow-border rounded-xl text-center text-xs text-snow-muted flex items-center justify-center gap-2">
+                    <i data-lucide="lock" class="w-4 h-4 text-snow-muted"></i>
+                    <span>Para registrar diagnóstico y computar puntos, debes tomar el ticket primero.</span>
+                </div>
+                ` : (isCompleted ? `
+                <div class="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 rounded-xl text-xs text-emerald-800 dark:text-emerald-200">
+                    <div class="flex items-center gap-2 font-bold mb-1">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Ticket Completado y Puntos Computados</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-700 dark:text-emerald-300">Resolución registrada por <strong>${t.claimed_by_name || 'Especialista'}</strong>. Puntos acreditados a su perfil.</p>
+                </div>
+                ` : `
                 <form id="formCompleteTicketAutomated" onsubmit="submitCompleteAutomated(event)" class="space-y-3 pt-1">
                     <div>
                         <label class="block font-semibold text-gray-800 dark:text-gray-200 text-xs mb-1">
@@ -1215,6 +1326,7 @@ function loadTicketIntoReadingPane(t) {
                         </button>
                     </div>
                 </form>
+                `)}
 
             </div>
         </div>
@@ -1977,23 +2089,131 @@ function checkGroupContainsActiveArea(groupId) {
 }
 
 // =============================================================
-// GESTIÓN DE SESIÓN Y PERFIL DE USUARIO
+// GESTIÓN DE SESIÓN, PERFIL DE USUARIO Y CONMUTADOR RÁPIDO
 // =============================================================
+
+window.currentUser = null;
 
 async function loadCurrentUserProfile() {
     try {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
             const user = await res.json();
+            window.currentUser = user;
+            
+            // Sidebar Profile
             const nameEl = document.getElementById("sidebar-user-name");
             const roleEl = document.getElementById("sidebar-user-role");
             const avatarEl = document.getElementById("sidebar-user-avatar");
             if (nameEl) nameEl.innerText = user.name;
             if (roleEl) roleEl.innerText = user.role === 'ADMINISTRADOR' ? 'Administrador NOC' : (user.role + ' - ' + user.area);
             if (avatarEl && user.avatar) avatarEl.innerText = user.avatar;
+
+            // Header Profile
+            const hdrAvatar = document.getElementById("header-user-avatar");
+            const hdrName = document.getElementById("header-user-name");
+            const hdrRole = document.getElementById("header-user-role");
+            if (hdrAvatar && user.avatar) hdrAvatar.innerText = user.avatar;
+            if (hdrName) hdrName.innerText = user.name;
+            if (hdrRole) hdrRole.innerText = user.role === 'ADMINISTRADOR' ? 'Administrador NOC' : `${user.role} (${user.area})`;
+
+            // Dropdown Profile
+            const dropName = document.getElementById("dropdown-user-fullname");
+            const dropEmail = document.getElementById("dropdown-user-email");
+            const dropBadge = document.getElementById("dropdown-user-badge");
+            if (dropName) dropName.innerText = user.name;
+            if (dropEmail) dropEmail.innerText = user.email;
+            if (dropBadge) dropBadge.innerText = `${user.role} - ${user.area}`;
+
+            // Población de dropdown de conmutación
+            loadUsersDropdownList();
+
+            // Re-evaluar filtros del inbox para refrescar "Directos a Mí"
+            if (activeTickets && activeTickets.length > 0) {
+                applyInboxFilters();
+            }
         }
     } catch (e) {
         console.error("Error loading user profile:", e);
+    }
+}
+
+async function loadUsersDropdownList() {
+    const listEl = document.getElementById("dropdown-users-list");
+    if (!listEl) return;
+
+    try {
+        const res = await fetch('/api/auth/users');
+        if (!res.ok) return;
+        const data = await res.json();
+        const users = Array.isArray(data) ? data : (data.users || []);
+
+        listEl.innerHTML = '';
+        users.forEach(u => {
+            const isMe = window.currentUser && window.currentUser.id === u.id;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.onclick = () => switchUserProfile(u.id);
+            btn.className = `w-full flex items-center justify-between p-2 rounded-lg text-left transition cursor-pointer ${isMe ? 'bg-blue-50 dark:bg-blue-950/40 text-[#0056B3] dark:text-[#38BDF8]' : 'hover:bg-gray-100 dark:hover:bg-[#222225] text-gray-800 dark:text-gray-200'}`;
+            
+            btn.innerHTML = `
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <span class="w-6 h-6 rounded-md bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        ${u.avatar || u.name.substring(0, 2).toUpperCase()}
+                    </span>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-semibold truncate leading-tight">${u.name}</p>
+                        <p class="text-[10px] text-snow-muted truncate">${u.role} (${u.area})</p>
+                    </div>
+                </div>
+                ${isMe ? '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-[#0056B3] dark:text-[#38BDF8]">Activo</span>' : ''}
+            `;
+            listEl.appendChild(btn);
+        });
+    } catch (e) {
+        console.error("Error loading users dropdown:", e);
+    }
+}
+
+function toggleUserDropdown(forceState = null) {
+    const dropdown = document.getElementById("user-profile-dropdown");
+    if (!dropdown) return;
+    if (forceState !== null) {
+        if (forceState) dropdown.classList.remove("hidden");
+        else dropdown.classList.add("hidden");
+    } else {
+        dropdown.classList.toggle("hidden");
+    }
+}
+
+// Cerrar dropdown al hacer click fuera
+document.addEventListener("click", (e) => {
+    const dropdown = document.getElementById("user-profile-dropdown");
+    const userBtn = document.getElementById("user-menu-btn");
+    if (dropdown && !dropdown.classList.contains("hidden")) {
+        if (!dropdown.contains(e.target) && (!userBtn || !userBtn.contains(e.target))) {
+            dropdown.classList.add("hidden");
+        }
+    }
+});
+
+async function switchUserProfile(userId) {
+    try {
+        const res = await fetch('/api/auth/switch-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+        });
+        if (res.ok) {
+            toggleUserDropdown(false);
+            await loadCurrentUserProfile();
+            await loadInbox();
+            if (window.currentDashboardView === 'audit') {
+                await loadAuditLogs();
+            }
+        }
+    } catch (e) {
+        console.error("Error switching user profile:", e);
     }
 }
 
@@ -2003,6 +2223,85 @@ async function logoutSession() {
         window.location.href = '/login';
     } catch (e) {
         window.location.href = '/login';
+    }
+}
+
+// =============================================================
+// MOTOR DE AUDITORÍA Y TRAZABILIDAD OPERATIVA EN TIEMPO REAL
+// =============================================================
+
+let currentAuditActionFilter = 'TODAS';
+
+function changeAuditActionFilter(actionVal) {
+    currentAuditActionFilter = actionVal;
+    loadAuditLogs();
+}
+
+async function loadAuditLogs() {
+    const tbody = document.getElementById("audit-tbody");
+    if (!tbody) return;
+
+    try {
+        const url = `/api/audit/logs?limit=50${currentAuditActionFilter !== 'TODAS' ? `&action=${encodeURIComponent(currentAuditActionFilter)}` : ''}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-red-500 text-xs">Error cargando bitácora de auditoría.</td></tr>`;
+            return;
+        }
+
+        const data = await res.json();
+        const logs = Array.isArray(data) ? data : (data.logs || []);
+
+        if (logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-snow-muted text-xs">No hay eventos registrados para el filtro seleccionado.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = '';
+        logs.forEach(l => {
+            const act = l.action || '';
+            let actBadge = 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+            if (act === 'INICIO_SESION') actBadge = 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300';
+            else if (act === 'CAMBIO_PERFIL') actBadge = 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/60 dark:text-purple-300';
+            else if (act === 'TOMA_TICKET') actBadge = 'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300';
+            else if (act === 'PAUSA_TICKET') actBadge = 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300';
+            else if (act === 'REANUDACION_TICKET') actBadge = 'bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-950/60 dark:text-teal-300';
+            else if (act === 'CIERRE_TICKET') actBadge = 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300';
+            else if (act === 'INGESTA_CORREO') actBadge = 'bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300';
+
+            const userInitials = (l.user_name || 'SIS').substring(0, 2).toUpperCase();
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-gray-50/60 dark:hover:bg-white/5 transition text-xs";
+            tr.innerHTML = `
+                <td class="py-2.5 px-3 font-mono text-[11px] text-snow-muted whitespace-nowrap">${l.created_at || '--'}</td>
+                <td class="py-2.5 px-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-md bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-[9px] font-bold flex items-center justify-center shrink-0">${userInitials}</span>
+                        <span class="font-semibold text-gray-900 dark:text-white whitespace-nowrap">${l.user_name || 'Sistema'}</span>
+                    </div>
+                </td>
+                <td class="py-2.5 px-3 whitespace-nowrap">
+                    <span class="text-snow-muted">${l.user_role || '--'}</span>
+                    <span class="text-[10px] text-gray-400 block">${l.area || l.user_area || ''}</span>
+                </td>
+                <td class="py-2.5 px-3 whitespace-nowrap">
+                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${actBadge}">
+                        ${act}
+                    </span>
+                </td>
+                <td class="py-2.5 px-3 font-mono text-[11px] text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                    ${l.target_type || l.entity_type || ''} ${l.target_id || l.entity_id ? '#' + (l.target_id || l.entity_id) : ''}
+                </td>
+                <td class="py-2.5 px-3 text-gray-700 dark:text-gray-300 max-w-xs truncate" title="${(l.details || '').replace(/"/g, '&quot;')}">
+                    ${l.details || '--'}
+                </td>
+                <td class="py-2.5 px-3 text-right font-mono text-[10px] text-snow-muted whitespace-nowrap">${l.ip_address || '127.0.0.1'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Error loading audit logs:", err);
+        tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-red-500 text-xs">Fallo al conectar con el servicio de auditoría.</td></tr>`;
     }
 }
 
@@ -2070,9 +2369,11 @@ function switchDashboardView(viewId) {
         else if (viewId === 'audit') bcView.innerText = 'Historial y Auditoría';
     }
 
-    // Si ingresa a auditoría, refrescar datos
+    // Si ingresa a auditoría, refrescar datos completos
     if (viewId === 'audit') {
         loadReportsData();
+        loadFeed();
+        loadAuditLogs();
     } else if (viewId === 'inbox') {
         loadInbox();
         loadMailWorkerStatus();
@@ -2082,3 +2383,12 @@ function switchDashboardView(viewId) {
 }
 
 window.switchDashboardView = switchDashboardView;
+window.loadCurrentUserProfile = loadCurrentUserProfile;
+window.loadUsersDropdownList = loadUsersDropdownList;
+window.toggleUserDropdown = toggleUserDropdown;
+window.switchUserProfile = switchUserProfile;
+window.logoutSession = logoutSession;
+window.loadAuditLogs = loadAuditLogs;
+window.changeAuditActionFilter = changeAuditActionFilter;
+window.claimCurrentTicket = claimCurrentTicket;
+

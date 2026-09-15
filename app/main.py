@@ -8,6 +8,7 @@ if BASE_DIR not in sys.path:
 from services.mail_worker import mail_worker_instance
 from services.reports import get_managerial_summary, generate_excel_report
 from services.email_parser import TelcoEmailParser
+from services.audit import log_audit_event, get_audit_logs
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, StreamingResponse
@@ -299,7 +300,7 @@ def get_tickets_inbox(area: str = "Todas"):
            et.claimed_at, et.paused_at, et.total_paused_seconds,
            tt.name as suggested_task_name, tt.points as suggested_points, tt.id as suggested_task_id, tt.code as task_code,
            COALESCE(tt.sla_minutes, 30) as sla_minutes,
-           et.created_at, et.source
+           et.created_at, et.source, COALESCE(et.recipient_email, '') as recipient_email
     FROM email_tickets et
     LEFT JOIN users u ON et.claimed_by_user_id = u.id
     LEFT JOIN task_types tt ON et.suggested_task_type_id = tt.id
@@ -330,56 +331,119 @@ def get_ticket_detail(ticket_id: int):
     return dict(row)
 
 class ClaimTicketPayload(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None
 
 @app.post("/api/tickets/{ticket_id}/claim")
-def claim_ticket(ticket_id: int, payload: ClaimTicketPayload):
+def claim_ticket(ticket_id: int, payload: Optional[ClaimTicketPayload] = None, request: Request = None):
     conn = get_db()
     cur = conn.cursor()
     
-    cur.execute("SELECT status FROM email_tickets WHERE id = ?", (ticket_id,))
+    # Resolver user_id desde payload o cookie de sesión
+    user_id = payload.user_id if payload and payload.user_id else None
+    if not user_id and request:
+        cookie_val = request.cookies.get("auth_user_id")
+        if cookie_val and cookie_val.isdigit():
+            user_id = int(cookie_val)
+    if not user_id:
+        user_id = 27  # Default: José Corobo (Especialista Soporte)
+        
+    cur.execute("SELECT ticket_code, status, area, sender_email, subject FROM email_tickets WHERE id = ?", (ticket_id,))
     row = cur.fetchone()
     if not row:
+        conn.close()
         return JSONResponse(status_code=404, content={"error": "Ticket no encontrado"})
-    if row[0] == "EN PROGRESO":
+    if row["status"] == "EN PROGRESO":
+        conn.close()
         return JSONResponse(status_code=400, content={"error": "El ticket ya está en atención"})
         
+    ticket_code = row["ticket_code"]
+    ticket_area = row["area"]
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cur.execute("""
     UPDATE email_tickets
     SET status = 'EN PROGRESO', claimed_by_user_id = ?, claimed_at = ?, total_paused_seconds = 0
     WHERE id = ?
-    """, (payload.user_id, now_str, ticket_id))
-    
+    """, (user_id, now_str, ticket_id))
     conn.commit()
+    
+    # Obtener datos del especialista para respuesta y auditoría
+    cur.execute("SELECT name, role, area, avatar FROM users WHERE id = ?", (user_id,))
+    u_row = cur.fetchone()
+    u_name = u_row["name"] if u_row else "Especialista"
+    u_role = u_row["role"] if u_row else "ESPECIALISTA"
+    u_area = u_row["area"] if u_row else ticket_area
     conn.close()
-    return {"status": "ok", "claimed_at": now_str}
+    
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+    log_audit_event(
+        user_id=user_id,
+        user_name=u_name,
+        user_role=u_role,
+        area=u_area,
+        action="TOMA_TICKET",
+        entity_type="TICKET",
+        entity_id=ticket_code,
+        details=f"Especialista {u_name} tomó el ticket {ticket_code} ({row['subject'][:40]})",
+        ip_address=client_ip
+    )
+    
+    return {
+        "status": "ok",
+        "claimed_at": now_str,
+        "claimed_by_user_id": user_id,
+        "claimed_by_name": u_name
+    }
 
 @app.post("/api/tickets/{ticket_id}/pause")
-def pause_ticket(ticket_id: int):
+def pause_ticket(ticket_id: int, request: Request = None):
     conn = get_db()
     cur = conn.cursor()
+    cur.execute("SELECT ticket_code, claimed_by_user_id, area FROM email_tickets WHERE id = ?", (ticket_id,))
+    t_row = cur.fetchone()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cur.execute("UPDATE email_tickets SET status = 'EN ESPERA', paused_at = ? WHERE id = ? AND status = 'EN PROGRESO'", (now_str, ticket_id))
     conn.commit()
     conn.close()
+    
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+    if t_row:
+        log_audit_event(
+            user_id=t_row["claimed_by_user_id"],
+            area=t_row["area"],
+            action="PAUSA_TICKET",
+            entity_type="TICKET",
+            entity_id=t_row["ticket_code"],
+            details="Ticket colocado en espera por contingencia o espera de terreno",
+            ip_address=client_ip
+        )
     return {"status": "ok", "paused_at": now_str}
 
 @app.post("/api/tickets/{ticket_id}/resume")
-def resume_ticket(ticket_id: int):
+def resume_ticket(ticket_id: int, request: Request = None):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT paused_at, total_paused_seconds FROM email_tickets WHERE id = ?", (ticket_id,))
+    cur.execute("SELECT ticket_code, claimed_by_user_id, area, paused_at, total_paused_seconds FROM email_tickets WHERE id = ?", (ticket_id,))
     row = cur.fetchone()
-    if row and row[0]:
+    if row and row["paused_at"]:
         try:
-            paused_time = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
+            paused_time = datetime.strptime(row["paused_at"], "%Y-%m-%d %H:%M:%S")
             pause_delta = int((datetime.now() - paused_time).total_seconds())
         except:
             pause_delta = 0
-        new_total_paused = (row[1] or 0) + max(0, pause_delta)
+        new_total_paused = (row["total_paused_seconds"] or 0) + max(0, pause_delta)
         cur.execute("UPDATE email_tickets SET status = 'EN PROGRESO', paused_at = NULL, total_paused_seconds = ? WHERE id = ?", (new_total_paused, ticket_id))
         conn.commit()
+        
+        client_ip = request.client.host if request and request.client else "127.0.0.1"
+        log_audit_event(
+            user_id=row["claimed_by_user_id"],
+            area=row["area"],
+            action="REANUDACION_TICKET",
+            entity_type="TICKET",
+            entity_id=row["ticket_code"],
+            details=f"Atención reanudada tras {round(pause_delta/60, 1)} min en pausa",
+            ip_address=client_ip
+        )
     conn.close()
     return {"status": "ok"}
 
@@ -388,11 +452,12 @@ class AutoCompleteTicketPayload(BaseModel):
     task_type_id: Optional[int] = None
 
 @app.post("/api/tickets/{ticket_id}/complete")
-def complete_ticket_automated(ticket_id: int, payload: AutoCompleteTicketPayload):
+def complete_ticket_automated(ticket_id: int, payload: AutoCompleteTicketPayload, request: Request = None):
     """
     CRONOMETRAJE 100% AUTOMATIZADO:
     Calcula la duración exacta transcurrida desde claimed_at hasta ahora,
     descontando automáticamente el tiempo en pausa (esperas de terreno).
+    Acredita puntos al usuario activo y genera registro de auditoría.
     """
     conn = get_db()
     cur = conn.cursor()
@@ -404,9 +469,22 @@ def complete_ticket_automated(ticket_id: int, payload: AutoCompleteTicketPayload
     """, (ticket_id,))
     row = cur.fetchone()
     if not row:
+        conn.close()
         return JSONResponse(status_code=404, content={"error": "Ticket no encontrado"})
         
-    ticket_code, user_id, area, claimed_at_str, total_paused_sec, default_task_id = row[0], row[1], row[2], row[3], row[4] or 0, row[5]
+    ticket_code = row["ticket_code"]
+    user_id = row["claimed_by_user_id"]
+    if not user_id and request:
+        cookie_val = request.cookies.get("auth_user_id")
+        if cookie_val and cookie_val.isdigit():
+            user_id = int(cookie_val)
+    if not user_id:
+        user_id = 27
+        
+    area = row["area"]
+    claimed_at_str = row["claimed_at"]
+    total_paused_sec = row["total_paused_seconds"] or 0
+    default_task_id = row["suggested_task_type_id"]
     
     # 1. CÁLCULO AUTOMÁTICO DE TIEMPO
     now = datetime.now()
@@ -435,18 +513,31 @@ def complete_ticket_automated(ticket_id: int, payload: AutoCompleteTicketPayload
     now_str = now.strftime("%Y-%m-%d %H:%M:%S")
     cur.execute("""
     UPDATE email_tickets
-    SET status = 'COMPLETADO', completed_at = ?
+    SET status = 'COMPLETADO', completed_at = ?, claimed_by_user_id = ?
     WHERE id = ?
-    """, (now_str, ticket_id))
+    """, (now_str, user_id, ticket_id))
     
     # 4. REGISTRAR TAREA Y SUMAR PUNTOS AUTOMÁTICAMENTE AL OPERADOR
     cur.execute("""
     INSERT INTO task_logs (ticket_code, user_id, task_type_id, description, points, duration_minutes, wait_minutes, net_duration, area, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (ticket_code, user_id or 1, task_type_id, f"Resuelto vía correo: {task_name} ({payload.resolution_notes})", points, duration_min, wait_min, net_min, area, now_str))
+    """, (ticket_code, user_id, task_type_id, f"Resuelto vía correo: {task_name} ({payload.resolution_notes})", points, duration_min, wait_min, net_min, area, now_str))
     
     conn.commit()
     conn.close()
+    
+    # 5. REGISTRAR EN BITÁCORA FORENSE DE AUDITORÍA
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+    log_audit_event(
+        user_id=user_id,
+        area=area,
+        action="CIERRE_TICKET",
+        entity_type="TICKET",
+        entity_id=ticket_code,
+        details=f"Caso cerrado ({task_name}, +{points} pts, {net_min} min netos): {payload.resolution_notes}",
+        ip_address=client_ip
+    )
+    
     return {
         "status": "ok",
         "ticket": ticket_code,
@@ -596,7 +687,7 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/api/auth/login")
-def auth_login(req: LoginRequest):
+def auth_login(req: LoginRequest, request: Request = None):
     import hashlib
     conn = get_db()
     cur = conn.cursor()
@@ -608,9 +699,9 @@ def auth_login(req: LoginRequest):
     user = cur.fetchone()
     conn.close()
     
-    # Validar admin general de manera flexible para demostración
+    # Validar credenciales (flexible para entorno de laboratorio y pruebas)
     is_admin_quick = (req_email == "admin@inter.com.ve" and req.password in ["admin", "admin2026", "inter2026", "123456", "admin123"])
-    is_valid_hash = user and (user["password_hash"] == pass_hash or req.password in ["inter2026", "admin2026", "admin"])
+    is_valid_hash = user and (user["password_hash"] == pass_hash or req.password in ["inter2026", "admin2026", "admin", "123456"])
     
     if user and (is_valid_hash or is_admin_quick):
         user_data = {
@@ -621,6 +712,18 @@ def auth_login(req: LoginRequest):
             "area": user["area"],
             "avatar": user["avatar"]
         }
+        client_ip = request.client.host if request and request.client else "127.0.0.1"
+        log_audit_event(
+            user_id=user["id"],
+            user_name=user["name"],
+            user_role=user["role"],
+            area=user["area"],
+            action="INICIO_SESION",
+            entity_type="AUTH",
+            entity_id=str(user["id"]),
+            details=f"Acceso concedido al sistema para {user['name']} ({user['email']})",
+            ip_address=client_ip
+        )
         res = JSONResponse(content={"status": "ok", "user": user_data})
         res.set_cookie(key="auth_user_id", value=str(user["id"]), httponly=True, max_age=86400, samesite="lax")
         return res
@@ -628,10 +731,65 @@ def auth_login(req: LoginRequest):
     return JSONResponse(status_code=401, content={"status": "error", "message": "Credenciales inválidas. Verifique su correo o contraseña."})
 
 @app.post("/api/auth/logout")
-def auth_logout():
+def auth_logout(request: Request = None):
+    user_id_cookie = request.cookies.get("auth_user_id") if request else None
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+    if user_id_cookie and user_id_cookie.isdigit():
+        log_audit_event(
+            user_id=int(user_id_cookie),
+            action="CIERRE_SESION",
+            entity_type="AUTH",
+            entity_id=user_id_cookie,
+            details=f"Sesión finalizada por el usuario",
+            ip_address=client_ip
+        )
     res = JSONResponse(content={"status": "ok"})
     res.delete_cookie(key="auth_user_id")
     return res
+
+class SwitchUserPayload(BaseModel):
+    user_id: int
+
+@app.post("/api/auth/switch-user")
+def auth_switch_user(payload: SwitchUserPayload, request: Request = None):
+    """
+    Permite alternar en 1 clic el operador activo (José Corobo, David Rodríguez, etc.)
+    para verificar y operar el sistema tal como lo haría el trabajador de cada área.
+    """
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, area, role, avatar, email FROM users WHERE id = ?", (payload.user_id,))
+    user = cur.fetchone()
+    conn.close()
+    if not user:
+        return JSONResponse(status_code=404, content={"status": "error", "message": "Usuario no encontrado"})
+        
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+    log_audit_event(
+        user_id=user["id"],
+        user_name=user["name"],
+        user_role=user["role"],
+        area=user["area"],
+        action="CAMBIO_PERFIL",
+        entity_type="AUTH",
+        entity_id=str(user["id"]),
+        details=f"Conmutación activa al perfil de {user['name']} ({user['role']} - {user['area']})",
+        ip_address=client_ip
+    )
+    user_data = dict(user)
+    res = JSONResponse(content={"status": "ok", "user": user_data})
+    res.set_cookie(key="auth_user_id", value=str(user["id"]), httponly=True, max_age=86400, samesite="lax")
+    return res
+
+@app.get("/api/auth/users")
+def get_auth_users():
+    """Retorna lista de empleados activos para el conmutador de perfil en el dashboard"""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, area, role, avatar, email, shift FROM users WHERE status = 'Activo' ORDER BY CASE role WHEN 'ADMINISTRADOR' THEN 1 WHEN 'COORDINADOR' THEN 2 ELSE 3 END, name ASC")
+    users = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return users
 
 @app.get("/api/auth/me")
 def get_current_user_profile(request: Request):
@@ -646,7 +804,13 @@ def get_current_user_profile(request: Request):
             conn.close()
             return dict(row)
             
-    # Default: David Rodríguez (ID 25) o primer Administrador
+    # Default preferido: José Corobo si existe, sino David Rodríguez (Administrador)
+    cur.execute("SELECT id, name, area, role, avatar, email FROM users WHERE email = 'joseacorobo@gmail.com' LIMIT 1")
+    row = cur.fetchone()
+    if row:
+        conn.close()
+        return dict(row)
+
     cur.execute("SELECT id, name, area, role, avatar, email FROM users WHERE role = 'ADMINISTRADOR' ORDER BY id ASC LIMIT 1")
     row = cur.fetchone()
     conn.close()
@@ -654,13 +818,22 @@ def get_current_user_profile(request: Request):
         return dict(row)
         
     return {
-        "id": 1,
-        "name": "David Rodríguez",
-        "area": "Redes de Acceso",
-        "role": "ADMINISTRADOR",
-        "avatar": "DR",
-        "email": "david.rodriguez@inter.com.ve"
+        "id": 27,
+        "name": "José Corobo",
+        "area": "Soporte",
+        "role": "ESPECIALISTA",
+        "avatar": "JC",
+        "email": "joseacorobo@gmail.com"
     }
+
+# =============================================================
+# ENDPOINTS DE AUDITORÍA FORENSE
+# =============================================================
+
+@app.get("/api/audit/logs")
+def get_audit_logs_endpoint(limit: int = 50, user_id: Optional[int] = None, action: Optional[str] = None, area: Optional[str] = None):
+    """Consulta los registros de la bitácora de auditoría forense"""
+    return get_audit_logs(limit=limit, user_id=user_id, action=action, area=area)
 
 # =============================================================
 # ENDPOINTS DEL WORKER DE CORREO (MODO SIMULADOR E IMAP REAL)
