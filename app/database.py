@@ -145,6 +145,43 @@ def init_db():
         cursor.execute("ALTER TABLE email_tickets ADD COLUMN source TEXT DEFAULT 'MANUAL'")
     if "recipient_email" not in columns:
         cursor.execute("ALTER TABLE email_tickets ADD COLUMN recipient_email TEXT")
+    if "html_body" not in columns:
+        cursor.execute("ALTER TABLE email_tickets ADD COLUMN html_body TEXT")
+
+    # Tabla de Adjuntos, Membretes e Imágenes Inline
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ticket_attachments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticket_id INTEGER NOT NULL,
+        filename TEXT NOT NULL,
+        content_type TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        content_id TEXT,
+        is_inline BOOLEAN DEFAULT 0,
+        file_size INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ticket_id) REFERENCES email_tickets(id)
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_attachments_ticket ON ticket_attachments(ticket_id)")
+
+    # Tabla de Respuestas Enviadas vía Web / SMTP
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS email_replies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticket_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        recipient_email TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body_html TEXT NOT NULL,
+        body_text TEXT NOT NULL,
+        status TEXT DEFAULT 'ENVIADO',
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ticket_id) REFERENCES email_tickets(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_replies_ticket ON email_replies(ticket_id)")
 
     # Asegurar existencia de usuario José Corobo como especialista para validación real
     cursor.execute("SELECT id FROM users WHERE email = 'joseacorobo@gmail.com'")
