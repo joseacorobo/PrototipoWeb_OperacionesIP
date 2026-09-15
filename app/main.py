@@ -325,10 +325,42 @@ def get_ticket_detail(ticket_id: int):
     WHERE et.id = ?
     """, (ticket_id,))
     row = cur.fetchone()
-    conn.close()
     if not row:
+        conn.close()
         return JSONResponse(status_code=404, content={"error": "Ticket no encontrado"})
-    return dict(row)
+    
+    ticket = dict(row)
+    
+    # Consultar adjuntos, membretes e imagenes inline vinculadas
+    cur.execute("""
+    SELECT id, filename, content_type, file_path, content_id, is_inline, file_size, created_at
+    FROM ticket_attachments WHERE ticket_id = ? ORDER BY id ASC
+    """, (ticket_id,))
+    ticket["attachments"] = [dict(r) for r in cur.fetchall()]
+    
+    # Consultar historial de respuestas enviadas via web / SMTP
+    cur.execute("""
+    SELECT r.*, u.name as user_name, u.avatar as user_avatar, u.role as user_role, u.area as user_area
+    FROM email_replies r
+    LEFT JOIN users u ON r.user_id = u.id
+    WHERE r.ticket_id = ?
+    ORDER BY r.sent_at ASC
+    """, (ticket_id,))
+    ticket["replies"] = [dict(r) for r in cur.fetchall()]
+    
+    conn.close()
+    return ticket
+
+@app.get("/api/tickets/{ticket_id}/attachments")
+def get_ticket_attachments(ticket_id: int):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+    SELECT * FROM ticket_attachments WHERE ticket_id = ? ORDER BY id ASC
+    """, (ticket_id,))
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
 
 class ClaimTicketPayload(BaseModel):
     user_id: Optional[int] = None
@@ -545,6 +577,74 @@ def complete_ticket_automated(ticket_id: int, payload: AutoCompleteTicketPayload
         "duration_minutes": duration_min,
         "net_minutes": net_min,
         "wait_minutes": wait_min
+    }
+
+class TicketReplyPayload(BaseModel):
+    body_text: str
+    close_ticket: bool = False
+    resolution_notes: Optional[str] = None
+    task_type_id: Optional[int] = None
+    custom_recipient: Optional[str] = None
+    custom_subject: Optional[str] = None
+
+@app.post("/api/tickets/{ticket_id}/reply")
+def reply_to_ticket(ticket_id: int, payload: TicketReplyPayload, request: Request = None):
+    """
+    Despacha una respuesta técnica formal por correo vía SMTP (conservando el hilo de conversación)
+    y opcionalmente completa el ticket computando puntos y tiempo de atención en un solo paso.
+    """
+    try:
+        from services.smtp_service import smtp_service_instance
+    except ImportError:
+        from app.services.smtp_service import smtp_service_instance
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # 1. Identificar usuario activo
+    user_id = 27  # Default José Corobo
+    if request:
+        cookie_val = request.cookies.get("auth_user_id")
+        if cookie_val and cookie_val.isdigit():
+            user_id = int(cookie_val)
+
+    cur.execute("SELECT id, name, role, area, email FROM users WHERE id = ?", (user_id,))
+    u_row = cur.fetchone()
+    conn.close()
+
+    user_name = u_row["name"] if u_row else "José Corobo"
+    user_role = u_row["role"] if u_row else "ESPECIALISTA"
+    user_area = u_row["area"] if u_row else "Soporte"
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+
+    # 2. Despachar correo saliente vía SMTP
+    reply_res = smtp_service_instance.send_reply(
+        ticket_id=ticket_id,
+        user_id=user_id,
+        body_text=payload.body_text,
+        user_name=user_name,
+        user_role=user_role,
+        user_area=user_area,
+        custom_recipient=payload.custom_recipient,
+        custom_subject=payload.custom_subject,
+        ip_address=client_ip
+    )
+
+    # 3. Si se marcó 'close_ticket', completar caso y computar puntos
+    completion_details = None
+    if payload.close_ticket:
+        notes = payload.resolution_notes or payload.body_text
+        comp_payload = AutoCompleteTicketPayload(
+            resolution_notes=notes,
+            task_type_id=payload.task_type_id
+        )
+        completion_details = complete_ticket_automated(ticket_id, comp_payload, request)
+
+    return {
+        "status": "ok",
+        "reply": reply_res,
+        "completed": payload.close_ticket,
+        "completion_details": completion_details
     }
 
 @app.post("/api/tickets/simulate-incoming")

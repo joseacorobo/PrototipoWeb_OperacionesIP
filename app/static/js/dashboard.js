@@ -1281,51 +1281,157 @@ function loadTicketIntoReadingPane(t) {
                     </div>
                 </div>
 
-                <!-- Full Original Message Body -->
-                <div class="rounded-xl border border-snow-border p-3.5 bg-white dark:bg-[#1E1E20]">
-                    <p class="text-[10px] font-bold text-snow-muted uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                        <i data-lucide="mail-open" class="w-3.5 h-3.5 text-[#0078D4]"></i>
-                        Mensaje Original del Solicitante
-                    </p>
-                    <div id="ws-ticket-body" class="text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap bg-gray-50/60 dark:bg-[#242426] p-3 rounded-lg border border-snow-border/80 select-text">
+                <!-- Galería de Membretes, Firmas e Imágenes Adjuntas (si existen) -->
+                ${(t.attachments && t.attachments.length > 0) ? `
+                <div class="rounded-xl border border-snow-border p-3.5 bg-gray-50/70 dark:bg-[#202022] space-y-2">
+                    <div class="flex items-center justify-between">
+                        <p class="text-[10px] font-bold text-snow-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="paperclip" class="w-3.5 h-3.5 text-[#0078D4]"></i>
+                            Membretes, Firmas y Archivos Adjuntos (${t.attachments.length})
+                        </p>
+                        <span class="text-[10px] font-medium text-snow-muted">MIME Multipart Detectado</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 pt-1">
+                        ${t.attachments.map(att => `
+                            <div onclick="openAttachmentViewer('${att.file_path}', '${att.filename}')" class="p-2 rounded-lg bg-white dark:bg-[#262629] border border-snow-border hover:border-[#0078D4] transition cursor-pointer flex flex-col justify-between group">
+                                <div class="h-20 w-full rounded bg-gray-100 dark:bg-[#1C1C1E] overflow-hidden flex items-center justify-center relative mb-1.5">
+                                    ${att.content_type.startsWith('image/') ? `
+                                        <img src="${att.file_path}" alt="${att.filename}" class="h-full w-full object-contain group-hover:scale-105 transition duration-200">
+                                    ` : `
+                                        <i data-lucide="file-text" class="w-8 h-8 text-snow-muted"></i>
+                                    `}
+                                    <span class="absolute top-1 right-1 text-[8px] font-bold px-1 rounded bg-black/60 text-white">
+                                        ${att.is_inline ? 'Membrete' : 'Adjunto'}
+                                    </span>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <p class="text-[11px] font-semibold text-gray-800 dark:text-gray-200 truncate" title="${att.filename}">${att.filename}</p>
+                                    <span class="text-[9px] text-snow-muted">${Math.round((att.file_size || 1024)/1024)} KB</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Cuerpo del Correo: Conmutador Vista Membrete HTML vs Texto Plano -->
+                <div class="rounded-xl border border-snow-border p-3.5 bg-white dark:bg-[#1E1E20] space-y-2">
+                    <div class="flex items-center justify-between pb-1 border-b border-snow-border">
+                        <p class="text-[10px] font-bold text-snow-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="mail-open" class="w-3.5 h-3.5 text-[#0078D4]"></i>
+                            Mensaje del Solicitante
+                        </p>
+                        ${t.html_body ? `
+                        <div class="flex items-center gap-1 bg-gray-100 dark:bg-[#262629] p-0.5 rounded-lg text-[10px] font-semibold">
+                            <button type="button" onclick="toggleEmailBodyView('html')" id="btn-body-html" class="px-2 py-0.5 rounded bg-white dark:bg-[#333336] text-[#0078D4] dark:text-[#38BDF8] shadow-2xs cursor-pointer">
+                                Con Membrete HTML
+                            </button>
+                            <button type="button" onclick="toggleEmailBodyView('plain')" id="btn-body-plain" class="px-2 py-0.5 rounded text-snow-muted hover:text-gray-900 dark:hover:text-white cursor-pointer">
+                                Texto Plano
+                            </button>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Vista 1: HTML Enriquecido con Membrete y CIDs resueltos -->
+                    ${t.html_body ? `
+                    <div id="email-view-html" class="text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-sans bg-gray-50/50 dark:bg-[#242426] p-4 rounded-xl border border-snow-border/80 overflow-x-auto select-text">
+                        ${t.html_body}
+                    </div>
+                    ` : ''}
+
+                    <!-- Vista 2: Texto Plano tradicional -->
+                    <div id="email-view-plain" class="${t.html_body ? 'hidden' : ''} text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap bg-gray-50/60 dark:bg-[#242426] p-3 rounded-lg border border-snow-border/80 select-text font-mono">
                         ${(t.full_body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                     </div>
                 </div>
 
-                <!-- Formulario de Respuesta y Resolución Inline (Outlook Reply Style) -->
+                <!-- Historial de Respuestas en este Hilo (Conversation Thread) -->
+                ${(t.replies && t.replies.length > 0) ? `
+                <div class="rounded-xl border border-snow-border p-3.5 bg-gray-50/70 dark:bg-[#202022] space-y-2.5">
+                    <p class="text-[10px] font-bold text-snow-muted uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        Historial de Respuestas Salientes (${t.replies.length})
+                    </p>
+                    <div class="space-y-2">
+                        ${t.replies.map(r => `
+                            <div class="p-3 bg-white dark:bg-[#252528] rounded-lg border border-snow-border text-xs space-y-1 shadow-2xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                                        <span class="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] flex items-center justify-center font-bold">
+                                            ${r.user_avatar || 'JC'}
+                                        </span>
+                                        ${r.user_name || 'Especialista'} &bull; <span class="text-snow-muted text-[10px]">${r.user_role || 'Soporte'}</span>
+                                    </span>
+                                    <span class="font-mono text-[10px] text-snow-muted">${r.sent_at || ''}</span>
+                                </div>
+                                <p class="text-gray-700 dark:text-gray-300 font-sans whitespace-pre-wrap text-[11px] leading-relaxed pl-5">
+                                    ${r.body_text}
+                                </p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Módulo de Redacción y Respuesta Web (Outlook Web Composer) -->
                 ${isPending ? `
                 <div class="p-4 bg-gray-50 dark:bg-[#222225] border border-snow-border rounded-xl text-center text-xs text-snow-muted flex items-center justify-center gap-2">
                     <i data-lucide="lock" class="w-4 h-4 text-snow-muted"></i>
-                    <span>Para registrar diagnóstico y computar puntos, debes tomar el ticket primero.</span>
+                    <span>Para redactar respuestas o resolver este caso, primero debes hacer clic en <strong>Tomar Caso</strong>.</span>
                 </div>
                 ` : (isCompleted ? `
                 <div class="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 rounded-xl text-xs text-emerald-800 dark:text-emerald-200">
                     <div class="flex items-center gap-2 font-bold mb-1">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
-                        <span>Ticket Completado y Puntos Computados</span>
+                        <span>Ticket Completado y Notificación Enviada</span>
                     </div>
-                    <p class="text-[11px] text-emerald-700 dark:text-emerald-300">Resolución registrada por <strong>${t.claimed_by_name || 'Especialista'}</strong>. Puntos acreditados a su perfil.</p>
+                    <p class="text-[11px] text-emerald-700 dark:text-emerald-300">Resolución registrada por <strong>${t.claimed_by_name || 'Especialista'}</strong>. Todos los puntos y tiempos netos fueron acreditados.</p>
                 </div>
                 ` : `
-                <form id="formCompleteTicketAutomated" onsubmit="submitCompleteAutomated(event)" class="space-y-3 pt-1">
-                    <div>
-                        <label class="block font-semibold text-gray-800 dark:text-gray-200 text-xs mb-1">
-                            Diagnóstico Técnico y Comandos Aplicados (Respuesta de Cierre):
-                        </label>
-                        <textarea id="ws_resolution_notes" required rows="2" placeholder="Ej. Se validó atenuación óptica en -19.2 dBm. Demonio OLT desatascado en Slot 3 PON 4. ONT pasó a Whitelist y MAC en VERDE." class="w-full bg-gray-50 dark:bg-[#242426] border border-snow-border rounded-xl p-3 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0078D4]"></textarea>
+                <div class="rounded-xl border border-snow-border p-4 bg-white dark:bg-[#1E1E20] space-y-3 shadow-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-snow-border">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="reply" class="w-4 h-4 text-[#0078D4]"></i>
+                            <span class="text-xs font-bold text-gray-900 dark:text-white">Redactar Respuesta Oficial (SMTP Saliente)</span>
+                        </div>
+                        <select id="quick-template-select" onchange="applyTechnicalTemplate(this.value)" class="text-[11px] bg-gray-50 dark:bg-[#252528] border border-snow-border rounded-lg px-2.5 py-1 text-gray-800 dark:text-gray-200 font-medium outline-none">
+                            <option value="">Insertar Plantilla Técnica...</option>
+                            <option value="homologada">Resolución: ONT en Whitelist y Potencia OK</option>
+                            <option value="datos">Solicitud: Confirmación de Serial PON y Drop</option>
+                            <option value="bridge">Alerta: Validación WANMAC en Servidor 815</option>
+                            <option value="cierre_ok">Cierre Normalizado: Servicio 100% Operativo</option>
+                        </select>
                     </div>
 
-                    <div class="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
-                            <span class="text-emerald-800 dark:text-emerald-300 font-medium">El cronómetro y los puntos acumulados se computarán automáticamente al resolver.</span>
-                        </div>
-                        <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition shadow-xs flex items-center gap-2 cursor-pointer">
-                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                            <span>Resolver y Computar Puntos</span>
-                        </button>
+                    <div class="text-[11px] text-snow-muted flex items-center gap-2">
+                        <span>Para: <strong class="text-gray-800 dark:text-gray-200">${t.sender_email}</strong></span>
+                        <span>&bull;</span>
+                        <span>Asunto: <strong class="text-gray-800 dark:text-gray-200">Re: ${t.subject}</strong></span>
                     </div>
-                </form>
+
+                    <div>
+                        <textarea id="ws_reply_body" rows="3" placeholder="Escriba aquí la respuesta técnica que se enviará por correo al solicitante..." class="w-full bg-gray-50 dark:bg-[#242426] border border-snow-border rounded-xl p-3 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0078D4] leading-relaxed font-sans"></textarea>
+                    </div>
+
+                    <div class="bg-gray-50/70 dark:bg-[#252528] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs border border-snow-border">
+                        <div class="flex items-center gap-2 text-snow-muted text-[11px]">
+                            <i data-lucide="info" class="w-4 h-4 text-[#0078D4] shrink-0"></i>
+                            <span>Conserva las cabeceras RFC 5322 en el mismo hilo de conversación.</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="sendTicketReply(false)" id="btn-send-reply" class="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold transition cursor-pointer flex items-center gap-1.5">
+                                <i data-lucide="send" class="w-3.5 h-3.5 text-[#0078D4]"></i>
+                                <span>Enviar Respuesta</span>
+                            </button>
+                            <button type="button" onclick="sendTicketReply(true)" id="btn-complete-and-reply" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition shadow-xs cursor-pointer flex items-center gap-1.5">
+                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                                <span>Resolver Caso y Notificar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 `)}
 
             </div>
@@ -2392,3 +2498,116 @@ window.loadAuditLogs = loadAuditLogs;
 window.changeAuditActionFilter = changeAuditActionFilter;
 window.claimCurrentTicket = claimCurrentTicket;
 
+
+// =============================================================
+// FUNCIONES PARA RESPUESTA WEB Y VISUALIZACIÓN DE MEMBRETES
+// =============================================================
+
+function toggleEmailBodyView(mode) {
+    const elHtml = document.getElementById("email-view-html");
+    const elPlain = document.getElementById("email-view-plain");
+    const btnHtml = document.getElementById("btn-body-html");
+    const btnPlain = document.getElementById("btn-body-plain");
+
+    if (mode === 'html') {
+        if (elHtml) elHtml.classList.remove("hidden");
+        if (elPlain) elPlain.classList.add("hidden");
+        if (btnHtml) {
+            btnHtml.className = "px-2 py-0.5 rounded bg-white dark:bg-[#333336] text-[#0078D4] dark:text-[#38BDF8] shadow-2xs cursor-pointer";
+        }
+        if (btnPlain) {
+            btnPlain.className = "px-2 py-0.5 rounded text-snow-muted hover:text-gray-900 dark:hover:text-white cursor-pointer";
+        }
+    } else {
+        if (elHtml) elHtml.classList.add("hidden");
+        if (elPlain) elPlain.classList.remove("hidden");
+        if (btnPlain) {
+            btnPlain.className = "px-2 py-0.5 rounded bg-white dark:bg-[#333336] text-[#0078D4] dark:text-[#38BDF8] shadow-2xs cursor-pointer";
+        }
+        if (btnHtml) {
+            btnHtml.className = "px-2 py-0.5 rounded text-snow-muted hover:text-gray-900 dark:hover:text-white cursor-pointer";
+        }
+    }
+}
+
+function applyTechnicalTemplate(val) {
+    const area = document.getElementById("ws_reply_body");
+    if (!area || !val) return;
+
+    const templates = {
+        "homologada": "Buenas tardes equipo.\n\nSe procedió a desatascar demonio de la OLT y se verificó atenuación óptica en -19.2 dBm. La ONT homologó de forma correcta y pasó a Whitelist con MAC en VERDE.\n\nFavor confirmar navegación con el abonado.",
+        "datos": "Estimados,\n\nPara avanzar con la homologación requerimos nos confirmen el Serial PON impreso en la etiqueta de la ONT y medición con power meter en el conector SC/APC de la roseta.\n\nQuedamos a la espera de sus datos.",
+        "bridge": "ATENCIÓN CUADRILLA:\n\nSe identificó que el cliente posee IP Certificada bajo esquema Modo Bridge. Se validó la MAC en Servidor 815 sin reaprovisionar el equipo para no degradar el servicio.\n\nTráfico WAN verificado y activo.",
+        "cierre_ok": "Estimado solicitante,\n\nEl caso reportado ha sido validado y solventado satisfactoriamente por el equipo de Operaciones IP. Parámetros ópticos dentro de norma y enlace operativo al 100%.\n\nProcedemos con el cierre del ticket."
+    };
+
+    if (templates[val]) {
+        area.value = templates[val];
+    }
+}
+
+async function sendTicketReply(closeTicket = false) {
+    if (!currentOpenTicket) return;
+
+    const replyArea = document.getElementById("ws_reply_body");
+    const replyText = replyArea ? replyArea.value.trim() : "";
+
+    if (!replyText) {
+        alert("Por favor ingrese el texto de la respuesta a enviar.");
+        if (replyArea) replyArea.focus();
+        return;
+    }
+
+    const btn = document.getElementById(closeTicket ? "btn-complete-and-reply" : "btn-send-reply");
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i><span>Enviando...</span>';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    try {
+        const payload = {
+            body_text: replyText,
+            close_ticket: closeTicket,
+            resolution_notes: replyText,
+            task_type_id: currentOpenTicket.suggested_task_type_id || 1
+        };
+
+        const res = await fetch(`/api/tickets/${currentOpenTicket.id}/reply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (result.status === 'ok') {
+            if (closeTicket) {
+                selectedTicketId = null;
+                await loadInbox();
+                await loadDashboardData();
+                if (window.currentDashboardView === 'audit') await loadAuditLogs();
+            } else {
+                // Recargar el ticket para mostrar la respuesta en el hilo
+                await selectOutlookMessage(currentOpenTicket.id);
+            }
+        } else {
+            alert("Aviso: " + (result.message || "Error al procesar respuesta."));
+        }
+    } catch (err) {
+        console.error("Error enviando respuesta SMTP:", err);
+        alert("Fallo al contactar el servidor para despachar respuesta.");
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+function openAttachmentViewer(filePath, filename) {
+    if (!filePath) return;
+    // Abrir en nueva pestaña o modal de visualización
+    window.open(filePath, '_blank');
+}
+
+window.toggleEmailBodyView = toggleEmailBodyView;
+window.applyTechnicalTemplate = applyTechnicalTemplate;
+window.sendTicketReply = sendTicketReply;
+window.openAttachmentViewer = openAttachmentViewer;
