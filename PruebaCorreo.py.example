@@ -15,7 +15,7 @@ def revisar_correos_nuevos():
         mail.login(EMAIL, PASSWORD)
         mail.select("inbox")
         
-        status, mensajes = mail.search(None, "UNREAD")
+        status, mensajes = mail.search(None, "UNSEEN")
         lista_ids = mensajes[0].split()
         print(f"Correos no leídos encontrados: {len(lista_ids)}")
         mail.logout()

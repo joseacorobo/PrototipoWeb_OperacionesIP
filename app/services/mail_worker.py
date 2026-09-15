@@ -170,11 +170,16 @@ class MailWorker:
             mail.login(user, password)
             mail.select(mailbox)
 
-            status, messages = mail.search(None, "UNREAD")
-            if status != "OK":
-                return {"status": "ok", "new_count": 0}
+            # RFC 3501: El criterio estándar para mensajes no leídos es UNSEEN
+            status, messages = mail.search(None, "UNSEEN")
+            if status != "OK" or not messages or not messages[0]:
+                mail.close()
+                mail.logout()
+                return {"status": "ok", "mode": "REAL_IMAP", "new_count": 0, "message": "No hay correos no leídos en el buzón."}
 
             msg_ids = messages[0].split()
+            # Limitar a los 20 más recientes para evitar sobrecargas en pruebas iniciales
+            msg_ids = msg_ids[-20:]
             for msg_id_bytes in msg_ids:
                 res_fetch, msg_data = mail.fetch(msg_id_bytes, "(RFC822)")
                 if res_fetch != "OK":
@@ -236,19 +241,27 @@ class MailWorker:
             }
             
         mail = None
+        current_stage = "CONEXION"
         try:
+            current_stage = "CONEXION"
             ssl_context = ssl.create_default_context()
             mail = imaplib.IMAP4_SSL(host=server, port=int(port), ssl_context=ssl_context)
             ssl_version = mail.sock.version() if hasattr(mail, "sock") and mail.sock else "TLS"
             
+            current_stage = "AUTENTICACION"
             mail.login(user, password)
             
+            current_stage = "BUZON"
             sel_status, sel_data = mail.select(mailbox, readonly=True)
             unread_count = 0
             if sel_status == "OK":
-                s_status, messages = mail.search(None, "UNREAD")
-                if s_status == "OK" and messages and messages[0]:
-                    unread_count = len(messages[0].split())
+                try:
+                    # RFC 3501: Criterio estándar UNSEEN para correos no leídos (no UNREAD)
+                    s_status, messages = mail.search(None, "UNSEEN")
+                    if s_status == "OK" and messages and messages[0]:
+                        unread_count = len(messages[0].split())
+                except Exception as s_err:
+                    logger.warning(f"Aviso consultando mensajes UNSEEN: {s_err}")
             
             list_status, list_data = mail.list()
             folder_names = []
@@ -290,20 +303,22 @@ class MailWorker:
                 advice = "Microsoft ha deshabilitado la autenticación básica para esta cuenta. Debe generar una 'Contraseña de Aplicación' en su cuenta de Microsoft (myaccount.microsoft.com) o usar un buzón corporativo con IMAP habilitado."
             elif "AUTHENTICATIONFAILED" in err_msg.upper():
                 advice = "Fallo de autenticación. Si la cuenta usa doble factor (2FA/MFA), debe generar una 'Contraseña de Aplicación' en su cuenta Microsoft/Google."
+            elif current_stage == "BUZON":
+                advice = f"No se pudo acceder a la carpeta '{mailbox}'. Verifique que exista o use 'INBOX'."
             return {
                 "status": "error",
-                "stage": "AUTENTICACION",
+                "stage": current_stage,
                 "latency_ms": elapsed_ms,
-                "message": f"Error de autenticación IMAP: {err_msg}",
+                "message": f"Error IMAP ({current_stage}): {err_msg}",
                 "advice": advice
             }
         except Exception as e:
             elapsed_ms = round((time.time() - start_time) * 1000)
             return {
                 "status": "error",
-                "stage": "CONEXION",
+                "stage": current_stage,
                 "latency_ms": elapsed_ms,
-                "message": f"Error de conexión al servidor {server}:{port}: {str(e)}",
+                "message": f"Error de conexión ({current_stage}) al servidor {server}:{port}: {str(e)}",
                 "advice": "Verifique el nombre de host del servidor IMAP y que el puerto 993 no esté bloqueado por firewall."
             }
 
