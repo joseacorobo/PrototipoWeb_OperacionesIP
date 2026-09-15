@@ -1,3 +1,10 @@
+import sys
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 from services.mail_worker import mail_worker_instance
 from services.reports import get_managerial_summary, generate_excel_report
 from services.email_parser import TelcoEmailParser
@@ -7,7 +14,6 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Streamin
 from pydantic import BaseModel
 from typing import Optional
 import sqlite3
-import os
 from datetime import datetime
 from database import get_db, init_db
 
