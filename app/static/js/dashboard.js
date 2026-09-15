@@ -1720,18 +1720,28 @@ async function syncMailWorkerNow() {
 
 async function openMailConfigModal() {
     try {
-        const res = await fetch('/api/mail-worker/status');
-        const status = await res.json();
+        let status = {};
+        try {
+            const res = await fetch('/api/mail-worker/status');
+            if (res.ok) status = await res.json();
+        } catch (e) {
+            console.warn("Could not fetch mail worker status:", e);
+        }
         currentWorkerStatus = status;
-        const cfg = status.config;
+        const cfg = (status && status.config) ? status.config : (status || {});
 
-        document.getElementById("cfg_mode").value = cfg.mode || "SIMULATOR";
-        document.getElementById("cfg_interval").value = cfg.poll_interval || 60;
-        document.getElementById("cfg_imap_server").value = cfg.imap_server || "imap.gmail.com";
-        document.getElementById("cfg_imap_port").value = cfg.imap_port || 993;
-        document.getElementById("cfg_imap_mailbox").value = cfg.imap_mailbox || "INBOX";
-        document.getElementById("cfg_imap_user").value = cfg.imap_user || "";
-        document.getElementById("cfg_imap_password").value = "";
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = (val !== undefined && val !== null) ? val : "";
+        };
+
+        setVal("cfg_mode", cfg.mode || status.mode || "SIMULATOR");
+        setVal("cfg_interval", cfg.poll_interval || status.poll_interval || 60);
+        setVal("cfg_imap_server", cfg.imap_server || status.imap_server || "imap.gmail.com");
+        setVal("cfg_imap_port", cfg.imap_port || status.imap_port || 993);
+        setVal("cfg_imap_mailbox", cfg.imap_mailbox || status.imap_mailbox || "INBOX");
+        setVal("cfg_imap_user", cfg.imap_user || status.imap_user || "");
+        setVal("cfg_imap_password", "");
 
         toggleImapFieldsVisibility();
 
@@ -1742,11 +1752,20 @@ async function openMailConfigModal() {
         }
 
         const modal = document.getElementById("modalMailWorkerConfig");
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
-        lucide.createIcons();
+        if (modal) {
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+        if (window.lucide && typeof window.lucide.createIcons === "function") {
+            lucide.createIcons();
+        }
     } catch (err) {
         console.error("Error opening mail config modal:", err);
+        const modal = document.getElementById("modalMailWorkerConfig");
+        if (modal) {
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
     }
 }
 

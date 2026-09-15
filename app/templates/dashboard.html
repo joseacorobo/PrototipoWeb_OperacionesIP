@@ -672,8 +672,9 @@
                             <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="icon-sync-spin"></i>
                         </button>
 
-                        <button onclick="openMailConfigModal()" class="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white border border-white/20 transition cursor-pointer" title="Configurar IMAP">
+                        <button onclick="openMailConfigModal()" id="btn-open-mail-config" class="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold flex items-center gap-1.5 border border-white/20 transition cursor-pointer" title="Configurar IMAP / Servidor de Correo">
                             <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                            <span class="hidden sm:inline">Configurar IMAP</span>
                         </button>
 
                         <button onclick="toggleOutlookFullscreen()" id="btn-outlook-fullscreen" class="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white border border-white/20 transition cursor-pointer" title="Modo Pantalla Completa / Restaurar">
@@ -1316,6 +1317,6 @@
     </div>
 
     <!-- Dashboard Controller Script -->
-    <script src="/static/js/dashboard.js?v=4.1"></script>
+    <script src="/static/js/dashboard.js?v=4.5"></script>
 </body>
 </html>
