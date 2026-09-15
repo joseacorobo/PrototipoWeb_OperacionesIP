@@ -112,32 +112,43 @@ class MailWorker:
         else:
             return self._sync_real_imap()
 
-    def _sync_simulator(self) -> dict:
+    def _sync_simulator(self, area: str = None) -> dict:
         """Modo simulador de laboratorio: genera un caso telco estructurado"""
         sample_cases = [
             {
                 "sender": "cuadrilla.chacao@inter.com.ve",
                 "subject": "Falla ONT Discovery permanente - Nodo Chacao",
-                "body": f"Buenas tardes soporte, favor apoyo con AB {random.choice(['10', '25', '30'])}{random.randint(10000000, 99999999)} con serial FHTT{random.randint(10000000, 99999999)} en OLT-CHAC-01. La ONT emite -19.4 dBm pero no sube a Whitelist. Demonio atascado."
+                "body": f"Buenas tardes soporte, favor apoyo con AB {random.choice(['10', '25', '30'])}{random.randint(10000000, 99999999)} con serial FHTT{random.randint(10000000, 99999999)} en OLT-CHAC-01. La ONT emite -19.4 dBm pero no sube a Whitelist. Demonio atascado.",
+                "area": "Soporte"
             },
             {
                 "sender": "cuadrilla.centro@inter.com.ve",
                 "subject": "Cliente IP Certificada sin tráfico / Modo Bridge",
-                "body": f"Cliente corporativo con AB {random.choice(['10', '25', '30'])}{random.randint(10000000, 99999999)} serial HWTC{random.randint(10000000, 99999999)} en OLT-CCS-02. Modo bridge con IP certificada, validar WANMAC 00:1a:2b:{random.randint(10,99)}:{random.randint(10,99)}:{random.randint(10,99)} en 815."
+                "body": f"Cliente corporativo con AB {random.choice(['10', '25', '30'])}{random.randint(10000000, 99999999)} serial HWTC{random.randint(10000000, 99999999)} en OLT-CCS-02. Modo bridge con IP certificada, validar WANMAC 00:1a:2b:{random.randint(10,99)}:{random.randint(10,99)}:{random.randint(10,99)} en 815.",
+                "area": "Soporte"
             },
             {
                 "sender": "monitoreo.core@inter.com.ve",
                 "subject": "Alerta de saturación enlace troncal OLT",
-                "body": "Alerta automática NOC: Enlace troncal OLT-CCS-01 slot uplink 1 saturado al 79.4% (7.9 Gbps). Planificar ampliación PortChannel 20G."
+                "body": "Alerta automática NOC: Enlace troncal OLT-CCS-01 slot uplink 1 saturado al 79.4% (7.9 Gbps). Planificar ampliación PortChannel 20G.",
+                "area": "Cabecera"
             },
             {
                 "sender": "soporte.voip@inter.com.ve",
                 "subject": "Falla registro SIP en ONT residencial",
-                "body": f"AB {random.choice(['10', '25', '30'])}{random.randint(10000000, 99999999)} con serial FHTT{random.randint(10000000, 99999999)} en OLT-VAL-02 reporta SIP 403 Forbidden. Revisar dialplan."
+                "body": f"AB {random.choice(['10', '25', '30'])}{random.randint(10000000, 99999999)} con serial FHTT{random.randint(10000000, 99999999)} en OLT-VAL-02 reporta SIP 403 Forbidden. Revisar dialplan.",
+                "area": "Telefonía"
             }
         ]
         
-        selected = random.choice(sample_cases)
+        candidates = sample_cases
+        if area and area not in ["Todas", "General", ""]:
+            filtered = [c for c in sample_cases if c.get("area", "").lower() == area.lower()]
+            if filtered:
+                candidates = filtered
+                
+        selected = random.choice(candidates)
+        target_area = selected.get("area", "Soporte")
         msg_id = f"<sim-{int(time.time())}-{random.randint(1000,9999)}@inter.com.ve>"
         sim_code = f"INC-{random.randint(60000, 99999)}"
 
