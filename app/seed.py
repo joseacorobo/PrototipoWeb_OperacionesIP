@@ -1,9 +1,13 @@
-from database import get_db, init_db
+try:
+    from database import get_db, init_db
+except ImportError:
+    from app.database import get_db, init_db
 import random
 from datetime import datetime, timedelta
 
-def seed():
-    init_db()
+def seed(skip_init: bool = False):
+    if not skip_init:
+        init_db()
     conn = get_db()
     cur = conn.cursor()
     

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  operaciones-ip-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inter_operaciones_ip
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - WEB_CONCURRENCY=1
+    volumes:
+      # Persistencia de la base de datos SQLite y los adjuntos
+      - ./data:/app/data
+      - ./app/static/attachments:/app/app/static/attachments
+      - ./app/ip_ops.db:/app/app/ip_ops.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/kpis"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -197,5 +197,22 @@ def init_db():
     conn.commit()
     conn.close()
 
+    # Auto-seed para despliegues nuevos (si el catálogo de tareas está vacío)
+    conn_check = get_db()
+    cur_check = conn_check.cursor()
+    cur_check.execute("SELECT COUNT(*) FROM task_types")
+    needs_seed = (cur_check.fetchone()[0] == 0)
+    conn_check.close()
+
+    if needs_seed:
+        try:
+            try:
+                from seed import seed
+            except ImportError:
+                from app.seed import seed
+            seed(skip_init=True)
+        except Exception as seed_err:
+            print(f"Aviso en auto-seed de base de datos: {seed_err}")
+
 if __name__ == "__main__":
     init_db()
