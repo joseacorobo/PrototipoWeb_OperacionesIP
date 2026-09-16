@@ -1,0 +1,287 @@
+/* ==========================================================================
+   DASHBOARD - SISTEMA DE METRICAS Y DESARROLLO (OPERACIONES IP)
+   Figma Reference: Sistema de Metricas y Desarrollo (Node 0-1)
+   Corporate Identity: Inter NOC - Consola de Operaciones de Red
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. VARIABLES & DESIGN TOKENS DE METRICAS
+   -------------------------------------------------------------------------- */
+:root {
+    /* Superficies & Bordes */
+    --dash-bg: #F8FAFC;
+    --dash-card: #FFFFFF;
+    --dash-subtle: #F1F5F9;
+    --dash-border: #E2E8F0;
+    --dash-border-subtle: #EDF2F7;
+    
+    /* Tipografia */
+    --dash-text-title: #0F172A;
+    --dash-text-body: #334155;
+    --dash-text-muted: #64748B;
+    
+    /* Paleta de Estado & Severidad NOC */
+    --dash-blue: #0056B3;
+    --dash-blue-light: rgba(0, 86, 179, 0.08);
+    --dash-cyan: #0284C7;
+    --dash-emerald: #059669;
+    --dash-emerald-light: rgba(5, 150, 105, 0.1);
+    --dash-amber: #D97706;
+    --dash-amber-light: rgba(217, 119, 6, 0.1);
+    --dash-red: #DC2626;
+    --dash-red-light: rgba(220, 38, 38, 0.1);
+    --dash-purple: #4F46E5;
+    --dash-purple-light: rgba(79, 70, 229, 0.1);
+
+    /* Elevaciones de Tarjeta */
+    --dash-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --dash-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* Tema Oscuro (Figma Spec Dark NOC) */
+.dark {
+    --dash-bg: #070C19;
+    --dash-card: #0D1527;
+    --dash-subtle: #0F1729;
+    --dash-border: #1E293B;
+    --dash-border-subtle: #162238;
+    
+    --dash-text-title: #F8FAFC;
+    --dash-text-body: #CBD5E1;
+    --dash-text-muted: #94A3B8;
+    
+    --dash-blue: #0066CC;
+    --dash-blue-light: rgba(0, 102, 204, 0.2);
+    --dash-cyan: #38BDF8;
+    --dash-emerald: #10B981;
+    --dash-emerald-light: rgba(16, 185, 129, 0.15);
+    --dash-amber: #F59E0B;
+    --dash-amber-light: rgba(245, 158, 11, 0.15);
+    --dash-red: #EF4444;
+    --dash-red-light: rgba(239, 68, 68, 0.15);
+    --dash-purple: #818CF8;
+    --dash-purple-light: rgba(129, 140, 248, 0.15);
+
+    --dash-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --dash-shadow-hover: 0 6px 18px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   2. CONTENEDORES Y TARJETAS KPI DEL DASHBOARD
+   -------------------------------------------------------------------------- */
+.dashboard-kpi-card {
+    background-color: var(--dash-card);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    box-shadow: var(--dash-shadow-card);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--dash-shadow-hover);
+    border-color: rgba(0, 86, 179, 0.3);
+}
+
+.dark .dashboard-kpi-card:hover {
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* Tarjeta Hero KPI (Meta Ponderada de Produccion) */
+.dashboard-hero-kpi {
+    background: linear-gradient(135deg, #0056B3 0%, #0078D4 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 24px rgba(0, 86, 179, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+.dark .dashboard-hero-kpi {
+    background: linear-gradient(135deg, #0A2540 0%, #0056B3 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+.dashboard-kpi-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+/* Pildoras de Tendencia / Variacion (Pill Trends) */
+.kpi-trend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.675rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 9999px;
+    line-height: 1;
+}
+
+.kpi-trend-pill.positive {
+    background-color: var(--dash-emerald-light);
+    color: var(--dash-emerald);
+}
+
+.kpi-trend-pill.warning {
+    background-color: var(--dash-amber-light);
+    color: var(--dash-amber);
+}
+
+.kpi-trend-pill.negative {
+    background-color: var(--dash-red-light);
+    color: var(--dash-red);
+}
+
+/* --------------------------------------------------------------------------
+   3. BARRAS DE PROGRESO Y DISTRIBUCION DE PUNTOS
+   -------------------------------------------------------------------------- */
+.dashboard-progress-track {
+    height: 0.5rem;
+    background-color: var(--dash-subtle);
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.dashboard-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Colores Segun Celula Tecnica */
+.progress-fill-ftth {
+    background: linear-gradient(90deg, #0284C7 0%, #0056B3 100%);
+}
+
+.progress-fill-cabecera {
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+}
+
+.progress-fill-telefonia {
+    background: linear-gradient(90deg, #818CF8 0%, #4F46E5 100%);
+}
+
+/* --------------------------------------------------------------------------
+   4. CONTENEDORES DE GRAFICAS INTERACTIVAS (CHART.JS)
+   -------------------------------------------------------------------------- */
+.dashboard-chart-card {
+    background-color: var(--dash-card);
+    border: 1px solid var(--dash-border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    box-shadow: var(--dash-shadow-card);
+}
+
+.dashboard-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--dash-border-subtle);
+}
+
+.dashboard-chart-canvas-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 240px;
+}
+
+/* --------------------------------------------------------------------------
+   5. TABLAS CORPORATIVAS DE METRICAS Y AUDITORIA
+   -------------------------------------------------------------------------- */
+.table-corporate-metrics {
+    width: 100%;
+    text-align: left;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-corporate-metrics thead th {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--dash-text-muted);
+    background-color: var(--dash-subtle);
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.table-corporate-metrics thead th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.table-corporate-metrics thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.table-corporate-metrics tbody td {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.75rem;
+    color: var(--dash-text-body);
+    border-bottom: 1px solid var(--dash-border-subtle);
+    transition: background-color 120ms ease;
+}
+
+.table-corporate-metrics tbody tr:hover td {
+    background-color: var(--dash-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   6. PILDORAS Y BOTONES DE FILTRADO
+   -------------------------------------------------------------------------- */
+.dashboard-filter-pill {
+    font-size: 0.725rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    background-color: var(--dash-subtle);
+    color: var(--dash-text-muted);
+    border: 1px solid var(--dash-border);
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.dashboard-filter-pill:hover {
+    background-color: var(--dash-card);
+    color: var(--dash-text-title);
+}
+
+.dashboard-filter-pill.active {
+    background-color: var(--dash-blue);
+    color: #FFFFFF !important;
+    border-color: var(--dash-blue);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 86, 179, 0.2);
+}
+
+.dark .dashboard-filter-pill.active {
+    background-color: #0078D4;
+    border-color: #38BDF8;
+}
+
+/* --------------------------------------------------------------------------
+   7. MODAL Y DIALOGOS DE APOYO
+   -------------------------------------------------------------------------- */
+.dashboard-modal-backdrop {
+    background-color: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+}
+
+.dashboard-modal-surface {
+    background-color: var(--dash-card);
+    border: 1px solid var(--dash-border);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}\n
