@@ -20,6 +20,8 @@ Reporte_Gerencial_Operaciones_IP*.xlsx
 PruebaCorreo
 app/config_mail.json
 1.txt
+app/static/attachments/*
+!app/static/attachments/.gitkeep
 
 # Sistema Operativo y Editores
 .DS_Store

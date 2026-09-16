@@ -825,6 +825,14 @@ function applyInboxFilters() {
     const badgePend = document.getElementById("badge-tab-pendientes");
     if (badgePend) badgePend.innerText = countPendientes;
 
+    // Actualizar badges en Sidebar
+    const sbInboxBadge = document.getElementById("sidebar-inbox-badge");
+    if (sbInboxBadge) sbInboxBadge.innerText = activeTickets.length;
+    const sbDirBadge = document.getElementById("sidebar-directos-badge");
+    if (sbDirBadge) sbDirBadge.innerText = countDirectos;
+    const sbAsigBadge = document.getElementById("sidebar-asignados-badge");
+    if (sbAsigBadge) sbAsigBadge.innerText = countMisAsignados;
+
     let filtered = activeTickets.filter(t => {
         // 1. Filtro por Pestaña
         const isCrit = (t.suggested_points >= 4) || 

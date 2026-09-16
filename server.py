@@ -21,11 +21,22 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8000"))
     workers = int(os.environ.get("WEB_CONCURRENCY", "1"))
     
-    print(f"Servidor Web Operaciones IP iniciado en http://{host}:{port}")
-    uvicorn.run(
-        "app.main:app",
-        host=host,
-        port=port,
-        workers=workers,
-        access_log=True
-    )
+    reload = os.environ.get("RELOAD", "true").lower() == "true"
+    
+    print(f"Servidor Web Operaciones IP iniciado en http://{host}:{port} (reload={reload})")
+    if reload:
+        uvicorn.run(
+            "app.main:app",
+            host=host,
+            port=port,
+            reload=True,
+            access_log=True
+        )
+    else:
+        uvicorn.run(
+            "app.main:app",
+            host=host,
+            port=port,
+            workers=workers,
+            access_log=True
+        )

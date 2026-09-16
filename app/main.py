@@ -36,6 +36,14 @@ def dashboard_view():
 def login_view():
     return FileResponse(os.path.join(BASE_DIR, "templates", "login.html"))
 
+@app.get("/mail", response_class=FileResponse)
+def mail_portal_view():
+    return FileResponse(os.path.join(BASE_DIR, "templates", "mail.html"))
+
+@app.get("/inbox", response_class=FileResponse)
+def inbox_portal_view():
+    return FileResponse(os.path.join(BASE_DIR, "templates", "mail.html"))
+
 def parse_area_filter(area: str, table_prefix: str = ""):
     col = f"{table_prefix}.area" if table_prefix else "area"
     if not area or area in ["Todas", "Todas las Áreas", "Todas las Células"]:
@@ -649,48 +657,8 @@ def reply_to_ticket(ticket_id: int, payload: TicketReplyPayload, request: Reques
 
 @app.post("/api/tickets/simulate-incoming")
 def simulate_incoming_ticket(area: Optional[str] = "Soporte"):
-    conn = get_db()
-    cur = conn.cursor()
-    import random
-    code = f"INC-{random.randint(50000, 99999)}"
-    
-    templates = {
-        "Soporte": [
-            ("cuadrilla.centro@inter.com.ve", "Cliente con ONT en Discovery permanente - Nodo Centro", 
-             "Abonado FHTT88129031 con potencia normal (-18.5 dBm) no es reconocido por la OLT en Whitelist. Requiere desatasco de demonio.",
-             "CLI-884910", "FHTT88129031", "OLT-CCS-01", "Slot 4 / PON 8 / Ct.Onu 12", "C4:A8:1D:99:32:10", 5),
-            ("soporte.empresas@inter.com.ve", "Cliente IP Certificada sin tráfico / Modo Bridge", 
-             "Cliente corporativo con servicio simétrico. ONT en Bridge conectada a Fortigate del abonado. Verificar WANMAC en servidor 815. NO refrescar.",
-             "CORP-109283", "HWTC55192033", "OLT-CHAC-01", "Slot 1 / PON 3 / Ct.Onu 5", "00:09:0F:77:21:A4", 7),
-        ],
-        "Cabecera": [
-            ("monitoreo.core@inter.com.ve", "Alerta de saturación interfaz XFP OLT-01 al 79%", 
-             "Tráfico pico sostenido sobre 7.9 Gbps. Requiere planificar PortChannel 20G.",
-             "N/A", "N/A", "OLT-CCS-01", "Slot Uplink 1", "N/A", 14),
-        ],
-        "Telefonía": [
-            ("soporte.clientes@inter.com.ve", "Registro SIP fallido en ONT FiberHome con VoIP", 
-             "ONT reporta SIP status 403 Forbidden tras cambio de firmware.",
-             "CLI-339182", "FHTT66192830", "OLT-VAL-01", "Slot 2 / PON 4", "N/A", 16),
-        ]
-    }
-    
-    if area in ["Acceso", "Redes de Acceso"]:
-        target_area = random.choice(["Soporte", "Cabecera"])
-    elif area in templates:
-        target_area = area
-    else:
-        target_area = "Soporte"
-    sample = random.choice(templates[target_area])
-    
-    cur.execute("""
-    INSERT INTO email_tickets (ticket_code, sender_email, subject, full_body, area, subscriber_code, serial_pon, node_name, slot_pon, mac_address, suggested_task_type_id, status, source)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', 'SIMULADOR')
-    """, (code, sample[0], sample[1], sample[2], target_area, sample[3], sample[4], sample[5], sample[6], sample[7], sample[8]))
-    
-    conn.commit()
-    conn.close()
-    return {"status": "ok", "ticket": code, "area": target_area}
+    res = mail_worker_instance._sync_simulator(area=area)
+    return res
 # =============================================================
 # ENDPOINTS DEL ALGORITMO DE PARSING DE CASOS REALES
 # =============================================================
