@@ -296,10 +296,54 @@ def get_feed(area: str = "Todas"):
 # =============================================================
 
 @app.get("/api/tickets/inbox")
-def get_tickets_inbox(area: str = "Todas"):
+def get_tickets_inbox(area: str = "Todas", folder: Optional[str] = None, user_id: Optional[int] = None, request: Request = None):
     conn = get_db()
     cur = conn.cursor()
+    
+    # Resolver especialista en sesión
+    if not user_id and request:
+        cookie_val = request.cookies.get("auth_user_id")
+        if cookie_val and cookie_val.isdigit():
+            user_id = int(cookie_val)
+    if not user_id:
+        user_id = 27
+        
+    cur.execute("SELECT email FROM users WHERE id = ?", (user_id,))
+    u_row = cur.fetchone()
+    user_email = u_row["email"] if u_row else "joseacorobo@gmail.com"
+    
     where_clause, params = parse_area_filter(area, "et")
+    
+    # Filtro específico por Carpeta
+    if folder:
+        f_lower = folder.lower().strip()
+        if f_lower == "directos":
+            where_clause += " AND et.recipient_email = ?"
+            params.append(user_email)
+        elif f_lower == "mis_asignados":
+            where_clause += " AND et.claimed_by_user_id = ? AND et.status != 'COMPLETADO'"
+            params.append(user_id)
+        elif f_lower == "pendientes":
+            where_clause += " AND et.status = 'PENDIENTE'"
+        elif f_lower == "en_espera":
+            where_clause += " AND et.status = 'EN ESPERA'"
+        elif f_lower == "resueltos":
+            where_clause += " AND et.status = 'COMPLETADO'"
+        elif f_lower == "inbox":
+            where_clause += " AND et.status != 'COMPLETADO'"
+        elif f_lower == "aprovisionamiento":
+            where_clause += " AND (et.folder = 'APROVISIONAMIENTO' OR et.subject LIKE '%Discovery%' OR et.subject LIKE '%Whitelist%')"
+        elif f_lower == "demonios_olt":
+            where_clause += " AND (et.folder = 'DEMONIOS_OLT' OR et.subject LIKE '%Demonio%' OR et.full_body LIKE '%Demonio%')"
+        elif f_lower == "ip_bridge":
+            where_clause += " AND (et.folder = 'IP_BRIDGE' OR et.subject LIKE '%Bridge%' OR et.subject LIKE '%IP Certificada%')"
+        elif f_lower == "telefonia":
+            where_clause += " AND (et.folder = 'TELEFONIA' OR et.area = 'Telefonía' OR et.subject LIKE '%SIP%')"
+        elif f_lower == "cabecera":
+            where_clause += " AND (et.folder = 'CABECERA' OR et.area = 'Cabecera' OR et.subject LIKE '%Troncal%' OR et.subject LIKE '%XFP%')"
+        else:
+            where_clause += " AND et.folder = ?"
+            params.append(folder.upper())
     
     cur.execute(f"""
     SELECT et.id, et.ticket_code, et.sender_email, et.subject, et.full_body, et.area,
@@ -308,7 +352,8 @@ def get_tickets_inbox(area: str = "Todas"):
            et.claimed_at, et.paused_at, et.total_paused_seconds,
            tt.name as suggested_task_name, tt.points as suggested_points, tt.id as suggested_task_id, tt.code as task_code,
            COALESCE(tt.sla_minutes, 30) as sla_minutes,
-           et.created_at, et.source, COALESCE(et.recipient_email, '') as recipient_email
+           et.created_at, et.source, COALESCE(et.recipient_email, '') as recipient_email,
+           COALESCE(et.folder, 'INBOX') as folder
     FROM email_tickets et
     LEFT JOIN users u ON et.claimed_by_user_id = u.id
     LEFT JOIN task_types tt ON et.suggested_task_type_id = tt.id
@@ -319,6 +364,181 @@ def get_tickets_inbox(area: str = "Todas"):
     tickets = [dict(r) for r in cur.fetchall()]
     conn.close()
     return tickets
+
+@app.get("/api/mail/stats")
+def get_mail_stats(user_id: Optional[int] = None, area: str = "Todas", request: Request = None):
+    conn = get_db()
+    cur = conn.cursor()
+    
+    if not user_id and request:
+        cookie_val = request.cookies.get("auth_user_id")
+        if cookie_val and cookie_val.isdigit():
+            user_id = int(cookie_val)
+    if not user_id:
+        user_id = 27
+        
+    cur.execute("SELECT id, name, email, role, area, avatar FROM users WHERE id = ?", (user_id,))
+    user_info = cur.fetchone()
+    user_email = user_info["email"] if user_info else "joseacorobo@gmail.com"
+    user_name = user_info["name"] if user_info else "José Corobo"
+    user_role = user_info["role"] if user_info else "ESPECIALISTA"
+    user_avatar = user_info["avatar"] if user_info else "JC"
+    user_area = user_info["area"] if user_info else "Soporte"
+    
+    # 1. Telemetría global de entrada (Inbound)
+    cur.execute("SELECT COUNT(*) FROM email_tickets")
+    inbound_total = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE DATE(created_at) = DATE('now')")
+    inbound_today = cur.fetchone()[0] or 0
+    
+    # 2. Telemetría global de salida (Outbound SMTP)
+    cur.execute("SELECT COUNT(*) FROM email_replies")
+    outbound_total = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_replies WHERE DATE(sent_at) = DATE('now')")
+    outbound_today = cur.fetchone()[0] or 0
+    
+    # 3. Métricas del Operador logueado
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE recipient_email = ? AND status != 'COMPLETADO'", (user_email,))
+    my_direct_count = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE claimed_by_user_id = ? AND status = 'EN PROGRESO'", (user_id,))
+    my_assigned_count = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_replies WHERE user_id = ? AND DATE(sent_at) = DATE('now')", (user_id,))
+    my_replies_today = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE claimed_by_user_id = ? AND status = 'COMPLETADO' AND DATE(completed_at) = DATE('now')", (user_id,))
+    my_resolved_today = cur.fetchone()[0] or 0
+
+    # 4. Conteos de Carpetas
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE status != 'COMPLETADO'")
+    inbox_count = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE status = 'PENDIENTE'")
+    unassigned_count = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE status = 'EN ESPERA'")
+    on_hold_count = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE status = 'COMPLETADO'")
+    resolved_count = cur.fetchone()[0] or 0
+    
+    # Categorías telco
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE (folder = 'APROVISIONAMIENTO' OR subject LIKE '%Discovery%' OR subject LIKE '%Whitelist%') AND status != 'COMPLETADO'")
+    f_aprov = cur.fetchone()[0] or 0
+    
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE (folder = 'DEMONIOS_OLT' OR subject LIKE '%Demonio%' OR full_body LIKE '%Demonio%') AND status != 'COMPLETADO'")
+    f_demon = cur.fetchone()[0] or 0
+
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE (folder = 'IP_BRIDGE' OR subject LIKE '%Bridge%' OR subject LIKE '%IP Certificada%') AND status != 'COMPLETADO'")
+    f_bridge = cur.fetchone()[0] or 0
+
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE (folder = 'TELEFONIA' OR area = 'Telefonía' OR subject LIKE '%SIP%') AND status != 'COMPLETADO'")
+    f_tel = cur.fetchone()[0] or 0
+
+    cur.execute("SELECT COUNT(*) FROM email_tickets WHERE (folder = 'CABECERA' OR area = 'Cabecera' OR subject LIKE '%Troncal%' OR subject LIKE '%XFP%') AND status != 'COMPLETADO'")
+    f_cab = cur.fetchone()[0] or 0
+    
+    conn.close()
+    
+    return {
+        "operator": {
+            "id": user_id,
+            "name": user_name,
+            "email": user_email,
+            "role": user_role,
+            "avatar": user_avatar,
+            "area": user_area,
+            "direct_inbound": my_direct_count,
+            "claimed_active": my_assigned_count,
+            "replies_today": my_replies_today,
+            "resolved_today": my_resolved_today
+        },
+        "telemetry": {
+            "inbound_total": inbound_total,
+            "inbound_today": inbound_today,
+            "outbound_total": outbound_total,
+            "outbound_today": outbound_today,
+            "resolution_rate": round((resolved_count / inbound_total * 100), 1) if inbound_total > 0 else 100.0
+        },
+        "folders": {
+            "inbox": inbox_count,
+            "directos": my_direct_count,
+            "unassigned": unassigned_count,
+            "mis_asignados": my_assigned_count,
+            "en_espera": on_hold_count,
+            "enviados": outbound_total,
+            "resueltos": resolved_count,
+            "aprovisionamiento": f_aprov,
+            "demonios_olt": f_demon,
+            "ip_bridge": f_bridge,
+            "telefonia": f_tel,
+            "cabecera": f_cab
+        }
+    }
+
+@app.get("/api/mail/outbox")
+def get_mail_outbox(user_id: Optional[int] = None, request: Request = None):
+    conn = get_db()
+    cur = conn.cursor()
+    
+    cur.execute("""
+    SELECT r.id, r.ticket_id, et.ticket_code, r.recipient_email, r.subject,
+           r.body_text, r.body_html, r.status, r.sent_at,
+           r.user_id, u.name as user_name, u.avatar as user_avatar, u.role as user_role, u.area as user_area,
+           et.area as ticket_area, et.subscriber_code, et.node_name
+    FROM email_replies r
+    LEFT JOIN users u ON r.user_id = u.id
+    LEFT JOIN email_tickets et ON r.ticket_id = et.id
+    ORDER BY r.sent_at DESC
+    LIMIT 100
+    """)
+    
+    replies = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return replies
+
+class MoveFolderPayload(BaseModel):
+    folder: str
+
+@app.post("/api/tickets/{ticket_id}/move-folder")
+def move_ticket_to_folder(ticket_id: int, payload: MoveFolderPayload, request: Request = None):
+    conn = get_db()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT ticket_code, claimed_by_user_id, area, folder FROM email_tickets WHERE id = ?", (ticket_id,))
+    t_row = cur.fetchone()
+    if not t_row:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "Ticket no encontrado"})
+        
+    old_folder = t_row["folder"] or "INBOX"
+    new_folder = payload.folder.upper().strip()
+    
+    cur.execute("UPDATE email_tickets SET folder = ? WHERE id = ?", (new_folder, ticket_id))
+    conn.commit()
+    conn.close()
+    
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+    user_id = t_row["claimed_by_user_id"] or 27
+    log_audit_event(
+        user_id=user_id,
+        area=t_row["area"],
+        action="MOVER_CARPETA",
+        entity_type="TICKET",
+        entity_id=t_row["ticket_code"],
+        details=f"Ticket movido de carpeta '{old_folder}' a '{new_folder}'",
+        ip_address=client_ip
+    )
+    
+    return {
+        "status": "ok",
+        "ticket_id": ticket_id,
+        "old_folder": old_folder,
+        "new_folder": new_folder
+    }
 
 @app.get("/api/tickets/{ticket_id}")
 def get_ticket_detail(ticket_id: int):

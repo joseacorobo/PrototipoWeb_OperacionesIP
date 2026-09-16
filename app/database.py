@@ -67,6 +67,7 @@ def init_db():
         mac_address TEXT,
         suggested_task_type_id INTEGER,
         status TEXT DEFAULT 'PENDIENTE', -- PENDIENTE, EN PROGRESO, EN ESPERA, COMPLETADO
+        folder TEXT DEFAULT 'INBOX',
         claimed_by_user_id INTEGER,
         claimed_at TIMESTAMP,
         paused_at TIMESTAMP,
@@ -147,6 +148,9 @@ def init_db():
         cursor.execute("ALTER TABLE email_tickets ADD COLUMN recipient_email TEXT")
     if "html_body" not in columns:
         cursor.execute("ALTER TABLE email_tickets ADD COLUMN html_body TEXT")
+    if "folder" not in columns:
+        cursor.execute("ALTER TABLE email_tickets ADD COLUMN folder TEXT DEFAULT 'INBOX'")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_tickets_folder ON email_tickets(folder)")
 
     # Tabla de Adjuntos, Membretes e Imágenes Inline
     cursor.execute("""

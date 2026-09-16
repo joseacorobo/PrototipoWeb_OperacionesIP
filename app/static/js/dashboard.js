@@ -667,20 +667,318 @@ function populateTechFilter(techs) {
     if (currentVal) select.value = currentVal;
 }
 
-async function loadInbox() {
-    const res = await fetch(`/api/tickets/inbox?area=${currentArea}`);
-    const tickets = await res.json();
-    activeTickets = tickets;
-    
-    const pendingCount = tickets.filter(t => t.status === 'PENDIENTE').length;
-    const badgeInbox = document.getElementById('badge-inbox-count');
-    if (badgeInbox) badgeInbox.innerText = pendingCount;
-    const headerBadge = document.getElementById('header-badge-count');
-    if (headerBadge) {
-        headerBadge.style.display = pendingCount > 0 ? 'block' : 'none';
+let currentMailFolder = 'inbox';
+let currentMailDirection = 'inbound'; // 'inbound' | 'outbound'
+let outboxItems = [];
+let selectedOutboxId = null;
+
+async function loadInbox(folderParam) {
+    if (folderParam) {
+        currentMailFolder = folderParam;
     }
+    const uid = window.currentUser ? window.currentUser.id : 27;
+    const url = `/api/tickets/inbox?area=${encodeURIComponent(currentArea)}&folder=${encodeURIComponent(currentMailFolder)}&user_id=${uid}`;
+    try {
+        const res = await fetch(url);
+        const tickets = await res.json();
+        activeTickets = tickets;
+        
+        const pendingCount = tickets.filter(t => t.status === 'PENDIENTE').length;
+        const badgeInbox = document.getElementById('badge-inbox-count');
+        if (badgeInbox) badgeInbox.innerText = pendingCount;
+        const headerBadge = document.getElementById('header-badge-count');
+        if (headerBadge) {
+            headerBadge.style.display = pendingCount > 0 ? 'block' : 'none';
+        }
+        
+        applyInboxFilters();
+        loadMailStats();
+    } catch (err) {
+        console.error("Error al cargar tickets de bandeja:", err);
+    }
+}
+
+async function loadMailStats() {
+    const uid = window.currentUser ? window.currentUser.id : 27;
+    try {
+        const res = await fetch(`/api/mail/stats?user_id=${uid}`);
+        if (!res.ok) return;
+        const stats = await res.json();
+        
+        // 1. Actualizar Telemetria Entrada/Salida en Vivo
+        if (stats.telemetry) {
+            const inToday = document.getElementById("telemetry-inbound-today");
+            if (inToday) inToday.innerText = stats.telemetry.inbound_today;
+            const inTotal = document.getElementById("telemetry-inbound-total");
+            if (inTotal) inTotal.innerText = stats.telemetry.inbound_total;
+            const outToday = document.getElementById("telemetry-outbound-today");
+            if (outToday) outToday.innerText = stats.telemetry.outbound_today;
+            const outTotal = document.getElementById("telemetry-outbound-total");
+            if (outTotal) outTotal.innerText = stats.telemetry.outbound_total;
+            const resRate = document.getElementById("telemetry-resolution-rate");
+            if (resRate) resRate.innerText = `${stats.telemetry.resolution_rate}%`;
+        }
+        
+        // 2. Actualizar Metricas del Operador
+        if (stats.operator) {
+            const opName = document.getElementById("operator-card-name");
+            if (opName) opName.innerText = stats.operator.name;
+            const opRole = document.getElementById("operator-card-role");
+            if (opRole) opRole.innerText = `${stats.operator.role} (${stats.operator.area})`;
+            const opAvatar = document.getElementById("operator-card-avatar");
+            if (opAvatar) opAvatar.innerText = stats.operator.avatar;
+            const opDirects = document.getElementById("operator-directs-count");
+            if (opDirects) opDirects.innerText = stats.operator.direct_inbound;
+            const opClaimed = document.getElementById("operator-claimed-count");
+            if (opClaimed) opClaimed.innerText = stats.operator.claimed_active;
+            const opReplies = document.getElementById("operator-replies-count");
+            if (opReplies) opReplies.innerText = stats.operator.replies_today;
+            const opResolved = document.getElementById("operator-resolved-count");
+            if (opResolved) opResolved.innerText = stats.operator.resolved_today;
+        }
+        
+        // 3. Actualizar Badges del Arbol de Carpetas
+        if (stats.folders) {
+            const f = stats.folders;
+            const mapBadges = {
+                'badge-folder-inbox': f.inbox,
+                'badge-folder-directos': f.directos,
+                'badge-folder-mis_asignados': f.mis_asignados,
+                'badge-folder-en_espera': f.en_espera,
+                'badge-folder-salida': f.enviados,
+                'badge-folder-resueltos': f.resueltos,
+                'badge-folder-aprov_ftth': f.aprovisionamiento,
+                'badge-folder-olt_daemon': f.demonios_olt,
+                'badge-folder-bridge': f.ip_bridge,
+                'badge-folder-telefonia': f.telefonia,
+                'badge-folder-cabecera': f.cabecera
+            };
+            for (const [id, count] of Object.entries(mapBadges)) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = count !== undefined ? count : 0;
+            }
+        }
+    } catch (e) {
+        console.error("Error al cargar estadisticas del correo:", e);
+    }
+}
+
+async function selectMailFolder(folderId) {
+    currentMailFolder = folderId;
     
-    applyInboxFilters();
+    // Actualizar estados visuales en arbol de carpetas
+    document.querySelectorAll(".mail-folder-item").forEach(el => {
+        el.classList.remove("mail-folder-active");
+    });
+    const activeEl = document.getElementById(`folder-item-${folderId}`);
+    if (activeEl) activeEl.classList.add("mail-folder-active");
+
+    // Actualizar titulo del contenedor de mensajes
+    const titleEl = document.getElementById("current-folder-title");
+    const mapTitles = {
+        'inbox': 'Bandeja de Entrada Principal',
+        'directos': 'Directos a mi Buzon',
+        'mis_asignados': 'Mis Tickets Asignados',
+        'en_espera': 'Tickets en Espera / Terreno',
+        'salida': 'Elementos Enviados (Salida SMTP)',
+        'resueltos': 'Casos Resueltos',
+        'aprovisionamiento': 'Aprovisionamiento FTTH',
+        'demonios_olt': 'Demonio OLT y Sincronizacion',
+        'ip_bridge': 'Soporte Bridge IP Certificada',
+        'telefonia': 'Telefonia SIP y Asterisk',
+        'cabecera': 'Cabecera y Troncal Optica'
+    };
+    if (titleEl) titleEl.innerText = mapTitles[folderId] || folderId.toUpperCase();
+
+    if (folderId === 'salida') {
+        currentMailDirection = 'outbound';
+        await loadOutbox();
+    } else {
+        currentMailDirection = 'inbound';
+        await loadInbox(folderId);
+    }
+}
+
+async function loadOutbox() {
+    try {
+        const res = await fetch("/api/mail/outbox");
+        outboxItems = await res.json();
+        
+        const countEl = document.getElementById("filter-visible-count");
+        if (countEl) countEl.innerText = outboxItems.length;
+
+        renderOutboxMessageList(outboxItems);
+        loadMailStats();
+    } catch (e) {
+        console.error("Error cargando outbox:", e);
+    }
+}
+
+function renderOutboxMessageList(items) {
+    const listContainer = document.getElementById("outlook-message-list");
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
+
+    if (items.length === 0) {
+        listContainer.innerHTML = `
+            <div class="p-8 text-center text-snow-muted italic text-xs">
+                <i data-lucide="send" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                No hay correos salientes registrados todavia.
+            </div>
+        `;
+        lucide.createIcons();
+        renderOutlookReadingPaneEmpty();
+        return;
+    }
+
+    items.forEach((item, idx) => {
+        const isSelected = (selectedOutboxId !== null && item.id === selectedOutboxId) || (selectedOutboxId === null && idx === 0);
+        if (isSelected && (selectedOutboxId === null || selectedOutboxId !== item.id)) {
+            selectedOutboxId = item.id;
+        }
+
+        const cleanSender = item.user_name || "Especialista NOC";
+        const initials = item.user_avatar || getSenderInitials(cleanSender, item.user_email);
+        const avatarColor = getAvatarColor(initials);
+        const bodySnippet = (item.body_text || "Sin texto").replace(/\r?\n/g, ' ').substring(0, 110) + '...';
+
+        const card = document.createElement("div");
+        card.id = `outbox-item-${item.id}`;
+        card.className = `outlook-msg-card p-3 cursor-pointer relative transition hover:bg-gray-50 dark:hover:bg-[#222225] ${isSelected ? 'outlook-item-selected' : 'bg-transparent'}`;
+        card.onclick = () => selectOutboxMessage(item.id);
+
+        card.innerHTML = `
+            <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded-full ${avatarColor} shrink-0 flex items-center justify-center font-bold text-[11px] shadow-2xs">
+                    ${initials}
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[170px]">
+                            Para: ${item.recipient_email || 'Solicitante'}
+                        </span>
+                        <span class="text-[10px] text-snow-muted font-mono shrink-0">
+                            ${item.sent_at ? item.sent_at.substring(11, 16) : ''}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 mb-1">
+                        <span class="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">OUT-${item.id}</span>
+                        <p class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
+                            Re: ${item.ticket_subject || 'Respuesta tecnica'}
+                        </p>
+                    </div>
+
+                    <p class="text-[11px] text-snow-muted line-clamp-2 leading-relaxed mb-2 font-normal">
+                        ${bodySnippet}
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">Despachado SMTP</span>
+                        <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">${item.ticket_code || 'TICKET'}</span>
+                        <span class="text-[9px] text-snow-muted ml-auto font-medium">Por: ${cleanSender}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        listContainer.appendChild(card);
+    });
+
+    lucide.createIcons();
+
+    if (selectedOutboxId !== null) {
+        const found = items.find(i => i.id === selectedOutboxId) || items[0];
+        if (found) loadOutboxItemIntoReadingPane(found);
+    }
+}
+
+function selectOutboxMessage(replyId) {
+    selectedOutboxId = replyId;
+    document.querySelectorAll(".outlook-msg-card").forEach(el => el.classList.remove("outlook-item-selected"));
+    const selectedEl = document.getElementById(`outbox-item-${replyId}`);
+    if (selectedEl) selectedEl.classList.add("outlook-item-selected");
+
+    const found = outboxItems.find(i => i.id === replyId);
+    if (found) loadOutboxItemIntoReadingPane(found);
+}
+
+function loadOutboxItemIntoReadingPane(item) {
+    const pane = document.getElementById("outlook-reading-pane");
+    if (!pane) return;
+
+    const cleanSender = item.user_name || "Especialista NOC";
+    const initials = item.user_avatar || getSenderInitials(cleanSender, item.user_email);
+    const avatarColor = getAvatarColor(initials);
+
+    pane.innerHTML = `
+        <div class="flex-1 flex flex-col h-full overflow-hidden">
+            <div class="px-5 py-3 border-b border-snow-border bg-gray-50/70 dark:bg-[#1E1E20] flex items-center justify-between gap-3 shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-white dark:bg-[#2C2C2E] border border-snow-border text-gray-900 dark:text-white shadow-2xs">${item.ticket_code || 'TICKET'}</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300">Despachado SMTP</span>
+                    <span class="text-xs text-snow-muted truncate max-w-xs font-mono">&lt;${item.recipient_email}&gt;</span>
+                </div>
+                <span class="text-xs text-snow-muted font-mono">${item.sent_at || ''}</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-4">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900 dark:text-white tracking-tight">Re: ${item.ticket_subject || 'Respuesta Tecnica FSM'}</h2>
+                    <p class="text-xs text-snow-muted mt-1">Ticket de referencia: <strong class="text-gray-800 dark:text-gray-200 font-mono">${item.ticket_code || 'N/A'}</strong></p>
+                </div>
+
+                <div class="flex items-start justify-between p-3 rounded-xl bg-gray-50/50 dark:bg-[#242426] border border-snow-border">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full ${avatarColor} font-bold text-xs flex items-center justify-center shadow-xs">
+                            ${initials}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-900 dark:text-white">${cleanSender}</p>
+                            <p class="text-[11px] text-snow-muted">De: <span class="font-mono">${item.user_email || 'operaciones@inter.com.ve'}</span></p>
+                            <p class="text-[11px] text-snow-muted">Para: <span class="font-mono text-gray-700 dark:text-gray-300 font-semibold">${item.recipient_email}</span></p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold">Entrega Confirmada</span>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-snow-border p-4 bg-white dark:bg-[#1E1E20] space-y-2">
+                    <p class="text-[10px] font-bold text-snow-muted uppercase tracking-wider flex items-center gap-1.5 border-b border-snow-border pb-1">
+                        <i data-lucide="mail-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        Cuerpo del Mensaje Saliente (RFC 5322)
+                    </p>
+                    <div class="text-xs text-gray-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap bg-gray-50/50 dark:bg-[#242426] p-4 rounded-xl border border-snow-border/80 select-text font-mono">
+${item.body_text || ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    lucide.createIcons();
+}
+
+async function moveTicketToFolder(ticketId, folderName) {
+    try {
+        const res = await fetch(`/api/tickets/${ticketId}/move-folder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ folder: folderName })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'ok') {
+            if (currentOpenTicket && currentOpenTicket.id === ticketId) {
+                currentOpenTicket.folder = folderName;
+            }
+            await loadInbox();
+            await loadMailStats();
+            if (typeof selectOutlookMessage === 'function') {
+                selectOutlookMessage(ticketId);
+            }
+        }
+    } catch (e) {
+        console.error("Error al mover ticket de carpeta:", e);
+    }
 }
 
 // =============================================================
@@ -786,6 +1084,23 @@ function getAvatarColor(initials) {
 }
 
 function applyInboxFilters() {
+    if (currentMailDirection === 'outbound') {
+        const outlookSearchEl = document.getElementById("outlook-search-input");
+        const globalSearchEl = document.getElementById("global-search-input");
+        const searchQuery = (outlookSearchEl ? outlookSearchEl.value : (globalSearchEl ? globalSearchEl.value : "")).trim().toLowerCase();
+        let filtered = outboxItems.filter(item => {
+            if (searchQuery) {
+                const rowStr = `${item.ticket_code || ''} ${item.recipient_email || ''} ${item.ticket_subject || ''} ${item.body_text || ''} ${item.user_name || ''}`.toLowerCase();
+                return rowStr.includes(searchQuery);
+            }
+            return true;
+        });
+        const countEl = document.getElementById("filter-visible-count");
+        if (countEl) countEl.innerText = filtered.length;
+        renderOutboxMessageList(filtered);
+        return;
+    }
+
     const filterTech = document.getElementById("filter-tech") ? document.getElementById("filter-tech").value : "todos";
     const filterBottleneck = document.getElementById("filter-bottleneck") ? document.getElementById("filter-bottleneck").value : "todos";
     const outlookSearchEl = document.getElementById("outlook-search-input");
@@ -1172,6 +1487,19 @@ function loadTicketIntoReadingPane(t) {
                         <span id="btn-pause-text">${t.status === 'EN ESPERA' ? 'Reanudar' : 'Pausar'}</span>
                     </button>
                     `)}
+
+                    <!-- Selector Mover a Carpeta -->
+                    <div class="relative">
+                        <select onchange="moveTicketToFolder(${t.id}, this.value)" class="text-[11px] font-semibold bg-white dark:bg-[#2C2C2E] border border-snow-border rounded-lg px-2 py-1 text-gray-800 dark:text-gray-200 outline-none cursor-pointer hover:border-[#0078D4] transition" title="Mover este ticket a otra carpeta técnica">
+                            <option value="" disabled selected>Mover a carpeta...</option>
+                            <option value="INBOX" ${(t.folder === 'INBOX' || !t.folder) ? 'disabled' : ''}>Bandeja Principal (INBOX)</option>
+                            <option value="APROVISIONAMIENTO" ${t.folder === 'APROVISIONAMIENTO' ? 'disabled' : ''}>Aprovisionamiento FTTH</option>
+                            <option value="DEMONIOS_OLT" ${t.folder === 'DEMONIOS_OLT' ? 'disabled' : ''}>Demonios OLT</option>
+                            <option value="IP_BRIDGE" ${t.folder === 'IP_BRIDGE' ? 'disabled' : ''}>Soporte IP Bridge</option>
+                            <option value="TELEFONIA" ${t.folder === 'TELEFONIA' ? 'disabled' : ''}>Telefonía SIP</option>
+                            <option value="CABECERA" ${t.folder === 'CABECERA' ? 'disabled' : ''}>Cabecera y Troncal</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -1213,6 +1541,7 @@ function loadTicketIntoReadingPane(t) {
                         <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-950/40 dark:text-purple-300">${t.suggested_task_name || 'Operación'}</span>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300">+${t.suggested_points || 2} pts (P${t.suggested_points || 2})</span>
                         <span class="text-[10px] font-mono text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">SLA: ${t.sla_minutes || 30}m</span>
+                        <span class="text-[10px] font-mono text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-900 font-semibold">Carpeta: ${(t.folder || 'INBOX').toUpperCase()}</span>
                         ${isDirect ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300">Directo a mi Buzón</span>` : ''}
                     </div>
                 </div>
@@ -2619,3 +2948,8 @@ window.toggleEmailBodyView = toggleEmailBodyView;
 window.applyTechnicalTemplate = applyTechnicalTemplate;
 window.sendTicketReply = sendTicketReply;
 window.openAttachmentViewer = openAttachmentViewer;
+window.selectMailFolder = selectMailFolder;
+window.moveTicketToFolder = moveTicketToFolder;
+window.loadMailStats = loadMailStats;
+window.loadOutbox = loadOutbox;
+window.selectOutboxMessage = selectOutboxMessage;

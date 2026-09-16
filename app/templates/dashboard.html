@@ -756,39 +756,210 @@
                     </div>
                 </div>
 
-                <!-- 2. SPLIT 2-COLUMN VIEW (LIST PANE + READING PANE) -->
-                <div class="flex-1 flex flex-col md:flex-row h-[660px] overflow-hidden">
+                <!-- 2. TRIPLE COLUMN VIEW (ARBOL | LISTA | LECTURA) -->
+                <div class="flex-1 flex flex-col md:flex-row h-[720px] overflow-hidden">
                     
-                    <!-- COLUMN 1: OUTLOOK MESSAGE LIST (380px) -->
-                    <div class="w-full md:w-[390px] lg:w-[420px] shrink-0 border-r border-snow-border flex flex-col bg-snow-sidebar overflow-hidden">
+                    <!-- COLUMNA 1: PERFIL OPERADOR, TELEMETRIA Y ARBOL DE CARPETAS (250px) -->
+                    <div class="w-full md:w-[250px] lg:w-[260px] shrink-0 border-r border-snow-border flex flex-col bg-snow-sidebar overflow-y-auto select-none divide-y divide-snow-border">
                         
-                        <!-- Top Bar: Tabs Prioritarios / Otros / Todos -->
+                        <!-- 1.1 Tarjeta de Identidad del Operador -->
+                        <div class="p-3 bg-white dark:bg-[#151D2F] space-y-2">
+                            <div class="flex items-center gap-2.5">
+                                <div id="operator-card-avatar" class="w-8 h-8 rounded-xl bg-[#0056B3] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                                    JC
+                                </div>
+                                <div class="overflow-hidden">
+                                    <h3 id="operator-card-name" class="text-xs font-bold text-gray-900 dark:text-white truncate">Jose Corobo</h3>
+                                    <p id="operator-card-role" class="text-[10px] text-[#0056B3] dark:text-[#38BDF8] font-semibold truncate">Especialista (Soporte)</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-1.5 pt-1 text-center">
+                                <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                    <span class="text-[9px] text-snow-muted block">Directos a Mi</span>
+                                    <strong id="operator-directs-count" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 font-mono">0</strong>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                    <span class="text-[9px] text-snow-muted block">Mis Asignados</span>
+                                    <strong id="operator-claimed-count" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">0</strong>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                    <span class="text-[9px] text-snow-muted block">Respuestas</span>
+                                    <strong id="operator-replies-count" class="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono">0</strong>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                    <span class="text-[9px] text-snow-muted block">Resueltos</span>
+                                    <strong id="operator-resolved-count" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">0</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1.2 Widget Telemetria Entrada / Salida en Vivo -->
+                        <div class="p-3 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 dark:from-[#131B2E] dark:to-[#171F36] space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-snow-muted">Trafico RFC / SMTP</span>
+                                </div>
+                                <span id="telemetry-resolution-rate" class="text-[10px] font-mono font-bold text-[#0056B3] dark:text-[#38BDF8]">0.0%</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="p-2 rounded-lg bg-white/80 dark:bg-[#1E293B] border border-blue-100 dark:border-blue-900/50">
+                                    <div class="flex items-center justify-between mb-0.5">
+                                        <span class="text-[9px] text-snow-muted">Entrada</span>
+                                        <i data-lucide="arrow-down-left" class="w-3 h-3 text-blue-600"></i>
+                                    </div>
+                                    <div class="flex items-baseline gap-1">
+                                        <strong id="telemetry-inbound-today" class="text-xs font-black text-gray-900 dark:text-white font-mono">0</strong>
+                                        <span class="text-[9px] text-snow-muted font-mono">/ <span id="telemetry-inbound-total">0</span></span>
+                                    </div>
+                                </div>
+
+                                <div class="p-2 rounded-lg bg-white/80 dark:bg-[#1E293B] border border-emerald-100 dark:border-emerald-900/50">
+                                    <div class="flex items-center justify-between mb-0.5">
+                                        <span class="text-[9px] text-snow-muted">Salida</span>
+                                        <i data-lucide="arrow-up-right" class="w-3 h-3 text-emerald-600"></i>
+                                    </div>
+                                    <div class="flex items-baseline gap-1">
+                                        <strong id="telemetry-outbound-today" class="text-xs font-black text-gray-900 dark:text-white font-mono">0</strong>
+                                        <span class="text-[9px] text-snow-muted font-mono">/ <span id="telemetry-outbound-total">0</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1.3 Arbol de Carpetas Outlook -->
+                        <div class="p-2.5 space-y-2.5 flex-1 overflow-y-auto">
+                            
+                            <!-- Carpetas Principales -->
+                            <div class="space-y-0.5">
+                                <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-snow-muted block mb-1">
+                                    Carpetas Principales
+                                </span>
+
+                                <div id="folder-item-inbox" onclick="selectMailFolder('inbox')" class="mail-folder-item mail-folder-active">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="inbox" class="w-3.5 h-3.5"></i>
+                                        <span>Bandeja de Entrada</span>
+                                    </div>
+                                    <span id="badge-folder-inbox" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-blue-100 dark:bg-blue-950 text-[#0056B3] dark:text-blue-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-directos" onclick="selectMailFolder('directos')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="mail-check" class="w-3.5 h-3.5 text-indigo-500"></i>
+                                        <span>Directos a Mi</span>
+                                    </div>
+                                    <span id="badge-folder-directos" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-mis_asignados" onclick="selectMailFolder('mis_asignados')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                                        <span>Mis Asignados</span>
+                                    </div>
+                                    <span id="badge-folder-mis_asignados" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-en_espera" onclick="selectMailFolder('en_espera')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
+                                        <span>En Espera</span>
+                                    </div>
+                                    <span id="badge-folder-en_espera" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-salida" onclick="selectMailFolder('salida')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="send" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                        <span>Enviados (Salida)</span>
+                                    </div>
+                                    <span id="badge-folder-salida" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-resueltos" onclick="selectMailFolder('resueltos')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="archive" class="w-3.5 h-3.5 text-slate-400"></i>
+                                        <span>Resueltos</span>
+                                    </div>
+                                    <span id="badge-folder-resueltos" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">0</span>
+                                </div>
+                            </div>
+
+                            <!-- Clasificacion Tecnica Telco -->
+                            <div class="space-y-0.5 pt-2 border-t border-snow-border">
+                                <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-snow-muted block mb-1">
+                                    Clasificacion Telco
+                                </span>
+
+                                <div id="folder-item-aprovisionamiento" onclick="selectMailFolder('aprovisionamiento')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="router" class="w-3.5 h-3.5 text-blue-500"></i>
+                                        <span>Aprov. FTTH</span>
+                                    </div>
+                                    <span id="badge-folder-aprov_ftth" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-demonios_olt" onclick="selectMailFolder('demonios_olt')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="cpu" class="w-3.5 h-3.5 text-amber-600"></i>
+                                        <span>Demonio OLT</span>
+                                    </div>
+                                    <span id="badge-folder-olt_daemon" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-ip_bridge" onclick="selectMailFolder('ip_bridge')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-red-500"></i>
+                                        <span>Bridge IP</span>
+                                    </div>
+                                    <span id="badge-folder-bridge" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-telefonia" onclick="selectMailFolder('telefonia')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="phone-call" class="w-3.5 h-3.5 text-purple-500"></i>
+                                        <span>Telefonia SIP</span>
+                                    </div>
+                                    <span id="badge-folder-telefonia" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">0</span>
+                                </div>
+
+                                <div id="folder-item-cabecera" onclick="selectMailFolder('cabecera')" class="mail-folder-item">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                        <span>Cabecera</span>
+                                    </div>
+                                    <span id="badge-folder-cabecera" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">0</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA 2: OUTLOOK MESSAGE LIST (380px) -->
+                    <div class="w-full md:w-[370px] lg:w-[400px] shrink-0 border-r border-snow-border flex flex-col bg-snow-sidebar overflow-hidden">
+                        
+                        <!-- Top Bar: Titulo de Carpeta y Tabs Prioritarios / Otros / Todos -->
                         <div class="p-2.5 border-b border-snow-border bg-gray-50/70 dark:bg-[#1E1E20] space-y-2">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-1 overflow-x-auto pb-0.5 max-w-[280px]">
+                                <div>
+                                    <h3 id="current-folder-title" class="text-xs font-bold text-gray-900 dark:text-white leading-tight">Bandeja de Entrada Principal</h3>
+                                    <span class="text-[10px] text-snow-muted font-medium">
+                                        <strong id="filter-visible-count" class="text-gray-900 dark:text-white font-mono">--</strong> tickets
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-1 overflow-x-auto pb-0.5">
                                     <button onclick="switchInboxTab('todos')" id="tab-inbox-todos" class="outlook-tab-btn active cursor-pointer whitespace-nowrap">
                                         Todos
                                     </button>
-                                    <button onclick="switchInboxTab('directos')" id="tab-inbox-directos" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Correos recibidos directamente en mi buzón">
-                                        Directos a Mí
-                                        <span id="badge-tab-directos" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold">0</span>
-                                    </button>
-                                    <button onclick="switchInboxTab('mis_asignados')" id="tab-inbox-mis_asignados" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Tickets asignados a mi perfil">
-                                        Mis Asignados
-                                        <span id="badge-tab-mis-asignados" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">0</span>
-                                    </button>
-                                    <button onclick="switchInboxTab('pendientes')" id="tab-inbox-pendientes" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Tickets pendientes sin asignar">
-                                        Pendientes
-                                        <span id="badge-tab-pendientes" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-[#0078D4] dark:bg-blue-900/40 dark:text-blue-300 font-bold">0</span>
-                                    </button>
                                     <button onclick="switchInboxTab('prioritarios')" id="tab-inbox-prioritarios" class="outlook-tab-btn cursor-pointer whitespace-nowrap">
-                                        Prioritarios
-                                        <span id="badge-tab-prioritarios" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300 font-bold">0</span>
+                                        Prioritarios (<span id="badge-tab-prioritarios">0</span>)
+                                    </button>
+                                    <button onclick="switchInboxTab('otros')" id="tab-inbox-otros" class="outlook-tab-btn cursor-pointer whitespace-nowrap">
+                                        Otros (<span id="badge-tab-otros">0</span>)
                                     </button>
                                 </div>
-                                <span class="text-[11px] text-snow-muted font-medium">
-                                    <strong id="filter-visible-count" class="text-gray-900 font-mono">--</strong> tickets
-                                </span>
                             </div>
 
                             <!-- Filter Selectors in Compact Outlook Style -->
@@ -800,7 +971,7 @@
                                     <option value="todos">Todos los Casos</option>
                                     <option value="estancados">Fuera de SLA</option>
                                     <option value="pausados">En Pausa (Terreno)</option>
-                                    <option value="criticos">Críticos (P4/P5)</option>
+                                    <option value="criticos">Criticos (P4/P5)</option>
                                     <option value="pendientes">Pendientes</option>
                                 </select>
                             </div>
@@ -815,13 +986,13 @@
                         <div class="p-2 border-t border-snow-border bg-gray-50/50 dark:bg-[#1C1C1E] flex items-center justify-between text-[10px] text-snow-muted">
                             <span class="flex items-center gap-1.5">
                                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <strong id="worker-mode-text" class="text-gray-700 font-mono">Modo: Simulador</strong>
+                                <strong id="worker-mode-text" class="text-gray-700 dark:text-gray-300 font-mono">Modo: Simulador</strong>
                             </span>
                             <span id="worker-state-text" class="font-medium text-emerald-600">Servicio Activo</span>
                         </div>
                     </div>
 
-                    <!-- COLUMN 2: OUTLOOK READING PANE (PANEL DE LECTURA) -->
+                    <!-- COLUMNA 3: OUTLOOK READING PANE (PANEL DE LECTURA) -->
                     <div id="outlook-reading-pane" class="flex-1 flex flex-col bg-white dark:bg-[#1C1C1E] overflow-hidden">
                         <!-- Injected dynamically by selectOutlookMessage(ticketId) -->
                     </div>

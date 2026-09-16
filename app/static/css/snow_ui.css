@@ -555,3 +555,41 @@ body {
     background-color: #1E293B;
     color: #F8FAFC;
 }
+
+/* ============================================================== */
+/* MAIL FOLDERS TREE & OPERATOR WORKSPACE                         */
+/* ============================================================== */
+
+.mail-folder-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.625rem;
+    border-radius: 6px;
+    font-size: 0.725rem;
+    font-weight: 500;
+    color: var(--snow-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.mail-folder-item:hover {
+    background-color: var(--snow-subtle);
+    color: var(--snow-text);
+}
+
+.mail-folder-item.mail-folder-active {
+    background-color: #0078D4 !important;
+    color: #FFFFFF !important;
+    font-weight: 700;
+}
+
+.mail-folder-item.mail-folder-active span.folder-badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #FFFFFF !important;
+}
+
+.mail-folder-item.mail-folder-active i {
+    color: #FFFFFF !important;
+}

@@ -53,7 +53,7 @@ def seed(skip_init: bool = False):
         ("P2-CAB-01", "Inspección y Limpieza de Patch Cord Óptico", "Cabecera", 2, 30, "Mantenimiento físico en rack"),
         ("P3-CAB-01", "Sustitución Módulo SFP-10G-SR en Switch", "Cabecera", 3, 45, "Reemplazo de transceptor con falla"),
         ("P4-CAB-01", "Reemplazo Tarjeta Controladora HSWA", "Cabecera", 5, 75, "Mantenimiento crítico de controladora"),
-        ("P5-CAB-01", "Habilitación PortChannel 10G ➔ 20G en OLT/SW", "Cabecera", 8, 120, "Ampliación de capacidad troncal"),
+        ("P5-CAB-01", "Habilitación PortChannel 10G -> 20G en OLT/SW", "Cabecera", 8, 120, "Ampliación de capacidad troncal"),
         ("P5-CAB-02", "Armado y Certificación de Mini Red para OLT", "Cabecera", 8, 150, "Puesta en marcha de nuevo nodo"),
         ("P1-TEL-01", "Consulta Estado Registro SIP en Softswitch", "Telefonía", 1, 10, "Validación de registro activo"),
         ("P2-TEL-01", "Corrección Básica de Credenciales SIP", "Telefonía", 2, 20, "Reenvío de auth a la ONT"),

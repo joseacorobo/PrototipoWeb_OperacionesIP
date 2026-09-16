@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Correos Operaciones IP - Inter FTTH</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22 16 16><text y=%2214%22 font-size=%2214%22>✉️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230056B3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect width='20' height='16' x='2' y='4' rx='2'/><path d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/></svg>">
     
     <!-- Google Fonts Inter & Tailwind CSS CDN -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/css/snow_ui.css?v=4.2">
 
     <script>
         tailwind.config = {
@@ -73,19 +74,46 @@
             color: #FFFFFF !important;
             font-weight: 700;
         }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        .outlook-item-selected {
+            background-color: #EFF6FF !important;
+            border-left: 3px solid #0078D4 !important;
         }
-        ::-webkit-scrollbar-track {
-            background: transparent;
+        .dark .outlook-item-selected {
+            background-color: #1E293B !important;
+            border-left: 3px solid #38BDF8 !important;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #CBD5E1;
-            border-radius: 3px;
+        .mail-folder-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.45rem 0.65rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #64748B;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
         }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #334155;
+        .mail-folder-item:hover {
+            background-color: #E2E8F0;
+            color: #0F172A;
+        }
+        .dark .mail-folder-item:hover {
+            background-color: #1E293B;
+            color: #F8FAFC;
+        }
+        .mail-folder-item.mail-folder-active {
+            background-color: #0078D4 !important;
+            color: #FFFFFF !important;
+            font-weight: 700;
+        }
+        .mail-folder-item.mail-folder-active span.folder-badge {
+            background-color: rgba(255, 255, 255, 0.25) !important;
+            color: #FFFFFF !important;
+        }
+        .mail-folder-item.mail-folder-active i {
+            color: #FFFFFF !important;
         }
     </style>
 </head>
@@ -107,35 +135,35 @@
                     <span class="text-snow-muted text-xs">|</span>
                     <span class="text-xs font-bold text-[#0056B3] dark:text-[#38BDF8]">Portal de Correos FSM</span>
                 </div>
-                <p class="text-[10px] text-snow-muted hidden sm:block">Entorno dedicado para triaje, diagnóstico y respuesta de casos técnicos</p>
+                <p class="text-[10px] text-snow-muted hidden sm:block">Entorno dedicado para triaje, diagnostico y respuesta de casos tecnicos</p>
             </div>
         </div>
 
-        <!-- Center: Navegación Rápida a Métricas y Filtro por Célula -->
+        <!-- Center: Navegacion Rapida a Metricas y Filtro por Celula -->
         <div class="flex items-center gap-2">
-            <a href="/" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-snow-border bg-gray-50 hover:bg-gray-100 dark:bg-[#1F2937] dark:hover:bg-[#374151] text-xs font-semibold text-snow-muted hover:text-gray-900 dark:hover:text-white transition" title="Ir a la Consola General de Métricas y KPIs">
+            <a href="/" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-snow-border bg-gray-50 hover:bg-gray-100 dark:bg-[#1F2937] dark:hover:bg-[#374151] text-xs font-semibold text-snow-muted hover:text-gray-900 dark:hover:text-white transition" title="Ir a la Consola General de Metricas y KPIs">
                 <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-snow-blue"></i>
-                <span class="hidden md:inline">Consola de Métricas</span>
+                <span class="hidden md:inline">Consola de Metricas</span>
             </a>
 
-            <!-- Selector de Célula Operativa -->
+            <!-- Selector de Celula Operativa -->
             <div class="relative">
                 <select id="mail-area-select" onchange="changeArea(this.value)" class="text-xs font-semibold bg-gray-50 dark:bg-[#1F2937] border border-snow-border rounded-lg px-2.5 py-1.5 text-gray-800 dark:text-gray-200 outline-none cursor-pointer">
-                    <option value="Todas">Todas las Células</option>
-                    <option value="Soporte" selected>Célula Soporte (Aprov.)</option>
-                    <option value="Cabecera">Célula Cabecera</option>
-                    <option value="Telefonía">Célula Telefonía</option>
-                    <option value="Acceso">Célula FTTH General</option>
+                    <option value="Todas">Todas las Celulas</option>
+                    <option value="Soporte" selected>Celula Soporte (Aprov.)</option>
+                    <option value="Cabecera">Celula Cabecera</option>
+                    <option value="Telefonía">Celula Telefonia</option>
+                    <option value="Acceso">Celula FTTH General</option>
                 </select>
             </div>
         </div>
 
-        <!-- Right: Búsqueda, Modo Oscuro y Perfil del Usuario -->
+        <!-- Right: Busqueda, Modo Oscuro y Perfil del Usuario -->
         <div class="flex items-center gap-2">
             <!-- Buscador en tiempo real -->
             <div class="relative hidden lg:flex items-center">
                 <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 text-snow-muted pointer-events-none"></i>
-                <input type="text" id="global-search-input" onkeyup="filterInboxBySearch(this.value)" placeholder="Buscar ticket o serial..." class="w-44 pl-8 pr-3 py-1 text-xs bg-gray-50 dark:bg-[#1F2937] rounded-lg text-gray-900 dark:text-white placeholder-snow-muted border border-snow-border outline-none focus:ring-1 focus:ring-snow-blue transition">
+                <input type="text" id="global-search-input" onkeyup="filterOutlookBySearch(this.value)" placeholder="Buscar ticket o serial..." class="w-44 pl-8 pr-3 py-1 text-xs bg-gray-50 dark:bg-[#1F2937] rounded-lg text-gray-900 dark:text-white placeholder-snow-muted border border-snow-border outline-none focus:ring-1 focus:ring-snow-blue transition">
             </div>
 
             <!-- Conmutador Tema Claro / Oscuro -->
@@ -152,16 +180,16 @@
                         JC
                     </div>
                     <div class="hidden sm:flex flex-col text-left">
-                        <span id="header-user-name" class="text-xs font-bold text-gray-900 dark:text-white leading-tight">José Corobo</span>
+                        <span id="header-user-name" class="text-xs font-bold text-gray-900 dark:text-white leading-tight">Jose Corobo</span>
                         <span id="header-user-role" class="text-[9px] text-[#0056B3] dark:text-[#38BDF8] font-semibold leading-tight">Especialista (Soporte)</span>
                     </div>
                     <i data-lucide="chevron-down" class="w-3 h-3 text-snow-muted ml-0.5"></i>
                 </button>
 
-                <!-- Menú Desplegable de Usuario -->
+                <!-- Menu Desplegable de Usuario -->
                 <div id="user-profile-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white dark:bg-[#1F2937] rounded-xl shadow-2xl border border-snow-border p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div class="px-3 py-2 border-b border-snow-border mb-2">
-                        <p class="text-xs font-bold text-gray-900 dark:text-white" id="dropdown-user-fullname">José Corobo</p>
+                        <p class="text-xs font-bold text-gray-900 dark:text-white" id="dropdown-user-fullname">Jose Corobo</p>
                         <p class="text-[10px] text-snow-muted font-mono" id="dropdown-user-email">joseacorobo@gmail.com</p>
                         <span id="dropdown-user-badge" class="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#0056B3] dark:bg-blue-950/60 dark:text-blue-300">
                             Especialista - Soporte FTTH
@@ -173,14 +201,14 @@
                             Conmutar Perfil de Operaciones
                         </span>
                         <div id="dropdown-users-list" class="max-h-48 overflow-y-auto space-y-1">
-                            <!-- Poblado dinámicamente con especialistas y coordinadores -->
+                            <!-- Poblado dinamicamente -->
                         </div>
                     </div>
 
                     <div class="border-t border-snow-border pt-2 mt-2">
                         <button onclick="logoutSession()" class="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition font-medium cursor-pointer">
                             <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-                            <span>Cerrar sesión</span>
+                            <span>Cerrar sesion</span>
                         </button>
                     </div>
                 </div>
@@ -216,11 +244,11 @@
                 <div class="flex-1 max-w-xs mx-2 hidden md:block">
                     <div class="relative">
                         <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2 text-white/60"></i>
-                        <input type="text" id="outlook-search-input" onkeyup="filterOutlookBySearch(this.value)" placeholder="Buscar en buzón..." class="w-full pl-8 pr-3 py-1 text-xs bg-white/15 hover:bg-white/25 focus:bg-white focus:text-gray-900 text-white placeholder-white/70 rounded-lg outline-none transition border border-white/20">
+                        <input type="text" id="outlook-search-input" onkeyup="filterOutlookBySearch(this.value)" placeholder="Buscar en buzon o remitente..." class="w-full pl-8 pr-3 py-1 text-xs bg-white/15 hover:bg-white/25 focus:bg-white focus:text-gray-900 text-white placeholder-white/70 rounded-lg outline-none transition border border-white/20">
                     </div>
                 </div>
 
-                <!-- Acciones Rápidas -->
+                <!-- Acciones Rapidas -->
                 <div class="flex items-center gap-1.5 sm:gap-2">
                     <button onclick="simulateEmail()" class="outlook-btn-primary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer">
                         <i data-lucide="mail-plus" class="w-3.5 h-3.5 text-[#0078D4]"></i>
@@ -247,31 +275,203 @@
                 </div>
             </div>
 
-            <!-- SPLIT 2-COLUMN VIEW (LIST PANE + READING PANE) -->
+            <!-- ========================================================= -->
+            <!-- 3. TRIPLE COLUMN VIEW (ARBOL | LISTA | LECTURA)           -->
+            <!-- ========================================================= -->
             <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                 
-                <!-- COLUMNA 1: LISTA DE MENSAJES (390px) -->
+                <!-- ===================================================== -->
+                <!-- COLUMNA 1: PERFIL OPERADOR, TELEMETRIA Y CARPETAS     -->
+                <!-- ===================================================== -->
+                <div class="w-full md:w-[250px] lg:w-[270px] shrink-0 border-r border-snow-border flex flex-col bg-gray-50/70 dark:bg-[#0E131F] overflow-y-auto select-none divide-y divide-snow-border">
+                    
+                    <!-- 1.1 Tarjeta del Operador de Turno -->
+                    <div class="p-3 bg-white dark:bg-[#151D2F] space-y-2">
+                        <div class="flex items-center gap-2.5">
+                            <div id="operator-card-avatar" class="w-9 h-9 rounded-xl bg-[#0056B3] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                                JC
+                            </div>
+                            <div class="overflow-hidden">
+                                <h3 id="operator-card-name" class="text-xs font-bold text-gray-900 dark:text-white truncate">Jose Corobo</h3>
+                                <p id="operator-card-role" class="text-[10px] text-[#0056B3] dark:text-[#38BDF8] font-semibold truncate">Especialista (Soporte)</p>
+                            </div>
+                        </div>
+
+                        <!-- Mini KPIs Personales del Operador -->
+                        <div class="grid grid-cols-2 gap-1.5 pt-1 text-center">
+                            <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                <span class="text-[9px] text-snow-muted block">Directos a Mi</span>
+                                <strong id="operator-directs-count" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 font-mono">0</strong>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                <span class="text-[9px] text-snow-muted block">Mis Asignados</span>
+                                <strong id="operator-claimed-count" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">0</strong>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                <span class="text-[9px] text-snow-muted block">Respuestas Hoy</span>
+                                <strong id="operator-replies-count" class="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono">0</strong>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-[#1C2438] p-1.5 rounded-lg border border-snow-border">
+                                <span class="text-[9px] text-snow-muted block">Resueltos Hoy</span>
+                                <strong id="operator-resolved-count" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">0</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1.2 Widget Telemetria Entrada / Salida en Vivo -->
+                    <div class="p-3 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 dark:from-[#131B2E] dark:to-[#171F36] space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-snow-muted">Trafico RFC / SMTP</span>
+                            </div>
+                            <span id="telemetry-resolution-rate" class="text-[10px] font-mono font-bold text-[#0056B3] dark:text-[#38BDF8]">0.0%</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="p-2 rounded-lg bg-white/80 dark:bg-[#1E293B] border border-blue-100 dark:border-blue-900/50">
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <span class="text-[9px] text-snow-muted">Entrada Hoy</span>
+                                    <i data-lucide="arrow-down-left" class="w-3 h-3 text-blue-600"></i>
+                                </div>
+                                <div class="flex items-baseline gap-1">
+                                    <strong id="telemetry-inbound-today" class="text-sm font-black text-gray-900 dark:text-white font-mono">0</strong>
+                                    <span class="text-[9px] text-snow-muted font-mono">/ <span id="telemetry-inbound-total">0</span></span>
+                                </div>
+                            </div>
+
+                            <div class="p-2 rounded-lg bg-white/80 dark:bg-[#1E293B] border border-emerald-100 dark:border-emerald-900/50">
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <span class="text-[9px] text-snow-muted">Salida Hoy</span>
+                                    <i data-lucide="arrow-up-right" class="w-3 h-3 text-emerald-600"></i>
+                                </div>
+                                <div class="flex items-baseline gap-1">
+                                    <strong id="telemetry-outbound-today" class="text-sm font-black text-gray-900 dark:text-white font-mono">0</strong>
+                                    <span class="text-[9px] text-snow-muted font-mono">/ <span id="telemetry-outbound-total">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1.3 Arbol de Carpetas Outlook -->
+                    <div class="p-2.5 space-y-3 flex-1 overflow-y-auto">
+                        
+                        <!-- Seccion Carpetas Principales -->
+                        <div class="space-y-0.5">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-snow-muted block mb-1">
+                                Carpetas Principales
+                            </span>
+
+                            <div id="folder-item-inbox" onclick="selectMailFolder('inbox')" class="mail-folder-item mail-folder-active">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="inbox" class="w-3.5 h-3.5"></i>
+                                    <span>Bandeja de Entrada</span>
+                                </div>
+                                <span id="badge-folder-inbox" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-blue-100 dark:bg-blue-950 text-[#0056B3] dark:text-blue-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-directos" onclick="selectMailFolder('directos')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="mail-check" class="w-3.5 h-3.5 text-indigo-500"></i>
+                                    <span>Directos a Mi</span>
+                                </div>
+                                <span id="badge-folder-directos" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-mis_asignados" onclick="selectMailFolder('mis_asignados')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                                    <span>Mis Asignados</span>
+                                </div>
+                                <span id="badge-folder-mis_asignados" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-en_espera" onclick="selectMailFolder('en_espera')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
+                                    <span>En Espera / Terreno</span>
+                                </div>
+                                <span id="badge-folder-en_espera" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-salida" onclick="selectMailFolder('salida')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="send" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                    <span>Enviados (Salida SMTP)</span>
+                                </div>
+                                <span id="badge-folder-salida" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-resueltos" onclick="selectMailFolder('resueltos')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="archive" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span>Casos Resueltos</span>
+                                </div>
+                                <span id="badge-folder-resueltos" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Seccion Clasificacion Tecnica Telco -->
+                        <div class="space-y-0.5 pt-2 border-t border-snow-border">
+                            <span class="px-2 text-[9px] font-bold uppercase tracking-wider text-snow-muted block mb-1">
+                                Clasificacion Tecnica Telco
+                            </span>
+
+                            <div id="folder-item-aprovisionamiento" onclick="selectMailFolder('aprovisionamiento')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="router" class="w-3.5 h-3.5 text-blue-500"></i>
+                                    <span>Aprovisionamiento FTTH</span>
+                                </div>
+                                <span id="badge-folder-aprov_ftth" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-demonios_olt" onclick="selectMailFolder('demonios_olt')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="cpu" class="w-3.5 h-3.5 text-amber-600"></i>
+                                    <span>Demonio OLT</span>
+                                </div>
+                                <span id="badge-folder-olt_daemon" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-ip_bridge" onclick="selectMailFolder('ip_bridge')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-red-500"></i>
+                                    <span>Modo Bridge IP</span>
+                                </div>
+                                <span id="badge-folder-bridge" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-telefonia" onclick="selectMailFolder('telefonia')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="phone-call" class="w-3.5 h-3.5 text-purple-500"></i>
+                                    <span>Telefonia SIP</span>
+                                </div>
+                                <span id="badge-folder-telefonia" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">0</span>
+                            </div>
+
+                            <div id="folder-item-cabecera" onclick="selectMailFolder('cabecera')" class="mail-folder-item">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                    <span>Cabecera y Troncal</span>
+                                </div>
+                                <span id="badge-folder-cabecera" class="folder-badge text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">0</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ===================================================== -->
+                <!-- COLUMNA 2: LISTA DE MENSAJES DE LA CARPETA ACTIVA     -->
+                <!-- ===================================================== -->
                 <div class="w-full md:w-[380px] lg:w-[410px] shrink-0 border-r border-snow-border flex flex-col bg-gray-50/50 dark:bg-[#0E131F] overflow-hidden">
                     
-                    <!-- Pestañas de Filtrado -->
+                    <!-- Encabezado de la Carpeta y Filtros -->
                     <div class="p-2.5 border-b border-snow-border bg-gray-100/60 dark:bg-[#141B2D] space-y-2 shrink-0">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-1 overflow-x-auto pb-0.5 max-w-[300px]">
-                                <button onclick="switchInboxTab('todos')" id="tab-inbox-todos" class="outlook-tab-btn active cursor-pointer whitespace-nowrap">
-                                    Todos
-                                </button>
-                                <button onclick="switchInboxTab('directos')" id="tab-inbox-directos" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Correos dirigidos a mi buzón">
-                                    Directos a Mí
-                                    <span id="badge-tab-directos" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold">0</span>
-                                </button>
-                                <button onclick="switchInboxTab('mis_asignados')" id="tab-inbox-mis_asignados" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Tickets asignados a mi perfil">
-                                    Mis Asignados
-                                    <span id="badge-tab-mis-asignados" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">0</span>
-                                </button>
-                                <button onclick="switchInboxTab('pendientes')" id="tab-inbox-pendientes" class="outlook-tab-btn cursor-pointer whitespace-nowrap" title="Tickets pendientes de atención">
-                                    Pendientes
-                                    <span id="badge-tab-pendientes" class="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 text-snow-blue dark:bg-blue-950 dark:text-blue-300 font-bold">0</span>
-                                </button>
+                            <div>
+                                <h3 id="current-folder-title" class="text-xs font-bold text-gray-900 dark:text-white leading-tight">Bandeja de Entrada Principal</h3>
+                                <p class="text-[10px] text-snow-muted"><strong id="filter-visible-count" class="font-mono text-gray-800 dark:text-gray-200">--</strong> mensajes disponibles</p>
                             </div>
                             
                             <span id="worker-status-pill" class="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800 shrink-0">
@@ -279,45 +479,54 @@
                             </span>
                         </div>
 
-                        <!-- Filtros secundarios -->
-                        <div class="flex items-center justify-between gap-2 text-xs">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] text-snow-muted font-semibold uppercase">Filtro:</span>
-                                <button onclick="filterInboxByTab('prioritarios')" id="tab-inbox-prioritarios" class="px-2 py-0.5 text-[10px] font-semibold rounded bg-white dark:bg-[#1E293B] border border-snow-border hover:border-snow-blue transition cursor-pointer">
+                        <!-- Pestañas secundarias de triaje -->
+                        <div class="flex items-center justify-between gap-1.5">
+                            <div class="flex items-center gap-1 overflow-x-auto pb-0.5">
+                                <button onclick="switchInboxTab('todos')" id="tab-inbox-todos" class="outlook-tab-btn active cursor-pointer whitespace-nowrap">
+                                    Todos
+                                </button>
+                                <button onclick="switchInboxTab('prioritarios')" id="tab-inbox-prioritarios" class="outlook-tab-btn cursor-pointer whitespace-nowrap">
                                     Prioritarios (<span id="badge-tab-prioritarios">0</span>)
                                 </button>
-                                <button onclick="filterInboxByTab('otros')" id="tab-inbox-otros" class="px-2 py-0.5 text-[10px] font-semibold rounded bg-white dark:bg-[#1E293B] border border-snow-border hover:border-snow-blue transition cursor-pointer">
+                                <button onclick="switchInboxTab('otros')" id="tab-inbox-otros" class="outlook-tab-btn cursor-pointer whitespace-nowrap">
                                     Otros (<span id="badge-tab-otros">0</span>)
                                 </button>
                             </div>
-                            <select id="select-tech-filter" onchange="filterByTechnician(this.value)" class="text-[10px] font-medium bg-white dark:bg-[#1E293B] border border-snow-border rounded px-1.5 py-0.5 text-snow-muted">
-                                <option value="todos">Todos los Especialistas</option>
+
+                            <select id="filter-tech" onchange="applyInboxFilters()" class="text-[10px] font-semibold bg-white dark:bg-[#1E293B] border border-snow-border rounded px-1.5 py-0.5 text-snow-muted">
+                                <option value="todos">Todos</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Contenedor Scrollable de la Lista de Correos -->
-                    <div id="inbox-list-container" class="flex-1 overflow-y-auto divide-y divide-snow-border/60">
+                    <!-- Contenedor Scrollable de la Lista de Mensajes -->
+                    <div id="outlook-message-list" class="flex-1 overflow-y-auto divide-y divide-snow-border/60">
                         <div class="p-8 text-center text-snow-muted text-xs">
-                            Cargando bandeja de correos...
+                            Cargando buzon de correos...
                         </div>
+                    </div>
+
+                    <!-- Worker Footer Status -->
+                    <div class="p-2 border-t border-snow-border bg-gray-50 dark:bg-[#141B2D] flex items-center justify-between text-[10px] text-snow-muted">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <strong id="worker-mode-text" class="text-gray-700 dark:text-gray-300 font-mono">Modo: Simulador</strong>
+                        </span>
+                        <span id="worker-state-text" class="font-medium text-emerald-600 dark:text-emerald-400">Servicio Activo</span>
                     </div>
                 </div>
 
-                <!-- COLUMNA 2: READING PANE (PANEL DE LECTURA Y ATENCIÓN) -->
-                <div id="reading-pane" class="flex-1 bg-white dark:bg-[#111827] flex flex-col overflow-y-auto">
+                <!-- ===================================================== -->
+                <!-- COLUMNA 3: READING PANE (LECTURA, MEMBRETE Y COMPOSER)-->
+                <!-- ===================================================== -->
+                <div id="outlook-reading-pane" class="flex-1 bg-white dark:bg-[#111827] flex flex-col overflow-hidden">
                     <!-- Estado Inicial Vacío -->
-                    <div id="reading-empty" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-snow-muted select-none">
+                    <div class="flex-1 flex flex-col items-center justify-center p-8 text-center text-snow-muted select-none">
                         <div class="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#0056B3] dark:text-[#38BDF8] flex items-center justify-center mb-3">
                             <i data-lucide="mail-open" class="w-8 h-8"></i>
                         </div>
-                        <h3 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Seleccione un correo del buzón</h3>
-                        <p class="text-xs text-snow-muted max-w-sm">Haga clic en cualquiera de los tickets de la lista izquierda para visualizar el membrete, analizar parámetros técnicos y redactar respuesta formal.</p>
-                    </div>
-
-                    <!-- Detalle del Ticket Seleccionado -->
-                    <div id="reading-detail" class="hidden flex-1 flex flex-col">
-                        <!-- El contenido detallado se renderiza mediante renderTicketDetail() en dashboard.js -->
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-white mb-1">Seleccione un correo del buzon</h3>
+                        <p class="text-xs text-snow-muted max-w-sm">Haga clic en cualquiera de los tickets de la lista para visualizar el membrete formal, analizar parametros tecnicos y despachar respuestas RFC 5322.</p>
                     </div>
                 </div>
 
@@ -327,380 +536,113 @@
     </main>
 
     <!-- Modales de Soporte Funcional -->
-    <div id="modalTicketWorkspace" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-4xl max-h-[90vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            <!-- Top Bar del Ticket -->
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span id="ws-ticket-code" class="text-sm font-mono font-bold px-2.5 py-1 rounded-lg bg-white border border-snow-border text-gray-900 shadow-2xs">INC-XXXXX</span>
-                    <span id="ws-ticket-source-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-snow-blue border border-blue-100">Simulador</span>
-                    <span id="ws-ticket-status-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-snow-blue flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-snow-blue animate-pulse"></span> En Atención
-                    </span>
-                    <span id="ws-ticket-sender" class="text-xs text-snow-muted truncate max-w-xs">remitente@inter.com.ve</span>
-                </div>
-
-                <!-- CRONÓMETRO 100% AUTOMÁTICO EN VIVO -->
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-snow-border shadow-2xs">
-                        <i data-lucide="timer" class="w-4 h-4 text-snow-blue"></i>
-                        <span class="text-xs text-snow-muted font-medium">Tiempo Transcurrido:</span>
-                        <span id="ws-live-timer" class="font-mono font-bold text-sm text-gray-900">00:00:00</span>
-                    </div>
-
-                    <!-- Botón de Pausa (En Espera por Terreno / ARU) -->
-                    <button id="btn-pause-ticket" onclick="togglePauseTicket()" class="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-semibold flex items-center gap-1.5 transition">
-                        <i data-lucide="pause-circle" class="w-4 h-4"></i>
-                        <span id="btn-pause-text">Pausar (En Espera)</span>
-                    </button>
-
-                    <button onclick="closeWorkspaceModal()" class="text-snow-muted hover:text-gray-900 ml-2">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Cuerpo del Workspace (Scrollable) -->
-            <div class="flex-1 overflow-y-auto p-6 space-y-5">
-                
-                <!-- Asunto del Correo -->
-                <div>
-                    <h2 id="ws-ticket-subject" class="text-base font-bold text-gray-900">Asunto de la solicitud de soporte</h2>
-                </div>
-
-                <!-- Alerta Contextual Dinámica (ej. Si es Modo Bridge) -->
-                <div id="ws-bridge-alert" class="hidden p-3.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-start gap-2.5">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
-                    <div>
-                        <span class="font-bold">POLÍTICA CRÍTICA DE MODO BRIDGE:</span>
-                        <span> Bajo ninguna circunstancia aplicar reaprovisionamiento ni enviar comando REFRESH por Soporte FibraHogar a esta ONT. Verificar la WANMAC del router del cliente directamente en Servidor 815.</span>
-                    </div>
-                </div>
-
-                <!-- Tarjeta de Parámetros Técnicos Extraídos de la Petición -->
-                <div class="bg-gray-50/80 rounded-lg border border-snow-border p-4">
-                    <p class="text-[11px] font-bold text-snow-muted uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                        <i data-lucide="cpu" class="w-3.5 h-3.5 text-snow-blue"></i>
-                        Parámetros Técnicos Detectados en el Correo
-                    </p>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div class="bg-white p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block">Código Abonado</span>
-                            <span id="ws-param-subscriber" class="font-bold text-gray-900 font-mono">--</span>
-                        </div>
-                        <div class="bg-white p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block">Serial PON</span>
-                            <span id="ws-param-serial" class="font-bold text-gray-900 font-mono">--</span>
-                        </div>
-                        <div class="bg-white p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block">Nodo OLT & Ubicación</span>
-                            <span id="ws-param-node" class="font-bold text-gray-900">--</span>
-                        </div>
-                        <div class="bg-white p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block">Slot / PON</span>
-                            <span id="ws-param-slotpon" class="font-bold text-gray-900 font-mono">--</span>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 mt-3 text-xs">
-                        <div class="bg-white p-2.5 rounded-lg border border-snow-border flex items-center justify-between">
-                            <div>
-                                <span class="text-[10px] text-snow-muted block">Dirección MAC Abonado</span>
-                                <span id="ws-param-mac" class="font-bold text-gray-900 font-mono">--</span>
-                            </div>
-                            <span class="text-[10px] px-2 py-0.5 rounded-md bg-gray-100 font-mono text-gray-600">L2 / L3</span>
-                        </div>
-                        <div class="bg-white p-2.5 rounded-lg border border-snow-border flex items-center justify-between">
-                            <div>
-                                <span class="text-[10px] text-snow-muted block">Complejidad Ponderada</span>
-                                <span id="ws-param-points-badge" class="font-bold text-snow-blue">+5 pts (P4)</span>
-                            </div>
-                            <span id="ws-param-taskname" class="text-xs text-gray-700 font-medium">Soporte a Modo Bridge</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Cuerpo Completo del Correo Solicitante -->
-                <div class="border border-snow-border rounded-lg p-4 bg-white">
-                    <p class="text-[11px] font-bold text-snow-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <i data-lucide="mail-open" class="w-3.5 h-3.5 text-snow-blue"></i>
-                        Mensaje Original del Solicitante
-                    </p>
-                    <div id="ws-ticket-body" class="text-xs text-gray-800 leading-relaxed bg-gray-50/50 p-3 rounded-lg border border-snow-border/60">
-                        Cargando cuerpo del correo...
-                    </div>
-                </div>
-
-                <!-- Formulario de Respuesta y Cierre -->
-                <form id="formCompleteTicketAutomated" onsubmit="submitCompleteAutomated(event)" class="space-y-3 pt-2">
-                    <div>
-                        <label class="block font-semibold text-gray-800 text-xs mb-1">
-                            Diagnóstico / Comandos Aplicados / Respuesta al Correo:
-                        </label>
-                        <textarea id="ws_resolution_notes" required rows="2" placeholder="Ej. Se validó atenuación óptica en -19.2 dBm. Demonio OLT desatascado en Slot 3 PON 4. ONT pasó a Whitelist y MAC en VERDE." class="w-full bg-gray-50 border border-snow-border rounded-lg p-3 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-snow-blue"></textarea>
-                    </div>
-
-                    <div class="bg-emerald-50/60 border border-emerald-100 rounded-lg p-3 flex items-center justify-between text-xs">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i>
-                            <span class="text-emerald-800 font-medium">El tiempo de atención y los puntos se calcularán de manera 100% automática al enviar.</span>
-                        </div>
-                        <button type="submit" class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition shadow-xs flex items-center gap-2">
-                            <i data-lucide="send" class="w-4 h-4"></i>
-                            <span>Resolver y Computar Puntos</span>
-                        </button>
-                    </div>
-                </form>
-
-            </div>
-
-        </div>
-    </div>
-    <div id="modalParserTester" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-3xl max-h-[90vh] flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
+    <!-- Modal Tester NLP -->
+    <div id="modalTesterNLP" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-[#1E293B] rounded-snow-card w-full max-w-3xl flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="px-6 py-4 bg-gray-50 dark:bg-[#141B2D] border-b border-snow-border flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-snow-blue flex items-center justify-center font-bold">
-                        <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+                        <i data-lucide="scan-search" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 text-sm">Algoritmo de Extracción y Distribución de Datos</h3>
-                        <p class="text-[11px] text-snow-muted">Pega el texto libre de cualquier correo y observa la distribución en casillas de texto</p>
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">Analizador Forense de Casos NLP</h3>
+                        <p class="text-[10px] text-snow-muted">Prueba heuristica de extraccion de abonados, seriales PON y clasificacion de celula</p>
                     </div>
                 </div>
-                <button onclick="closeTesterModal()" class="text-snow-muted hover:text-gray-900">
+                <button onclick="closeTesterModal()" class="text-snow-muted hover:text-gray-900 dark:hover:text-white">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-
-            <div class="flex-1 overflow-y-auto p-6 space-y-4">
-                
-                <!-- Botones de Ejemplos Rápidos -->
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-snow-muted font-medium">Casos predefinidos:</span>
-                    <button onclick="loadExampleText(1)" class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">Discovery FiberHome</button>
-                    <button onclick="loadExampleText(2)" class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">Bridge IP Certificada (Alerta)</button>
-                    <button onclick="loadExampleText(3)" class="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition">Alerta Troncal 20G Cabecera</button>
-                </div>
-
-                <!-- Textarea para pegar correo real -->
+            <div class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-800 mb-1">Texto Libre del Correo (Copia y Pega aquí):</label>
-                    <textarea id="tester_raw_text" rows="5" placeholder="Ej: Buenas tardes soporte, favor apoyo con el siguiente caso: Abonado: 9021882, Serial: FHTT09182312, OLT-CHAC-01 slot 3 pon 4..." class="w-full bg-gray-50 border border-snow-border rounded-lg p-3 text-xs font-mono text-gray-900 focus:outline-none focus:ring-2 focus:ring-snow-blue"></textarea>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cuerpo del correo a evaluar:</label>
+                    <textarea id="tester-raw-text" rows="5" placeholder="Pegue aqui el texto del correo..." class="w-full bg-gray-50 dark:bg-[#0F172A] border border-snow-border rounded-lg p-3 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-snow-blue font-mono"></textarea>
                 </div>
-
-                <div class="flex justify-end">
-                    <button onclick="executeParserAnalysis()" class="px-4 py-2 rounded-lg bg-snow-blue hover:bg-blue-600 text-white font-semibold text-xs flex items-center gap-1.5 transition shadow-xs">
-                        <i data-lucide="sparkles" class="w-4 h-4"></i>
-                        <span>Ejecutar Algoritmo de Extracción</span>
-                    </button>
-                </div>
-
-                <!-- RESULTADOS DE LA EXTRACCIÓN (DISTRIBUCIÓN EN CASILLAS) -->
-                <div id="tester-results-container" class="hidden space-y-3 pt-3 border-t border-snow-border">
-                    <p class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i>
-                        Parámetros Técnicos Identificados y Distribuidos:
-                    </p>
-
-                    <!-- Alerta de Modo Bridge si se detectó -->
-                    <div id="tester-bridge-alert" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 font-medium flex items-center gap-2">
-                        <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0"></i>
-                        <span><strong>REGLA DE SEGURIDAD OPERACIONAL:</strong> ONT en Modo Bridge con IP Certificada. PROHIBIDO enviar comandos de Refresh o Reaprovisionar.</span>
-                    </div>
-
-                    <!-- Casillas Distribuidas Fila 1 -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs">
-                        <div class="bg-gray-50 p-2.5 rounded-lg border border-snow-border">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[10px] text-snow-muted block font-semibold uppercase">Abonado (10 Dígitos)</span>
-                                <span id="res_permisor_badge" class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-snow-blue hidden">P-10</span>
-                            </div>
-                            <input type="text" id="res_subscriber" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
-                        </div>
-                        <div class="bg-gray-50 p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block font-semibold uppercase">Serial PON / Vendor</span>
-                            <input type="text" id="res_serial" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
-                        </div>
-                        <div class="bg-gray-50 p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block font-semibold uppercase">Nodo OLT</span>
-                            <input type="text" id="res_node" readonly class="w-full bg-transparent font-bold text-gray-900 text-xs">
-                        </div>
-                        <div class="bg-gray-50 p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block font-semibold uppercase">Slot / PON / Ct.Onu</span>
-                            <input type="text" id="res_slotpon" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
-                        </div>
-                    </div>
-
-                    <!-- Casillas Distribuidas Fila 2 -->
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
-                        <div class="bg-gray-50 p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block font-semibold uppercase">Dirección MAC</span>
-                            <input type="text" id="res_mac" readonly class="w-full bg-transparent font-mono font-bold text-gray-900 text-xs">
-                        </div>
-                        <div class="bg-gray-50 p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block font-semibold uppercase">Potencia Óptica (dBm)</span>
-                            <input type="text" id="res_power" readonly class="w-full bg-transparent font-bold text-emerald-600 text-xs">
-                        </div>
-                        <div class="bg-gray-50 p-2.5 rounded-lg border border-snow-border">
-                            <span class="text-[10px] text-snow-muted block font-semibold uppercase">Ponderación Asignada</span>
-                            <input type="text" id="res_points" readonly class="w-full bg-transparent font-bold text-snow-blue text-xs">
-                        </div>
-                    </div>
-
-                    <!-- Fila 3: Tarea Sugerida y Botón de Conversión a Ticket -->
-                    <div class="bg-blue-50/60 p-3 rounded-lg border border-blue-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3 text-xs">
-                        <div class="flex items-center gap-2">
-                            <span class="text-snow-muted">Área y Tarea Clasificada:</span>
-                            <span id="res_taskname" class="font-bold text-gray-900">--</span>
-                        </div>
-                        <button onclick="convertAnalysisToTicket()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1.5 transition shadow-xs">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                            <span>Crear Ticket en Bandeja e Iniciar</span>
-                        </button>
-                    </div>
-                </div>
-
+                <button onclick="runNlpTest()" class="px-4 py-2 rounded-lg bg-snow-blue text-white text-xs font-bold flex items-center gap-2 hover:bg-blue-600 transition">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <span>Analizar Sintaxis Tecnica</span>
+                </button>
+                <div id="tester-results" class="hidden p-4 rounded-lg bg-gray-50 dark:bg-[#0F172A] border border-snow-border text-xs space-y-2"></div>
             </div>
-
         </div>
     </div>
-    <div id="modalMailWorkerConfig" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-snow-card w-full max-w-lg flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            <div class="px-6 py-4 bg-gray-50 border-b border-snow-border flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-snow-blue text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20">
-                        <i data-lucide="mail-search" class="w-5 h-5"></i>
+
+    <!-- Modal Configuracion IMAP -->
+    <div id="modalConfigIMAP" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-[#1E293B] rounded-snow-card w-full max-w-2xl flex flex-col border border-snow-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="px-6 py-4 bg-gray-50 dark:bg-[#141B2D] border-b border-snow-border flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-[#0056B3] text-white flex items-center justify-center font-bold">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900 text-sm">Configuración del Ingestor de Correo</h3>
-                        <p class="text-[11px] text-snow-muted">Módulo 6: Worker en Segundo Plano (IMAP SSL / Simulador)</p>
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">Parametros de Sincronizacion IMAP / SMTP</h3>
+                        <p class="text-[10px] text-snow-muted">Conexion con buzones corporativos de Inter y Microsoft 365 Exchange</p>
                     </div>
                 </div>
-                <button onclick="closeMailConfigModal()" class="text-snow-muted hover:text-gray-900 p-1">
+                <button onclick="closeMailConfigModal()" class="text-snow-muted hover:text-gray-900 dark:hover:text-white">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-
-            <form id="formMailWorkerConfig" onsubmit="saveMailWorkerConfig(event)" class="p-6 space-y-4 text-xs">
-                
-                <!-- Selector de Modo -->
+            <form id="formMailConfig" onsubmit="saveMailConfig(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Servidor IMAP:</label>
+                        <input type="text" id="cfg-imap-server" value="outlook.office365.com" class="w-full bg-gray-50 dark:bg-[#0F172A] border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 dark:text-white font-mono outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Puerto IMAP (SSL):</label>
+                        <input type="number" id="cfg-imap-port" value="993" class="w-full bg-gray-50 dark:bg-[#0F172A] border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 dark:text-white font-mono outline-none">
+                    </div>
+                </div>
                 <div>
-                    <label class="block font-semibold text-gray-800 mb-1">Modo de Operación:</label>
-                    <select id="cfg_mode" onchange="toggleImapFieldsVisibility()" class="w-full bg-gray-50 border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 font-semibold focus:ring-2 focus:ring-snow-blue outline-none">
-                        <option value="SIMULATOR">Modo Simulador de Laboratorio (Recomendado sin Internet)</option>
-                        <option value="REAL_IMAP">Buzón IMAP Real SSL (Puerto 993)</option>
-                    </select>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Cuenta de Correo:</label>
+                    <input type="email" id="cfg-imap-user" value="operaciones@inter.com.ve" class="w-full bg-gray-50 dark:bg-[#0F172A] border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 dark:text-white font-mono outline-none">
                 </div>
-
-                <!-- Intervalo de Consulta -->
-                <div>
-                    <label class="block font-semibold text-gray-800 mb-1">Intervalo de Verificación Automática (segundos):</label>
-                    <input type="number" id="cfg_interval" min="15" max="3600" value="60" required class="w-full bg-gray-50 border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
-                    <span class="text-[10px] text-snow-muted mt-0.5 block">Frecuencia de escaneo en segundo plano (Recomendado: 60s).</span>
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-snow-border">
+                    <button type="button" onclick="closeMailConfigModal()" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-semibold hover:bg-gray-200 transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-[#0056B3] text-white text-xs font-bold hover:bg-blue-600 transition">Guardar Configuracion</button>
                 </div>
-
-                <!-- Campos de Conexión IMAP Real (visibles u ocultos según modo) -->
-                <div id="cfg_imap_fields" class="space-y-3 pt-2 border-t border-snow-border">
-                    <p class="font-bold text-gray-900 uppercase tracking-wider text-[10px] text-snow-muted flex items-center gap-1.5">
-                        <i data-lucide="server" class="w-3.5 h-3.5 text-snow-blue"></i>
-                        Credenciales del Buzón IMAP
-                    </p>
-
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="col-span-2">
-                            <label class="block font-medium text-gray-700 mb-1">Servidor IMAP Host:</label>
-                            <input type="text" id="cfg_imap_server" placeholder="imap.gmail.com" class="w-full bg-gray-50 border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
-                        </div>
-                        <div>
-                            <label class="block font-medium text-gray-700 mb-1">Puerto SSL:</label>
-                            <input type="number" id="cfg_imap_port" placeholder="993" value="993" class="w-full bg-gray-50 border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Carpeta de Correo:</label>
-                        <input type="text" id="cfg_imap_mailbox" placeholder="INBOX" value="INBOX" class="w-full bg-gray-50 border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Usuario / Dirección de Correo:</label>
-                        <input type="text" id="cfg_imap_user" placeholder="ejemplo@inter.com.ve" class="w-full bg-gray-50 border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 focus:ring-2 focus:ring-snow-blue outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block font-medium text-gray-700 mb-1">Contraseña de Aplicación / Token:</label>
-                        <input type="password" id="cfg_imap_password" placeholder="••••••••••••••••" class="w-full bg-gray-50 border border-snow-border rounded-lg p-2.5 text-xs text-gray-900 font-mono focus:ring-2 focus:ring-snow-blue outline-none">
-                        <span class="text-[10px] text-snow-muted mt-0.5 block">Dejar en blanco para mantener la contraseña actual.</span>
-                    </div>
-                </div>
-
-                <!-- Nota Informativa -->
-                <div class="p-3 bg-blue-50/60 border border-blue-100 rounded-lg text-[11px] text-blue-900 flex items-start gap-2">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-snow-blue shrink-0 mt-0.5"></i>
-                    <span>En <strong>Modo Simulador</strong>, el worker genera periódicamente casos reales de soporte FTTH y cabecera con validación de nomenclatura DERS, sin requerir acceso a internet.</span>
-                </div>
-
-                <!-- Banner de Diagnóstico en Tiempo Real -->
-                <div id="imap-test-feedback" class="hidden p-3 rounded-lg text-xs font-medium"></div>
-
-                <!-- Footer Acciones -->
-                <div class="flex items-center justify-between gap-2 pt-3 border-t border-snow-border">
-                    <a href="/docs/CONEXION_OUTLOOK_IMAP.md" target="_blank" class="text-[11px] text-snow-blue hover:underline font-semibold flex items-center gap-1">
-                        <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
-                        <span>Guía Outlook IMAP</span>
-                    </a>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="closeMailConfigModal()" class="px-3.5 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition cursor-pointer">
-                            Cancelar
-                        </button>
-                        <button type="button" onclick="testMailConnection()" id="btn-test-imap" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-1.5 shadow-xs transition cursor-pointer" title="Validar parámetros SSL/TLS sin guardar">
-                            <i data-lucide="activity" class="w-4 h-4"></i>
-                            <span>Probar Conexión</span>
-                        </button>
-                        <button type="submit" class="px-3.5 py-2 rounded-lg bg-snow-blue hover:bg-blue-600 text-white font-semibold flex items-center gap-1.5 shadow-xs transition cursor-pointer">
-                            <i data-lucide="save" class="w-4 h-4"></i>
-                            <span>Guardar Parámetros</span>
-                        </button>
-                    </div>
-                </div>
-
             </form>
-
         </div>
     </div>
 
-    <!-- Scripts de la Aplicación -->
+    <!-- Scripts de la Aplicacion -->
     <script src="/static/js/dashboard.js"></script>
     <script>
-        // Inicialización del Portal Autónomo de Correos
         document.addEventListener('DOMContentLoaded', async () => {
             if (window.lucide) lucide.createIcons();
             
             // Forzar vista de bandeja
             window.currentDashboardView = 'inbox';
             
-            // Cargar usuario en sesión
-            if (typeof loadCurrentUser === 'function') {
-                await loadCurrentUser();
+            // Cargar usuario en sesion
+            if (typeof loadCurrentUserProfile === 'function') {
+                await loadCurrentUserProfile();
             }
             
-            // Cargar bandeja de correos y estado del worker
+            // Cargar bandeja de correos, telemetria y worker
             if (typeof loadInbox === 'function') {
-                await loadInbox();
+                await loadInbox('inbox');
+            }
+            if (typeof loadMailStats === 'function') {
+                await loadMailStats();
             }
             if (typeof loadMailWorkerStatus === 'function') {
                 await loadMailWorkerStatus();
             }
 
-            // Sincronización periódica cada 15 segundos
-            setInterval(() => {
-                if (typeof loadInbox === 'function') loadInbox();
-                if (typeof loadMailWorkerStatus === 'function') loadMailWorkerStatus();
+            // Sincronizacion periodica en vivo cada 15 segundos
+            setInterval(async () => {
+                if (typeof loadMailStats === 'function') await loadMailStats();
+                if (typeof loadInbox === 'function' && window.currentMailDirection !== 'outbound') {
+                    await loadInbox();
+                }
+                if (typeof loadMailWorkerStatus === 'function') {
+                    await loadMailWorkerStatus();
+                }
             }, 15000);
         });
     </script>
 </body>
-</html>
+</html>\n
